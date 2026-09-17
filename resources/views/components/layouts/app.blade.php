@@ -6,18 +6,29 @@
     </x-slot:seo>
 
     <x-slot:header>
-        <header class="sticky top-0 z-50 bg-paper/85 backdrop-blur-md border-b border-line2">
+        @php
+            $links = [
+                [route('home').'#relation',   'What is AtomPay'],
+                [route('home').'#how',        'How it works'],
+                [route('home').'#calculator', 'Estimate a plan'],
+                [route('home').'#assess',     'Get approved'],
+                [route('faq'),                'FAQ'],
+            ];
+        @endphp
+        <header class="sticky top-0 z-50 bg-paper/85 backdrop-blur-md border-b border-line2" x-data="{ open: false }" @keydown.escape.window="open = false">
             <div class="wrap flex items-center justify-between h-[72px] gap-4">
                 <x-brand-mark id="nav" />
                 <nav class="hidden lg:flex items-center gap-7 text-[14.5px]" aria-label="Primary">
-                    <a href="{{ route('home') }}#relation" class="text-muted hover:text-ink no-underline">What is AtomPay</a>
-                    <a href="{{ route('home') }}#how" class="text-muted hover:text-ink no-underline">How it works</a>
-                    <a href="{{ route('home') }}#calculator" class="text-muted hover:text-ink no-underline">Estimate a plan</a>
-                    <a href="{{ route('home') }}#assess" class="text-muted hover:text-ink no-underline">Get approved</a>
-                    <a href="{{ route('faq') }}" class="text-muted hover:text-ink no-underline">FAQ</a>
+                    @foreach ($links as [$href, $label])
+                        <a href="{{ $href }}" class="text-muted hover:text-ink no-underline">{{ $label }}</a>
+                    @endforeach
                 </nav>
-                <a class="btn btn-primary btn-sm" href="{{ auth()->check() ? route('account.dashboard') : route('login') }}">My AtomPay</a>
+                <div class="flex items-center gap-2">
+                    <a class="btn btn-primary btn-sm" href="{{ auth()->check() ? route('account.dashboard') : route('login') }}">My AtomPay</a>
+                    <x-menu-button class="lg:hidden" />
+                </div>
             </div>
+            <x-mobile-menu :links="$links" />
         </header>
     </x-slot:header>
 

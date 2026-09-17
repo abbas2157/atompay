@@ -14,7 +14,7 @@
     <span>
         <b class="font-disp text-[17px] tracking-tight block leading-none">{{ config('app.name') }}</b>
         @if ($tagline)
-            <small class="block font-mono text-[9.5px] tracking-[.1em] text-muted mt-1">Instalment partner of AtomShop.pk</small>
+            <small class="hidden sm:block font-mono text-[9.5px] tracking-[.1em] text-muted mt-1">Instalment partner of AtomShop.pk</small>
         @endif
     </span>
 </a>
