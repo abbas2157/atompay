@@ -101,5 +101,47 @@ Alpine.data('applicationWizard', ({ steps, initial, ratios, errorStep = null, la
     get maxInstalment() { return this.incomeValid ? Math.max(0, Math.min(Math.round(this.form.monthly_income * ratios.instalment), this.disposable)) : 0; },
 }));
 
+/**
+ * Searchable select. `options` is { value: label }. Exposes `value` via
+ * x-modelable so a parent can bind it like a native <select>:
+ *   <div x-data="combobox({...})" x-modelable="value" x-model="form.city_id">
+ * The visible text input carries `required`; the hidden input carries the
+ * form value and name.
+ */
+Alpine.data('combobox', ({ options, value = null, placeholder = 'Select…' }) => ({
+    options: Object.entries(options).map(([v, l]) => ({ value: String(v), label: String(l) })),
+    value: value === null || value === undefined || value === '' ? '' : String(value),
+    query: '',
+    open: false,
+    active: -1,
+    placeholder,
+
+    init() {
+        this.query = this.selectedLabel;
+        this.$watch('value', () => { if (!this.open) this.query = this.selectedLabel; });
+    },
+    get selectedLabel() { return this.options.find((o) => o.value === this.value)?.label ?? ''; },
+    get filtered() {
+        const q = this.query.trim().toLowerCase();
+        if (!q || q === this.selectedLabel.toLowerCase()) return this.options;
+        return this.options.filter((o) => o.label.toLowerCase().includes(q));
+    },
+
+    show() { this.open = true; this.active = Math.max(0, this.filtered.findIndex((o) => o.value === this.value)); },
+    onInput() { this.open = true; this.active = 0; if (this.query === '') this.value = ''; },
+    choose(option) { this.value = option.value; this.query = option.label; this.open = false; this.$refs.input.blur(); },
+    clear() { this.value = ''; this.query = ''; this.$refs.input.focus(); this.open = true; },
+    /** Leaving without a match reverts to the last real selection. */
+    close() { this.open = false; this.query = this.selectedLabel; },
+    move(step) {
+        if (!this.open) return this.show();
+        const n = this.filtered.length;
+        if (!n) return;
+        this.active = (this.active + step + n) % n;
+        this.$nextTick(() => this.$refs.list?.children[this.active]?.scrollIntoView({ block: 'nearest' }));
+    },
+    pickActive() { const o = this.filtered[this.active]; if (o) this.choose(o); },
+}));
+
 window.Alpine = Alpine;
 Alpine.start();
