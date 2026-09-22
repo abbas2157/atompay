@@ -161,17 +161,17 @@
                     <div class="glow w-[260px] h-[260px] -right-[80px] -top-[120px]" aria-hidden="true"></div>
                     <div class="relative z-[2] grid sm:grid-cols-2 gap-4">
                         <div>
-                            <span class="eyebrow text-white/50">Provisional purchase limit</span>
+                            <span class="eyebrow text-white/70">Provisional purchase limit</span>
                             <div class="font-disp font-extrabold text-[28px] tracking-tight spectrum-text mt-1" x-text="fmt(limit)"></div>
-                            <span class="text-white/50 text-[12px]">{{ (int) ($ratios['limit'] * 100) }}% of monthly income</span>
+                            <span class="text-white/70 text-[12px]">{{ (int) ($ratios['limit'] * 100) }}% of monthly income</span>
                         </div>
                         <div>
-                            <span class="eyebrow text-white/50">Max instalment / month</span>
+                            <span class="eyebrow text-white/70">Max instalment / month</span>
                             <div class="font-disp font-extrabold text-[28px] tracking-tight mt-1" x-text="fmt(maxInstalment)"></div>
-                            <span class="text-white/50 text-[12px]">{{ (int) ($ratios['instalment'] * 100) }}% of income, within disposable</span>
+                            <span class="text-white/70 text-[12px]">{{ (int) ($ratios['instalment'] * 100) }}% of income, within disposable</span>
                         </div>
                     </div>
-                    <p class="relative z-[2] text-white/40 text-[11.5px] mt-3">Final figures are set by our team after the risk assessment.</p>
+                    <p class="relative z-[2] text-white/65 text-[11.5px] mt-3">Final figures are set by our team after the risk assessment.</p>
                 </div>
             </section>
 

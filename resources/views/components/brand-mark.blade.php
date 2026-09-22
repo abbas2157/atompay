@@ -1,6 +1,6 @@
 {{-- The atom logo. `id` must be unique per instance because SVG gradient ids are document-global. --}}
 @props(['size' => 34, 'id' => 'nav', 'tagline' => true])
-<a {{ $attributes->merge(['class' => 'flex items-center gap-2.5 no-underline', 'href' => route('home')]) }} aria-label="{{ config('app.name') }} home">
+<a {{ $attributes->merge(['class' => 'flex items-center gap-2.5 no-underline', 'href' => route('home')]) }}>
     <svg width="{{ $size }}" height="{{ $size }}" viewBox="0 0 44 44" aria-hidden="true">
         <circle cx="22" cy="22" r="20" fill="#050708"/>
         <ellipse cx="22" cy="22" rx="17" ry="7" fill="none" stroke="url(#g{{ $id }}1)" stroke-width="1.6" transform="rotate(28 22 22)"/>

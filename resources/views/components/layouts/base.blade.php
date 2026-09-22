@@ -14,9 +14,10 @@
     {{ $seo }}
 
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    {{-- Fonts are self-hosted and bundled by Vite; preloading them lets text paint on the first frame. --}}
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ Vite::asset('resources/fonts/inter-latin.woff2') }}">
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ Vite::asset('resources/fonts/bricolage-grotesque-latin.woff2') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')

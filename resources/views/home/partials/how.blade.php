@@ -5,7 +5,7 @@
             @foreach ($steps as $step)
                 <li class="card p-5 relative">
                     <div class="font-disp text-[13px] font-bold w-7 h-7 rounded-lg bg-nucleus text-white grid place-items-center mb-4" aria-hidden="true">{{ $loop->iteration }}</div>
-                    <h4 class="text-[16px] mb-1.5"><span class="sr-only">Step {{ $loop->iteration }}: </span>{{ $step['title'] }}</h4>
+                    <h3 class="text-[16px] mb-1.5"><span class="sr-only">Step {{ $loop->iteration }}: </span>{{ $step["title"] }}</h3>
                     <p class="text-muted text-[13.8px]">{{ $step['text'] }}</p>
                 </li>
             @endforeach

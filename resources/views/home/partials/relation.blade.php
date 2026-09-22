@@ -10,7 +10,7 @@
             </div>
             <div class="card p-7 bg-nucleus text-white border-transparent">
                 <h3 class="text-[19px] mb-2.5">AtomPay</h3>
-                <p class="text-white/65 text-[15px]">The instalment option at checkout. Instead of paying the full price today, you pay a smaller amount now and the rest over the following months.</p>
+                <p class="text-white/75 text-[15px]">The instalment option at checkout. Instead of paying the full price today, you pay a smaller amount now and the rest over the following months.</p>
             </div>
         </div>
     </div>
