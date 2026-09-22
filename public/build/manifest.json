@@ -1,0 +1,25 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-BQpEev65.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/fonts/bricolage-grotesque-latin.woff2": {
+    "file": "assets/bricolage-grotesque-latin-Cre6nC2_.woff2",
+    "src": "resources/fonts/bricolage-grotesque-latin.woff2"
+  },
+  "resources/fonts/inter-latin.woff2": {
+    "file": "assets/inter-latin-Dx4kXJAl.woff2",
+    "src": "resources/fonts/inter-latin.woff2"
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-BV8xhC-d.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  }
+}

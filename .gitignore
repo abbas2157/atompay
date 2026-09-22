@@ -13,7 +13,7 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+# /public/build - committed on purpose: the production host runs Node 18, too old for Vite 7. Run `npm run build` before every push that touches resources/.
 /public/hot
 /public/storage
 /storage/*.key
