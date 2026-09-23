@@ -34,27 +34,27 @@ class KycAssessmentFlowTest extends TestCase
     private function application(array $overrides = []): array
     {
         return [
-            'full_name'            => 'Test Customer',
-            'cnic'                 => '42101-1234567-1',
-            'mobile'               => '0300 1234567',
-            'date_of_birth'        => '1990-05-01',
-            'residential_address'  => 'House 1, Street 2, Karachi',
-            'cnic_front'           => UploadedFile::fake()->image('front.jpg'),
-            'cnic_back'            => UploadedFile::fake()->image('back.jpg'),
-            'selfie'               => UploadedFile::fake()->image('selfie.jpg'),
-            'employment_status'    => 'salaried',
-            'employer_name'        => 'Acme Ltd',
-            'income_source'        => 'salary',
-            'monthly_income'       => 200000,
+            'full_name' => 'Test Customer',
+            'cnic' => '42101-1234567-1',
+            'mobile' => '0300 1234567',
+            'date_of_birth' => '1990-05-01',
+            'residential_address' => 'House 1, Street 2, Karachi',
+            'cnic_front' => UploadedFile::fake()->image('front.jpg'),
+            'cnic_back' => UploadedFile::fake()->image('back.jpg'),
+            'selfie' => UploadedFile::fake()->image('selfie.jpg'),
+            'employment_status' => 'salaried',
+            'employer_name' => 'Acme Ltd',
+            'income_source' => 'salary',
+            'monthly_income' => 200000,
             'existing_instalments' => 10000,
-            'monthly_expenses'     => 90000,
+            'monthly_expenses' => 90000,
             ...$overrides,
         ];
     }
 
     public function test_customer_submits_kyc_and_financial_profile(): void
     {
-        Storage::fake('local');
+        Storage::fake(config('atompay.kyc.disk'));
         $user = $this->customer();
 
         $this->actingAs($user)->post(route('account.application.store'), $this->application())
@@ -67,7 +67,7 @@ class KycAssessmentFlowTest extends TestCase
         $this->assertSame('03001234567', $profile->mobile);
         $this->assertTrue($profile->hasDocuments());
         $this->assertSame(VerificationStatus::Pending, $profile->verification_status);
-        Storage::disk('local')->assertExists($profile->cnic_front_path);
+        Storage::disk(config('atompay.kyc.disk'))->assertExists($profile->cnic_front_path);
 
         $a = CreditAssessment::where('user_id', $user->id)->firstOrFail();
         $this->assertSame(100000, $a->disposable_income);           // 200k - 10k - 90k
@@ -83,7 +83,7 @@ class KycAssessmentFlowTest extends TestCase
 
     public function test_low_disposable_income_caps_the_instalment(): void
     {
-        Storage::fake('local');
+        Storage::fake(config('atompay.kyc.disk'));
         $user = $this->customer();
 
         $this->actingAs($user)->post(route('account.application.store'), $this->application([
@@ -100,15 +100,15 @@ class KycAssessmentFlowTest extends TestCase
     {
         $this->actingAs($this->customer())->post(route('account.application.store'), $this->application([
             'date_of_birth' => now()->subYears(17)->format('Y-m-d'),
-            'cnic'          => '123',
-            'selfie'        => null,
+            'cnic' => '123',
+            'selfie' => null,
         ]))->assertSessionHasErrors(['date_of_birth', 'cnic', 'selfie']);
     }
 
     public function test_staff_verify_address_and_decide_limit(): void
     {
-        Storage::fake('local');
-        $user  = $this->customer();
+        Storage::fake(config('atompay.kyc.disk'));
+        $user = $this->customer();
         $staff = $this->staff();
 
         $this->actingAs($user)->post(route('account.application.store'), $this->application());
@@ -124,27 +124,27 @@ class KycAssessmentFlowTest extends TestCase
 
         // Section 2
         $this->actingAs($staff)->post(route('staff.assessments.address', $assessment), [
-            'address_verified'    => 1,
-            'face_verified'       => 1,
-            'verified_at'         => today()->format('Y-m-d'),
+            'address_verified' => 1,
+            'face_verified' => 1,
+            'verified_at' => today()->format('Y-m-d'),
             'verification_status' => 'verified',
-            'verification_notes'  => 'Met at residence.',
-            'verification_form'   => UploadedFile::fake()->create('form.pdf', 100, 'application/pdf'),
+            'verification_notes' => 'Met at residence.',
+            'verification_form' => UploadedFile::fake()->create('form.pdf', 100, 'application/pdf'),
         ])->assertSessionHasNoErrors();
 
         $profile = $user->fresh()->kycProfile;
         $this->assertTrue($profile->isVerified());
         $this->assertSame($staff->id, $profile->verified_by);
-        Storage::disk('local')->assertExists($profile->verification_form_path);
+        Storage::disk(config('atompay.kyc.disk'))->assertExists($profile->verification_form_path);
 
         // Sections 4-5
         $this->actingAs($staff)->post(route('staff.assessments.decide', $assessment), [
-            'credit_history'  => 'good',
-            'approved_limit'  => 50000,
-            'max_instalment'  => 15000,
+            'credit_history' => 'good',
+            'approved_limit' => 50000,
+            'max_instalment' => 15000,
             'approved_tenure' => 6,
-            'status'          => 'approved',
-            'notes'           => 'Approved at reduced limit.',
+            'status' => 'approved',
+            'notes' => 'Approved at reduced limit.',
         ])->assertRedirect(route('staff.assessments.index'))->assertSessionHasNoErrors();
 
         $assessment->refresh();
@@ -161,7 +161,7 @@ class KycAssessmentFlowTest extends TestCase
 
     public function test_documents_are_private_to_owner_and_staff(): void
     {
-        Storage::fake('local');
+        Storage::fake(config('atompay.kyc.disk'));
         $owner = $this->customer();
         $this->actingAs($owner)->post(route('account.application.store'), $this->application());
         $profile = $owner->fresh()->kycProfile;

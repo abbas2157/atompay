@@ -13,14 +13,14 @@
 return [
 
     // The storefront this service is the payment option for.
-    'shop_url'  => env('ATOMSHOP_URL', 'https://atomshop.pk'),
+    'shop_url' => env('ATOMSHOP_URL', 'https://atomshop.pk'),
 
     // Where AtomShop serves uploaded product pictures from.
     'asset_url' => env('ATOMPAY_ASSET_URL', 'https://atomshop.pk'),
 
     'credit' => [
         // Approved limit as a share of declared monthly income.
-        'limit_ratio'      => 0.30,
+        'limit_ratio' => 0.30,
         // Cap on any single monthly instalment as a share of income.
         'instalment_ratio' => 0.10,
     ],
@@ -30,13 +30,13 @@ return [
         'min_advance_ratio' => 0.20,
         'max_advance_ratio' => 0.60,
         // Fallbacks when the installment_calculators row is missing.
-        'default_tenures'   => [3, 6, 9, 12],
+        'default_tenures' => [3, 6, 9, 12],
         'default_per_month' => 4.0,
         // Calculator config is read from AtomShop's table; cache it briefly.
-        'cache_ttl'         => 600,
+        'cache_ttl' => 600,
         // Calculator slider bounds on the landing page.
-        'price_min'  => 10000,
-        'price_max'  => 300000,
+        'price_min' => 10000,
+        'price_max' => 300000,
         'price_step' => 5000,
     ],
 
@@ -47,11 +47,13 @@ return [
     'staff_roles' => ['admin', 'amos', 'manager', 'recovery'],
 
     'kyc' => [
-        // Private disk + folder for CNIC, selfie and signed verification forms.
-        'disk'          => 'local',
-        'path'          => 'kyc',
+        // Shared private disk + folder for CNIC, selfie and signed verification
+        // forms. AtomShop's admin panel points its own disk at the same root,
+        // so both apps read and write one copy of each document.
+        'disk' => 'kyc',
+        'path' => 'kyc',
         'max_upload_kb' => 4096,
-        'min_age'       => 18,
+        'min_age' => 18,
     ],
 
     /*
@@ -62,14 +64,14 @@ return [
     'risk' => [
         'bands' => ['low' => 70, 'medium' => 45],
         'penalties' => [
-            'late_instalment'     => 8,   // per late AtomShop instalment, up to the cap
+            'late_instalment' => 8,   // per late AtomShop instalment, up to the cap
             'late_instalment_cap' => 40,
-            'defaulted'           => 30,  // any instalment overdue longer than default_days
-            'obligations_ratio'   => 25,  // scaled by obligations / monthly income (max 1)
-            'low_disposable'      => 20,  // disposable income below the max instalment
-            'no_payment_history'  => 5,
-            'kyc_not_verified'    => 10,
-            'credit_history'      => ['none' => 5, 'good' => 0, 'fair' => 10, 'poor' => 30],
+            'defaulted' => 30,  // any instalment overdue longer than default_days
+            'obligations_ratio' => 25,  // scaled by obligations / monthly income (max 1)
+            'low_disposable' => 20,  // disposable income below the max instalment
+            'no_payment_history' => 5,
+            'kyc_not_verified' => 10,
+            'credit_history' => ['none' => 5, 'good' => 0, 'fair' => 10, 'poor' => 30],
         ],
         'default_days' => 60,
     ],

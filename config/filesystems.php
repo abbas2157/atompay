@@ -47,6 +47,34 @@ return [
             'report' => false,
         ],
 
+        /*
+        | KYC documents (CNIC scans, selfies, signed verification forms).
+        |
+        | AtomPay and AtomShop share one database, so they share the paths
+        | stored in `atompay_kyc_profiles` - but a path is only meaningful
+        | relative to a root. Both apps therefore point this disk at the
+        | SAME directory, and the file exists exactly once.
+        |
+        | In production that directory lives outside both project trees so a
+        | redeploy (or a stray `git clean`) can never delete an ID document;
+        | locally it falls back to this app's own private storage.
+        |
+        | Never public: no `url`, no `serve`, and never listed under `links`.
+        | DocumentController is the only way these bytes reach a browser.
+        */
+        'kyc' => [
+            'driver' => 'local',
+            'root' => env('ATOMPAY_KYC_ROOT', storage_path('app/private')),
+            'serve' => false,
+            'throw' => true,
+            'report' => false,
+            // Group-readable so the other app's PHP user can read what we write.
+            'permissions' => [
+                'file' => ['public' => 0644, 'private' => 0660],
+                'dir' => ['public' => 0755, 'private' => 0770],
+            ],
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

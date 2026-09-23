@@ -56,16 +56,25 @@ AtomShop's existing `customers.verified` flag and `customer_verifications` table
    - `income_source`: `salary | business | rental | remittance | pension | other`
    - `payment_history`: `none | on_time | some_late | defaulted`
    - `risk_category`: `low | medium | high`
-4. **Documents live on AtomPay's private disk**, not in AtomShop storage. Paths stored in the DB are relative, e.g. `kyc/42/cnic_front-20260917101500.jpg`, rooted at `c:\xampp\htdocs\atompay\storage\app\private`. Add a dedicated disk in `config/filesystems.php`:
+4. **Documents live on a shared private disk that both apps point at.** The two apps share a database but not a project folder, and the DB stores only a *relative* path (`kyc/42/cnic_front-20260917101500.jpg`). AtomPay already defines this disk in its own `config/filesystems.php`; copy it verbatim so both roots resolve to the same directory and the file exists exactly once:
    ```php
    'atompay_kyc' => [
        'driver' => 'local',
        'root'   => env('ATOMPAY_KYC_ROOT', base_path('../atompay/storage/app/private')),
        'serve'  => false,
-       'throw'  => false,
+       'throw'  => true,
+       'report' => false,
+       'permissions' => [
+           'file' => ['public' => 0644, 'private' => 0660],
+           'dir'  => ['public' => 0755, 'private' => 0770],
+       ],
    ],
    ```
-   and `ATOMPAY_KYC_ROOT=C:\xampp\htdocs\atompay\storage\app\private` in `.env` / `.env.example`. Stream files through an admin-only controller with `Cache-Control: private, no-store`; never expose them via a public URL or symlink. Uploaded signed verification forms go to the **same** disk under `kyc/{user_id}/verification_form-{YmdHis}.{ext}` so AtomPay can see them too; delete the previous file when replacing.
+   Set `ATOMPAY_KYC_ROOT` in `.env` / `.env.example` to **the same value AtomPay uses** — `/var/www/shared/atompay` in production, `C:\xampp\htdocs\atompay\storage\app\private` locally. If the two values ever differ, uploads silently vanish from the other app's view.
+
+   Stream files through an admin-only controller with `Cache-Control: private, no-store`; never expose them via a public URL, `storage:link`, or an entry in `filesystems.links`. Uploaded signed verification forms go to the **same** disk under `kyc/{user_id}/verification_form-{YmdHis}.{ext}` — the exact convention AtomPay's `KycService::replaceDocument()` uses — and the previous file is deleted when replaced. Getting the filename convention wrong produces orphans neither app can find.
+
+   Port AtomPay's `atompay:kyc-check` command (`app/Console/Commands/KycStorageCheck.php`) as `atomshop:kyc-check`. Run it in both apps after deploying: identical output proves a document written by one is readable by the other.
 5. **CNIC** is stored as 13 bare digits. Display as `#####-#######-#`.
 6. **Auth**: everything sits inside the existing `EnsureUserIsAdmin` group in `routes/dashboards/admin.php` under prefix `admin/atompay`, route names `admin.atompay.*`.
 7. Match the existing admin v2 Blade layout, tables, badges, filters, pagination (`config('app.per_page')`) and flash-message patterns. Do not introduce a new CSS framework or JS library.
