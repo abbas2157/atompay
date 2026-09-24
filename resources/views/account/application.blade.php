@@ -26,8 +26,9 @@
     // Seed the wizard's state with old input, then the saved profile / last assessment.
     $initial = [
         'full_name'            => old('full_name', $profile->full_name),
-        'cnic'                 => old('cnic', $profile->cnic),
-        'mobile'               => old('mobile', $profile->mobile),
+        // Shown the way people write them; the request normalises them back.
+        'cnic'                 => \App\Support\Pakistan::formatCnic(old('cnic', $profile->cnic)),
+        'mobile'               => \App\Support\Pakistan::formatMobile(old('mobile', $profile->mobile)),
         'date_of_birth'        => old('date_of_birth', $profile->date_of_birth?->format('Y-m-d')),
         'city_id'              => old('city_id', $profile->city_id),
         'residential_address'  => old('residential_address', $profile->residential_address),
@@ -113,8 +114,14 @@
                 @include('account.application.step-head', ['n' => 1, 'title' => 'Personal details', 'intro' => 'Enter these exactly as they appear on your CNIC - the visit team checks them against the card.'])
                 <div class="grid sm:grid-cols-2 gap-4">
                     <x-input name="full_name" label="Full name" autocomplete="name" required class="sm:col-span-2" x-model="form.full_name" />
-                    <x-input name="cnic" label="CNIC number" inputmode="numeric" placeholder="42101-1234567-1" maxlength="15" pattern="[0-9\-]{13,15}" required x-model="form.cnic" />
-                    <x-input name="mobile" label="Mobile number" type="tel" autocomplete="tel" placeholder="03001234567" pattern="(\+92|0)?3[0-9]{9}" required x-model="form.mobile" />
+                    {{-- x-pk-format inserts the dashes and the 03 prefix while typing; the
+                         patterns still hold for anyone without JavaScript. --}}
+                    <x-input name="cnic" label="CNIC number" inputmode="numeric" autocomplete="off"
+                             placeholder="42101-1234567-1" maxlength="15" pattern="[0-9]{5}-?[0-9]{7}-?[0-9]"
+                             required x-model="form.cnic" x-pk-format="cnic" />
+                    <x-input name="mobile" label="Mobile number" type="tel" inputmode="tel" autocomplete="tel"
+                             placeholder="0300 1234567" maxlength="12" pattern="(\+?92|0)?[\s-]?3[0-9]{2}[\s-]?[0-9]{7}"
+                             required x-model="form.mobile" x-pk-format="mobile" />
                     <x-input name="date_of_birth" label="Date of birth" type="date" max="{{ now()->subYears(config('atompay.kyc.min_age'))->format('Y-m-d') }}" required x-model="form.date_of_birth" />
                     <x-select name="city_id" label="City" :options="$cities->pluck('title', 'id')" placeholder="Select city" x-model="form.city_id" />
                     <div class="sm:col-span-2">

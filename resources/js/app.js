@@ -143,5 +143,76 @@ Alpine.data('combobox', ({ options, value = null, placeholder = 'Select…' }) =
     pickActive() { const o = this.filtered[this.active]; if (o) this.choose(o); },
 }));
 
+/**
+ * Live formatting for the two Pakistani identifiers, as `x-pk-format="cnic"`
+ * or `x-pk-format="mobile"`.
+ *
+ *   cnic    4210112345671  ->  42101-1234567-1
+ *   mobile  +923001234567  ->  0300 1234567
+ *
+ * The server normalises these again on submit, so this is convenience, not
+ * validation - a customer with JS disabled can still type either form.
+ *
+ * The fiddly part is the caret: rewriting the value moves it to the end, so
+ * the position is remembered as "how many digits precede it" and restored
+ * afterwards. Without that, typing into the middle of a CNIC jumps to the end
+ * on every keystroke.
+ */
+const PK_MASKS = {
+    cnic: {
+        maxDigits: 13,
+        format: (d) => [d.slice(0, 5), d.slice(5, 12), d.slice(12, 13)].filter((p) => p !== '').join('-'),
+    },
+    mobile: {
+        maxDigits: 11,
+        /** Any country-code spelling collapses to the local 03XX form. */
+        clean: (d) => {
+            let n = d;
+            if (n.startsWith('0092')) n = n.slice(4);
+            else if (n.startsWith('92') && !n.startsWith('920')) n = n.slice(2);
+            if (/^3/.test(n)) n = '0' + n;
+            // Mid-typing, "+92" is just the country code with nothing after it.
+            // Collapsing that to an empty string would blank the field under
+            // the caret, so the raw digits stand until there is more to show.
+            return (n === '' ? d : n).slice(0, 11);
+        },
+        format: (d) => (d.length > 4 ? d.slice(0, 4) + ' ' + d.slice(4) : d),
+    },
+};
+
+Alpine.directive('pk-format', (el, { expression }) => {
+    const mask = PK_MASKS[expression];
+    if (!mask) return;
+
+    const apply = () => {
+        const before = el.value.slice(0, el.selectionStart ?? el.value.length);
+        const digitsBeforeCaret = (before.match(/\d/g) || []).length;
+
+        let digits = (el.value.match(/\d/g) || []).join('');
+        digits = (mask.clean ? mask.clean(digits) : digits).slice(0, mask.maxDigits);
+
+        const formatted = mask.format(digits);
+        if (formatted === el.value) return;
+
+        el.value = formatted;
+
+        // Walk forward past the same number of digits to find the caret again.
+        let seen = 0;
+        let caret = formatted.length;
+        for (let i = 0; i < formatted.length; i++) {
+            if (/\d/.test(formatted[i])) seen++;
+            if (seen === digitsBeforeCaret) { caret = i + 1; break; }
+        }
+        if (digitsBeforeCaret === 0) caret = 0;
+
+        el.setSelectionRange(caret, caret);
+        el.dispatchEvent(new Event('input', { bubbles: true })); // keep x-model in step
+    };
+
+    el.addEventListener('input', apply);
+    el.addEventListener('paste', () => setTimeout(apply));
+    if (el.value) apply();
+});
+
 window.Alpine = Alpine;
 Alpine.start();

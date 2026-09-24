@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Enums\VerificationStatus;
+use App\Support\Pakistan;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,8 +19,8 @@ class KycProfile extends Model
     /** Files the customer uploads, keyed by input name => column. */
     public const DOCUMENTS = [
         'cnic_front' => 'cnic_front_path',
-        'cnic_back'  => 'cnic_back_path',
-        'selfie'     => 'selfie_path',
+        'cnic_back' => 'cnic_back_path',
+        'selfie' => 'selfie_path',
     ];
 
     protected $fillable = [
@@ -32,11 +33,11 @@ class KycProfile extends Model
     protected function casts(): array
     {
         return [
-            'date_of_birth'       => 'date',
-            'face_verified'       => 'boolean',
-            'address_verified'    => 'boolean',
-            'submitted_at'        => 'datetime',
-            'verified_at'         => 'date',
+            'date_of_birth' => 'date',
+            'face_verified' => 'boolean',
+            'address_verified' => 'boolean',
+            'submitted_at' => 'datetime',
+            'verified_at' => 'date',
             'verification_status' => VerificationStatus::class,
         ];
     }
@@ -79,6 +80,12 @@ class KycProfile extends Model
     /** "42101-1234567-1" for display; stored as bare digits. */
     protected function cnicFormatted(): Attribute
     {
-        return Attribute::get(fn () => preg_replace('/^(\d{5})(\d{7})(\d)$/', '$1-$2-$3', (string) $this->cnic));
+        return Attribute::get(fn () => Pakistan::formatCnic($this->cnic));
+    }
+
+    /** "0300 1234567" for display; stored as 03XXXXXXXXX. */
+    protected function mobileFormatted(): Attribute
+    {
+        return Attribute::get(fn () => Pakistan::formatMobile($this->mobile));
     }
 }

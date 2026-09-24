@@ -9,7 +9,9 @@
                 <form method="POST" action="{{ route('register.perform') }}" class="mt-6 space-y-4">
                     @csrf
                     <x-input name="name" label="Full name" autocomplete="name" required autofocus />
-                    <x-input name="phone" label="Mobile number" type="tel" autocomplete="tel" placeholder="03XXXXXXXXX" required />
+                    <x-input name="phone" label="Mobile number" type="tel" inputmode="tel" autocomplete="tel"
+                             placeholder="0300 1234567" maxlength="12"
+                             pattern="(\+?92|0)?[\s-]?3[0-9]{2}[\s-]?[0-9]{7}" required x-pk-format="mobile" />
                     <x-input name="email" label="Email" type="email" autocomplete="email" required />
                     <x-input name="password" label="Password" type="password" autocomplete="new-password" required />
                     <x-input name="password_confirmation" label="Confirm password" type="password" autocomplete="new-password" required />

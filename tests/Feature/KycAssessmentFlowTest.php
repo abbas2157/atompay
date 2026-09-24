@@ -176,4 +176,48 @@ class KycAssessmentFlowTest extends TestCase
         $this->actingAs($this->staff())->get($url)->assertOk();
         $this->actingAs($owner)->get($url)->assertOk();
     }
+    /* ------------------------------------------------- CNIC & mobile input */
+
+    public function test_any_way_of_writing_the_cnic_and_mobile_is_accepted_and_stored_canonically(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+        $user = $this->customer();
+
+        $this->actingAs($user)->post(route('account.application.store'), $this->application([
+            'cnic' => '35202-1234567-1',
+            'mobile' => '+92 300 1234567',
+        ]))->assertSessionHasNoErrors();
+
+        $profile = KycProfile::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame('3520212345671', $profile->cnic);
+        $this->assertSame('03001234567', $profile->mobile);
+        $this->assertSame('0300 1234567', $profile->mobile_formatted);
+    }
+
+    public function test_a_landline_is_refused_with_an_explanation(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+
+        $this->actingAs($this->customer())
+            ->post(route('account.application.store'), $this->application(['mobile' => '042 35678901']))
+            ->assertSessionHasErrors(['mobile' => 'That looks like a landline. Enter a mobile number so we can text you about payments.']);
+    }
+
+    public function test_a_cnic_with_an_impossible_province_code_is_refused(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+
+        $this->actingAs($this->customer())
+            ->post(route('account.application.store'), $this->application(['cnic' => '92101-1234567-1']))
+            ->assertSessionHasErrors('cnic');
+    }
+
+    public function test_a_short_cnic_says_how_many_digits_were_given(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+
+        $this->actingAs($this->customer())
+            ->post(route('account.application.store'), $this->application(['cnic' => '42101-12345']))
+            ->assertSessionHasErrors(['cnic' => 'A CNIC has 13 digits; you entered 10.']);
+    }
 }
