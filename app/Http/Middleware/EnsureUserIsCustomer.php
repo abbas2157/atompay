@@ -16,6 +16,14 @@ class EnsureUserIsCustomer
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()?->isCustomer()) {
+            // The mobile app has no session and no login page to go back to.
+            // Revoking the token is its sign-out: an account blocked after
+            // sign-in stops working on its next request, not in 30 days.
+            if ($request->is('api/*')) {
+                $request->user()?->currentAccessToken()?->delete();
+                abort(403, 'Please sign in with an AtomShop customer account.');
+            }
+
             Auth::guard('web')->logout();
             $request->session()->invalidate();
 

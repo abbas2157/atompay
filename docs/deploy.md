@@ -99,6 +99,17 @@ ATOMPAY_ASSET_URL=https://atomshop.pk
 
 # Must be byte-identical to AtomShop's value - see docs/shared-storage.md
 ATOMPAY_KYC_ROOT=/var/www/shared/atompay
+
+# Mobile app. Push stays off until FCM_CREDENTIALS points at the Firebase
+# service-account JSON (keep it outside the web root, readable by www-data).
+FCM_CREDENTIALS=/var/www/shared/atompay/firebase-service-account.json
+ATOMPAY_APP_MIN_ANDROID=1.0.0
+ATOMPAY_APP_MIN_IOS=1.0.0
+ATOMPAY_APP_STORE_ANDROID=https://play.google.com/store/apps/details?id=...
+ATOMPAY_APP_STORE_IOS=https://apps.apple.com/app/id...
+ATOMPAY_SUPPORT_PHONE=...
+ATOMPAY_SUPPORT_WHATSAPP=...
+ATOMPAY_SUPPORT_EMAIL=...
 ```
 
 Writable directories and the shared document store:
@@ -128,6 +139,22 @@ subfolder layout; pointing a production docroot at the project root would expose
 `.env`, `storage/` and `vendor/`.
 
 `storage:link` is not needed — this app serves no files from the public disk.
+
+### Scheduler (required for the mobile app)
+
+The mobile app's notifications (limit decisions, KYC outcomes, instalment
+reminders) and the daily cleanup of expired app sign-ins run from Laravel's
+scheduler. Add one cron entry for the web-server user:
+
+```bash
+sudo crontab -u www-data -e
+# then add:
+* * * * * cd /var/www/atompay.shop && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Check it with `php artisan schedule:list`. You should see `atompay:notify` every 10 minutes and
+`sanctum:prune-expired` daily. Every notification is announced once only (a unique
+key per event), so a missed or doubled run does no harm.
 
 ---
 
