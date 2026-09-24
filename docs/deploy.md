@@ -100,6 +100,9 @@ ATOMPAY_ASSET_URL=https://atomshop.pk
 # Must be byte-identical to AtomShop's value - see docs/shared-storage.md
 ATOMPAY_KYC_ROOT=/var/www/shared/atompay
 
+# Google Analytics 4. Empty = no tag and no Google hosts in the CSP.
+GOOGLE_ANALYTICS_ID=G-PB9VT5QFML
+
 # Mobile app. Push stays off until FCM_CREDENTIALS points at the Firebase
 # service-account JSON (keep it outside the web root, readable by www-data).
 FCM_CREDENTIALS=/var/www/shared/atompay/firebase-service-account.json

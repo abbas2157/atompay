@@ -54,6 +54,16 @@ Check the homepage (Alpine calculator), `/my/application` (file inputs) and
 The CSP also widens automatically while `npm run dev` is running, to allow the
 Vite dev server and its HMR socket.
 
+**Google Analytics.** When `GOOGLE_ANALYTICS_ID` is set, Google's GA4 hosts
+(`config('security.csp.analytics')`) are added to `script-src`, `img-src` and
+`connect-src`, and both gtag tags carry the nonce. With no id, neither the tag
+nor the hosts appear. The tag is never rendered on `/staff/*` (URLs carry
+customer assessment ids), error pages have none (they are self-contained by
+design), and Google signals / ad personalisation are turned off. Allowing
+`*.googletagmanager.com` means a script from Google's tag host runs on pages
+that show a customer's CNIC; that is the price of GA, so leave the id empty if
+that trade-off is ever unacceptable.
+
 ## Rate limits
 
 Defined in `RateLimitServiceProvider`, ceilings in `config/security.php`:

@@ -20,6 +20,7 @@
     <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ Vite::asset('resources/fonts/bricolage-grotesque-latin.woff2') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <x-analytics />
     @stack('head')
 </head>
 <body class="min-h-full flex flex-col">

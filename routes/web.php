@@ -8,6 +8,7 @@ use App\Http\Controllers\Staff\AssessmentController as StaffAssessmentController
 use App\Http\Controllers\Web\AssessmentController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\QuoteController;
+use App\Http\Controllers\Web\RobotsController;
 use App\Http\Controllers\Web\SitemapController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/faq', [HomeController::class, 'faq'])->name('faq');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+// Generated, not public/robots.txt: the Sitemap line needs this host's absolute URL.
+Route::get('/robots.txt', RobotsController::class)->name('robots');
 
 /*
 |--------------------------------------------------------------------------

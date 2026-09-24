@@ -46,6 +46,17 @@ return [
             'connect-src' => ["'self'"],
             'manifest-src' => ["'self'"],
         ],
+
+        /*
+        | Added to the policy only when GOOGLE_ANALYTICS_ID is set - Google's
+        | documented host list for GA4 (gtag.js loads from googletagmanager,
+        | hits go to google-analytics / analytics.google as XHR or pixel).
+        */
+        'analytics' => [
+            'script-src' => ['https://*.googletagmanager.com'],
+            'img-src' => ['https://*.google-analytics.com', 'https://*.googletagmanager.com'],
+            'connect-src' => ['https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com'],
+        ],
     ],
 
     /*
