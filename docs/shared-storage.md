@@ -33,8 +33,21 @@ browser, and it checks owner-or-staff first.
 
 ## Production setup (one time, both apps on one server)
 
-Keep the directory **outside both project folders** so a redeploy or a stray
-`git clean -xfd` can never delete an identity document.
+Where things live on the production box:
+
+| | Path |
+|---|---|
+| AtomPay project root | `/var/www/atompay.shop` |
+| AtomShop project root | `/var/www/html` |
+| Shared KYC documents | `/var/www/shared/atompay` |
+
+"Project root" means the directory holding `artisan` and `.env` — not the
+`public/` docroot. `/var/www/html` is also Apache's default docroot, so confirm
+with `ls /var/www/html/artisan` before running the commands below; if AtomShop's
+`.env` sits a level up, adjust the paths.
+
+Keep the shared directory **outside both project folders** so a redeploy or a
+stray `git clean -xfd` can never delete an identity document.
 
 ```bash
 # 1. Create the shared root and give it to the web user.
@@ -48,11 +61,11 @@ sudo chown -R www-data:www-data /var/www/shared/atompay
 
 # 3. Point BOTH apps at it - the value must be byte-identical in each .env.
 echo 'ATOMPAY_KYC_ROOT=/var/www/shared/atompay' | sudo tee -a /var/www/atompay.shop/.env
-echo 'ATOMPAY_KYC_ROOT=/var/www/shared/atompay' | sudo tee -a /var/www/atomshop/.env
+echo 'ATOMPAY_KYC_ROOT=/var/www/shared/atompay' | sudo tee -a /var/www/html/.env
 
 # 4. Reload config and verify from both sides.
 cd /var/www/atompay.shop && php artisan config:clear && php artisan atompay:kyc-check
-cd /var/www/atomshop    && php artisan config:clear && php artisan atomshop:kyc-check
+cd /var/www/html         && php artisan config:clear && php artisan atomshop:kyc-check
 
 # 5. Only once both checks pass, remove the old copy.
 sudo rm -rf /var/www/atompay.shop/storage/app/private/kyc

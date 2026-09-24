@@ -72,6 +72,8 @@ AtomShop's existing `customers.verified` flag and `customer_verifications` table
    ```
    Set `ATOMPAY_KYC_ROOT` in `.env` / `.env.example` to **the same value AtomPay uses** — `/var/www/shared/atompay` in production, `C:\xampp\htdocs\atompay\storage\app\private` locally. If the two values ever differ, uploads silently vanish from the other app's view.
 
+   The `base_path('../atompay/...')` fallback above is a local-development convenience only: it resolves correctly under XAMPP, where both projects sit side by side in `htdocs`. In production AtomShop lives at `/var/www/html` and AtomPay at `/var/www/atompay.shop`, so they are *not* siblings and the fallback would point at nothing — the env var must be set explicitly there. See `atompay/docs/shared-storage.md` for the server setup.
+
    Stream files through an admin-only controller with `Cache-Control: private, no-store`; never expose them via a public URL, `storage:link`, or an entry in `filesystems.links`. Uploaded signed verification forms go to the **same** disk under `kyc/{user_id}/verification_form-{YmdHis}.{ext}` — the exact convention AtomPay's `KycService::replaceDocument()` uses — and the previous file is deleted when replaced. Getting the filename convention wrong produces orphans neither app can find.
 
    Port AtomPay's `atompay:kyc-check` command (`app/Console/Commands/KycStorageCheck.php`) as `atomshop:kyc-check`. Run it in both apps after deploying: identical output proves a document written by one is readable by the other.
