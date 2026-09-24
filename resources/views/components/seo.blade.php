@@ -38,6 +38,8 @@
 <meta name="twitter:description" content="{{ $description }}">
 <meta name="twitter:image" content="{{ $image }}">
 
+{{-- The nonce lets these survive the Content-Security-Policy; without it some
+     browsers drop the block and the structured data never reaches crawlers. --}}
 @foreach ($schema as $node)
-<script type="application/ld+json">{!! json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+<script type="application/ld+json" @if ($nonce = Illuminate\Support\Facades\Vite::cspNonce()) nonce="{{ $nonce }}" @endif>{!! json_encode($node, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 @endforeach

@@ -25,8 +25,8 @@ Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 | Tools (public, not indexable)
 |--------------------------------------------------------------------------
 */
-Route::post('/quote', QuoteController::class)->name('quote')->middleware('throttle:60,1');
-Route::post('/assess', [AssessmentController::class, 'store'])->name('assess')->middleware('throttle:20,1');
+Route::post('/quote', QuoteController::class)->name('quote')->middleware('throttle:quote');
+Route::post('/assess', [AssessmentController::class, 'store'])->name('assess')->middleware('throttle:assess');
 
 /*
 |--------------------------------------------------------------------------
@@ -35,9 +35,9 @@ Route::post('/assess', [AssessmentController::class, 'store'])->name('assess')->
 */
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.perform');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.perform');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1')->name('register.perform');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register')->name('register.perform');
 });
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
@@ -49,12 +49,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 Route::middleware(['auth', 'customer'])->prefix('my')->name('account.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/application', [ApplicationController::class, 'create'])->name('application');
-    Route::post('/application', [ApplicationController::class, 'store'])->middleware('throttle:10,1')->name('application.store');
+    Route::post('/application', [ApplicationController::class, 'store'])->middleware('throttle:application')->name('application.store');
 });
 
 // KYC documents - owner or staff only (checked in the controller).
 Route::get('/documents/{profile}/{document}', DocumentController::class)
-    ->middleware('auth')->where('document', '[a-z-]+')->name('documents.show');
+    ->middleware(['auth', 'throttle:documents'])->where('document', '[a-z-]+')->name('documents.show');
 
 /*
 |--------------------------------------------------------------------------

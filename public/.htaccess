@@ -49,3 +49,23 @@
         Header set Access-Control-Allow-Origin "*"
     </FilesMatch>
 </IfModule>
+
+# ------------------------------------------------------------------ security
+# Belt and braces: the document root should contain nothing sensitive, but a
+# stray .env.backup or database.sql copied here should still never be served.
+<IfModule mod_authz_core.c>
+    # Anything beginning with a dot: .env, .git, .htaccess, .DS_Store.
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+    # Editor swap files, dumps, archives and configs that get left behind.
+    <FilesMatch "\.(bak|backup|conf|config|dist|fla|inc|ini|log|old|orig|psd|save|sh|sql|swp|swo|tar|tmp|yml|yaml|lock|md)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Apache adds these on its own; both name software worth not naming.
+    Header unset X-Powered-By
+    Header unset X-AspNet-Version
+</IfModule>

@@ -54,3 +54,27 @@
         Header set Access-Control-Allow-Origin "*"
     </FilesMatch>
 </IfModule>
+
+# ------------------------------------------------------------------ security
+# This file only applies in the XAMPP subfolder layout, where the project root
+# itself is reachable over HTTP. Production serves public/ directly and never
+# loads this. Without these rules, http://localhost/atompay/.env is readable.
+<IfModule mod_authz_core.c>
+    <FilesMatch "^\.">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "\.(bak|backup|conf|config|dist|inc|ini|log|old|orig|save|sh|sql|swp|swo|tar|tmp|yml|yaml|lock|md|json)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+# The framework directories are not web content; none of them should answer.
+<IfModule mod_alias.c>
+    RedirectMatch 404 ^/atompay/(app|bootstrap|config|database|resources|routes|storage|tests|vendor)(/|$)
+</IfModule>
+
+<IfModule mod_headers.c>
+    # PHP appends this after Laravel has finished, so the middleware cannot
+    # remove it - only the web server can. Production also wants expose_php=Off.
+    Header unset X-Powered-By
+</IfModule>
