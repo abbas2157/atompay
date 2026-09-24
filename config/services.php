@@ -45,4 +45,13 @@ return [
         'credentials' => env('FCM_CREDENTIALS'),
     ],
 
+    /*
+    | Google Analytics 4 on the website (resources/views/components/analytics).
+    | Empty = no tag and no Google hosts in the CSP. Outside production hits
+    | are sent with debug_mode so they land in GA's DebugView.
+    */
+    'google_analytics' => [
+        'measurement_id' => env('GOOGLE_ANALYTICS_ID'),
+    ],
+
 ];

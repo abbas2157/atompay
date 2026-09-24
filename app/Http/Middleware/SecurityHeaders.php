@@ -72,6 +72,13 @@ class SecurityHeaders
             $directives['img-src'][] = $host;
         }
 
+        // Google Analytics, only when it is switched on.
+        if (filled(config('services.google_analytics.measurement_id'))) {
+            foreach (config('security.csp.analytics') as $directive => $hosts) {
+                array_push($directives[$directive], ...$hosts);
+            }
+        }
+
         // `npm run dev` serves assets and the HMR socket from another origin.
         // Without this, a developer running Vite sees a blank, style-less page
         // and a console full of CSP errors.
