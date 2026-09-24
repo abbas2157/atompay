@@ -94,7 +94,7 @@ resources/views/
 
 - `<x-seo>` emits title, description, canonical, robots, Open Graph, Twitter, and JSON-LD on every page.
 - Home carries `Organization`, `HowTo` and `FAQPage` schema; `/faq` carries `FAQPage`.
-- `/sitemap.xml` and `public/robots.txt` list public pages only; auth and account pages are `noindex`.
+- `/sitemap.xml` lists public pages only, with `<lastmod>` taken from their views and `config/atompay.php`. `/robots.txt` is generated (`RobotsController`): in production it blocks the private areas (`/my`, `/staff`, `/documents`, `/api/`, auth) and gives the sitemap as an absolute URL; on any other environment it is `Disallow: /`, so a local or staging copy is never indexed. Auth and account pages are also `noindex`.
 - Everything is server-rendered; Alpine only enhances the two calculators.
 
 ## Mobile API
