@@ -2,12 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\PersonalAccessToken;
 use App\Support\Money;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\Sanctum;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -35,5 +37,8 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('pkr', fn (string $expression) => '<?php echo \\'.Money::class."::format({$expression}); ?>");
 
         View::share('shopUrl', config('atompay.shop_url'));
+
+        // Mobile-app tokens live in AtomPay's own table, never AtomShop's.
+        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderInstalment;
 use App\Models\User;
@@ -14,17 +15,35 @@ use Illuminate\Support\Collection;
  */
 class PaymentScheduleService
 {
-    /** @return Collection<int, array> one entry per order, newest first */
-    public function forUser(User $user): Collection
+    /**
+     * @param bool $withCompleted also list fully repaid orders (the app's "history" tab)
+     * @return Collection<int, array> one entry per order, newest first
+     */
+    public function forUser(User $user, bool $withCompleted = false): Collection
     {
         $orders = Order::query()
             ->where('user_id', $user->id)
-            ->active()
+            ->when(
+                $withCompleted,
+                fn ($q) => $q->whereIn('status', [...OrderStatus::active(), OrderStatus::Completed]),
+                fn ($q) => $q->active(),
+            )
             ->with(['cart.product', 'instalments'])
             ->latest('id')
             ->get();
 
         return $orders->map(fn (Order $order) => $this->plan($order));
+    }
+
+    /** One of the customer's own orders, whatever its status; null if it is not theirs. */
+    public function forOrder(User $user, int $orderId): ?array
+    {
+        $order = Order::query()
+            ->where('user_id', $user->id)
+            ->with(['cart.product', 'instalments'])
+            ->find($orderId);
+
+        return $order ? $this->plan($order) : null;
     }
 
     /** Earliest unpaid monthly instalment across every order, or null. */

@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    /*
+    | Firebase Cloud Messaging (HTTP v1) for mobile push. Point this at the
+    | service-account JSON downloaded from Firebase console > Project settings
+    | > Service accounts. Unset = push is skipped (the in-app inbox still
+    | fills), which is what local development and tests use.
+    */
+    'fcm' => [
+        'credentials' => env('FCM_CREDENTIALS'),
+    ],
+
 ];

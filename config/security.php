@@ -94,6 +94,7 @@ return [
         'assess_hourly' => 40,
         'application' => 10,
         'documents' => 60,    // KYC file streams
+        'api' => 120,   // any signed-in mobile API request
     ],
 
     /*

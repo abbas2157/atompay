@@ -37,6 +37,9 @@ Open <http://localhost/atompay>. The root `index.php` + `.htaccess` are a dev-on
 | `installment_calculators` | `InstallmentCalculator` | Read - tenures + per-month % (cached 10 min) |
 | `atompay_kyc_profiles` | `KycProfile` | **Owned by AtomPay** - sections 1-2 of the KYC form |
 | `atompay_credit_assessments` | `CreditAssessment` | **Owned by AtomPay** - sections 3-5: financial profile, risk, decision |
+| `atompay_personal_access_tokens` | `PersonalAccessToken` | **Owned by AtomPay** - mobile-app bearer tokens. Deliberately not AtomShop's `personal_access_tokens`: both apps call their user model `App\Models\User`, so a shared table would let either app's tokens open the other |
+| `atompay_devices` | `Device` | **Owned by AtomPay** - phones registered for push (FCM), tied to the sign-in that registered them. Not AtomShop's `fcm_tokens`, which belong to the shop's own app |
+| `atompay_notifications` | `CustomerNotification` | **Owned by AtomPay** - customer inbox; unique `dedupe_key` makes each announcement happen once |
 
 Models on AtomShop tables use the `BelongsToAtomShop` trait, which guards every attribute so a stray mass-assignment can't rewrite shop data.
 
@@ -93,6 +96,12 @@ resources/views/
 - Home carries `Organization`, `HowTo` and `FAQPage` schema; `/faq` carries `FAQPage`.
 - `/sitemap.xml` and `public/robots.txt` list public pages only; auth and account pages are `noindex`.
 - Everything is server-rendered; Alpine only enhances the two calculators.
+
+## Mobile API
+
+`/api/v1/*` (`routes/api.php`) serves the AtomPay Flutter app: Sanctum bearer tokens only, JSON errors, same services and validation as the web. The contract is [docs/api/](docs/api/README.md) (one file per area); product, architecture, rules, design and task list for the app are in [.claude/](.claude/). Tests: `tests/Feature/Api/`.
+
+Notifications: `php artisan atompay:notify` (scheduled every 10 minutes - production needs the `schedule:run` cron, see [docs/deploy.md](docs/deploy.md)) announces limit decisions, KYC outcomes and instalment reminders into the inbox and, when `FCM_CREDENTIALS` is set, as push. It reads state rather than listening for events, so decisions made in AtomShop's admin are announced too.
 
 ## Still to build
 

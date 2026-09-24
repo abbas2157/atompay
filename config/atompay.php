@@ -40,6 +40,48 @@ return [
         'price_step' => 5000,
     ],
 
+    // Mobile app (routes/api.php).
+    'api' => [
+        // A mobile sign-in stays valid this long; then the app must sign in again.
+        'token_ttl_days' => 30,
+        // Token name when the app does not send a device_name.
+        'default_device_name' => 'AtomPay app',
+        // Builds older than this are told to update (GET /app-config). Semver.
+        'min_version' => [
+            'android' => env('ATOMPAY_APP_MIN_ANDROID', '1.0.0'),
+            'ios' => env('ATOMPAY_APP_MIN_IOS', '1.0.0'),
+        ],
+        'store_url' => [
+            'android' => env('ATOMPAY_APP_STORE_ANDROID'),
+            'ios' => env('ATOMPAY_APP_STORE_IOS'),
+        ],
+        // AtomShop owns passwords; the app sends people to its reset page.
+        'password_reset_url' => env('ATOMPAY_PASSWORD_RESET_URL', rtrim(env('ATOMSHOP_URL', 'https://atomshop.pk'), '/').'/password/forgot'),
+        'support' => [
+            'phone' => env('ATOMPAY_SUPPORT_PHONE'),
+            'whatsapp' => env('ATOMPAY_SUPPORT_WHATSAPP'),
+            'email' => env('ATOMPAY_SUPPORT_EMAIL'),
+        ],
+    ],
+
+    /*
+    | Customer notifications: an in-app inbox (atompay_notifications) plus a
+    | push to every registered device. `php artisan atompay:notify` sweeps
+    | for anything worth telling a customer - it runs every 10 minutes and
+    | is idempotent, so decisions made in AtomShop's admin are caught too.
+    */
+    'notifications' => [
+        // Instalment reminders: days before the due date, and days overdue.
+        'remind_before_days' => [3, 0],
+        'remind_overdue_days' => [1, 7],
+        // Reminders only go out in these local hours - never at 2am.
+        'timezone' => 'Asia/Karachi',
+        'quiet_before' => 9,
+        'quiet_after' => 21,
+        // How far back the sweep looks for decisions / verifications.
+        'lookback_days' => 3,
+    ],
+
     // Only these AtomShop accounts may sign in to My AtomPay.
     'customer_role' => 'customer',
 

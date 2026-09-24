@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * AtomShop's `users` table. AtomPay signs customers in against the same
@@ -16,7 +17,7 @@ use Illuminate\Notifications\Notifiable;
  */
 class User extends Authenticatable
 {
-    use Notifiable, SoftDeletes, BelongsToAtomShop;
+    use HasApiTokens, Notifiable, SoftDeletes, BelongsToAtomShop;
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -61,6 +62,18 @@ class User extends Authenticatable
     public function kycProfile(): HasOne
     {
         return $this->hasOne(KycProfile::class);
+    }
+
+    /** Phones registered for AtomPay push. */
+    public function devices(): HasMany
+    {
+        return $this->hasMany(Device::class);
+    }
+
+    /** In-app inbox, newest first. */
+    public function appNotifications(): HasMany
+    {
+        return $this->hasMany(CustomerNotification::class)->latest('id');
     }
 
     /** Most recent assessment of any status - what the customer is waiting on. */

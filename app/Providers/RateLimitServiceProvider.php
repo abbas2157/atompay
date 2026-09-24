@@ -51,6 +51,9 @@ class RateLimitServiceProvider extends ServiceProvider
 
         RateLimiter::for('application', fn (Request $r) => Limit::perMinute($limits['application'])->by($this->actor($r)));
 
+        // Signed-in mobile API traffic. Runs after auth:sanctum, so it keys by account.
+        RateLimiter::for('api', fn (Request $r) => Limit::perMinute($limits['api'])->by($this->actor($r)));
+
         // Stops a signed-in account walking the document ids looking for
         // someone else's CNIC. The ownership check refuses them; this stops
         // them trying thousands of times.
