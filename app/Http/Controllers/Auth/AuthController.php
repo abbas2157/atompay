@@ -43,6 +43,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request, AccountService $accounts): RedirectResponse
     {
         $user = $accounts->registerCustomer($request->validated());
+        $accounts->sendWelcome($user);
 
         Auth::login($user);
         $request->session()->regenerate();

@@ -87,8 +87,14 @@ Bundle the fonts (don't fetch them at runtime) so first launch works offline.
 1. **Splash:** Nucleus background, atom logo (two orbit ellipses in spectrum gradients, white
    "A"), fade out as `GET /me` resolves.
 2. **Sign in:** Logo, "Sign in with your AtomShop account", login field (email or mobile),
-   password with show/hide, primary "Sign in", links for "Create account" and "Forgot password?"
-   (opens the browser).
+   password with show/hide, primary "Sign in", links for "Create account" and "Forgot password?".
+2a. **Forgot password (native, 3 screens):**
+   - Enter email or mobile, with a small note: "Mobile numbers get the code on WhatsApp".
+   - A 6-box code input with a one-time-code autofill hint and a resend countdown from `resend_in`,
+     showing the masked `destination`.
+   - New password + confirm. Success lands signed in on Home, with a toast: "Password changed. It works
+     on AtomShop.pk too."
+   - Never say "no account found". Use the neutral "If this belongs to an AtomShop account…" copy.
 3. **Register:** Name, mobile, email, password, confirm. A small print line: "This also creates your
    AtomShop.pk account."
 4. **Home (Phase 1 placeholder):** Greeting (`short_name`), KYC status card with a CTA to the profile,

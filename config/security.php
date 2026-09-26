@@ -106,6 +106,9 @@ return [
         'application' => 10,
         'documents' => 60,    // KYC file streams
         'api' => 120,   // any signed-in mobile API request
+        'otp_request' => 3,     // forgot-password codes, per identifier + IP
+        'otp_request_ip' => 10,    // per IP, all identifiers
+        'otp_verify' => 10,    // code / reset attempts per IP (each code also caps at 5 tries)
     ],
 
     /*

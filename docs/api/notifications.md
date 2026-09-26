@@ -54,12 +54,23 @@ On Android, create the notification channel **`atompay_default`** at startup.
 
 Everything that was pushed is also stored here, including for customers who haven't allowed push.
 
+### Delivery channels
+
+Each notification is delivered three ways, once:
+
+| Channel | When |
+|---|---|
+| Inbox (`GET /notifications`) | Always |
+| Push (FCM) | The server has FCM credentials and the phone registered via `POST /devices` |
+| Email | Unless the customer turned alert emails off (`PATCH /me/preferences`, or the email's unsubscribe link) |
+
 ### When notifications are created
 
 The server checks every 10 minutes. Each event is announced **once**.
 
 | `type` | When | Title example |
 |---|---|---|
+| `application_received` | An income application was submitted (app or website) and isn't decided yet | "We've received your application" |
 | `limit_decided` | Staff approve, conditionally approve or reject an application (in AtomPay or AtomShop admin) | "Your AtomPay limit is approved" |
 | `kyc_verified` | The address visit is recorded as verified | "Your address is verified" |
 | `kyc_rejected` | Verification failed (body = reviewer's note if any) | "We could not verify your details" |

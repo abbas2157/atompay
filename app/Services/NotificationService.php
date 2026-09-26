@@ -2,16 +2,20 @@
 
 namespace App\Services;
 
+use App\Mail\CustomerAlertMail;
 use App\Models\CustomerNotification;
 use App\Models\Device;
 use App\Models\User;
 use App\Services\Push\FcmClient;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 /**
  * Tells a customer something: an inbox row first, then a push to each of
- * their registered phones. The dedupe key makes every announcement
- * happen at most once, however often the sweep runs.
+ * their registered phones and an email. The dedupe key makes every
+ * announcement happen at most once, however often the sweep runs.
  */
 class NotificationService
 {
@@ -41,8 +45,28 @@ class NotificationService
         }
 
         $this->push($notification);
+        $this->email($notification, $user);
 
         return $notification;
+    }
+
+    /**
+     * The same message by email, unless the customer turned alert emails off.
+     * A mail failure is logged, never thrown: the inbox row and push already
+     * happened, and the sweep must carry on to the next customer.
+     */
+    public function email(CustomerNotification $notification, User $user): void
+    {
+        if (! $user->email || ! $user->wantsEmailAlerts()) {
+            return;
+        }
+
+        try {
+            Mail::to($user->email, $user->name)->send(new CustomerAlertMail($notification, $user));
+            $notification->forceFill(['emailed_at' => now()])->save();
+        } catch (Throwable $e) {
+            Log::error('AtomPay alert email failed', ['notification_id' => $notification->id, 'error' => $e->getMessage()]);
+        }
     }
 
     /** Sends to every device; drops devices FCM says are gone. */

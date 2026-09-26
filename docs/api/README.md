@@ -5,7 +5,7 @@ listed below.
 
 - **Server code:** `routes/api.php`, `app/Http/Controllers/Api/V1/`, `app/Http/Resources/Api/V1/`
 - **Tests** that pin every example in these files: `tests/Feature/Api/`
-- **Status:** Every v1 endpoint is live (27 endpoints).
+- **Status:** Every v1 endpoint is live (32 endpoints).
 
 | | |
 |---|---|
@@ -22,15 +22,15 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 | File | Covers |
 |---|---|
 | [conventions.md](conventions.md) | Base URLs, conventions, errors, rate limits, token lifecycle |
-| [auth.md](auth.md) | Register, login, logout, logout everywhere, signed-in sessions |
-| [account.md](account.md) | `GET /me`, `kyc_status` values |
+| [auth.md](auth.md) | Register, login, logout, logout everywhere, signed-in sessions, **forgot password (OTP by email / WhatsApp)** |
+| [account.md](account.md) | `GET /me`, `kyc_status` values, email-alert preference |
 | [profile.md](profile.md) | KYC Section 1 (identity + CNIC/selfie uploads), own documents, cities |
 | [application.md](application.md) | KYC Section 3 (income → limit), the assessment object, history |
 | [dashboard.md](dashboard.md) | Home screen: limit card, status banner, stepper, next due |
 | [plans.md](plans.md) | AtomShop instalment orders and their schedules |
 | [calculator.md](calculator.md) | Calculator bounds, plan quote, income estimate (all public) |
 | [app-config.md](app-config.md) | Launch config (force update, links, support) and form options (public) |
-| [notifications.md](notifications.md) | Push device registration, push payload, notifications inbox |
+| [notifications.md](notifications.md) | Push device registration, push payload, notifications inbox, email/push/inbox channels |
 
 ## Endpoint index
 
@@ -43,11 +43,16 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 | POST | `/estimate` | – | [calculator.md](calculator.md) |
 | POST | `/auth/register` | – | [auth.md](auth.md) |
 | POST | `/auth/login` | – | [auth.md](auth.md) |
+| POST | `/auth/password/forgot` | – | [auth.md](auth.md#forgot-password-otp) |
+| POST | `/auth/password/verify` | – | [auth.md](auth.md#forgot-password-otp) |
+| POST | `/auth/password/reset` | – | [auth.md](auth.md#forgot-password-otp) |
 | POST | `/auth/logout` | ✓ | [auth.md](auth.md) |
 | POST | `/auth/logout-all` | ✓ | [auth.md](auth.md) |
 | GET | `/auth/sessions` | ✓ | [auth.md](auth.md) |
 | DELETE | `/auth/sessions/{id}` | ✓ | [auth.md](auth.md) |
 | GET | `/me` | ✓ | [account.md](account.md) |
+| GET | `/me/preferences` | ✓ | [account.md](account.md) |
+| PATCH | `/me/preferences` | ✓ | [account.md](account.md) |
 | GET | `/dashboard` | ✓ | [dashboard.md](dashboard.md) |
 | GET | `/profile` | ✓ | [profile.md](profile.md) |
 | POST | `/profile` | ✓ | [profile.md](profile.md) |
@@ -67,7 +72,8 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 ## Suggested app flow
 
 1. Launch: `GET /app-config` (force update?), then `GET /me` if a token is stored.
-2. Sign in or register, then `POST /devices` (if push is enabled).
+2. Sign in or register, then `POST /devices` (if push is enabled). "Forgot password?" runs
+   `/auth/password/forgot`, then `/verify`, then `/reset`, which ends signed in.
 3. Home: `GET /dashboard`, and follow `banner.action` to the profile or application form.
 4. Profile form: `GET /profile` + `GET /cities`, then `POST /profile` (multipart).
 5. Income form: `GET /options` + `GET /application`, then `POST /application`.
@@ -86,6 +92,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 
 | Date | Change |
 |---|---|
+| 2026-09-26 | Forgot password with OTP by email or WhatsApp (`/auth/password/forgot`, `/verify`, `/reset`). `GET/PATCH /me/preferences` for alert emails. New notification type `application_received`, and every notification is also emailed. `/app-config`: `password_reset_url` now points at AtomPay's own page, and `features.password_reset_channels` was added. **Removed `uuid` from `/me`**, because it unlocks AtomShop's reset link. No app has shipped yet, so this is allowed within v1. |
 | 2026-09-24 | Docs split into `docs/api/` (one file per area). No API change. |
 | 2026-09-24 | v1 complete: `/app-config`, `/options`, `/calculator`, `/quote`, `/estimate`, `/dashboard`, `/application` (+ history), `/plans`, `/devices`, `/notifications`, `/auth/sessions`. Logout now also unregisters the device. |
 | 2026-09-24 | v1 Phase 1: auth (register, login, logout, logout-all), `/me`, `/profile`, `/profile/documents/*`, `/cities`. |

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth\Concerns;
 
 use App\Models\User;
+use App\Support\Mask;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -25,23 +26,9 @@ trait LogsFailedLogins
         Log::info('AtomPay login failed', [
             'channel' => $channel,
             'field' => $field,
-            'value' => $this->maskIdentifier($credentials[$field]),
+            'value' => Mask::identifier($credentials[$field]),
             'user_id' => User::where($field, $credentials[$field])->value('id'),
             'ip' => $request->ip(),
         ]);
-    }
-
-    /** "ay****@gmail.com" / "0300*****21" - recognisable to its owner, useless to anyone else. */
-    private function maskIdentifier(string $value): string
-    {
-        if (str_contains($value, '@')) {
-            [$local, $domain] = explode('@', $value, 2);
-
-            return mb_substr($local, 0, 2).str_repeat('*', max(1, mb_strlen($local) - 2)).'@'.$domain;
-        }
-
-        return mb_strlen($value) <= 6
-            ? str_repeat('*', mb_strlen($value))
-            : mb_substr($value, 0, 4).str_repeat('*', mb_strlen($value) - 6).mb_substr($value, -2);
     }
 }

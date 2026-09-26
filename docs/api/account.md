@@ -8,7 +8,6 @@
 {
   "data": {
     "id": 5012,
-    "uuid": "af2397e0-4799-482b-97d1-71efbe54d0f4",
     "name": "Ayesha Khan",
     "short_name": "Ayesha K.",
     "email": "ayesha@example.com",
@@ -32,5 +31,25 @@
 | `verified` | Address verified by AtomPay staff | Green tick |
 | `rejected` | Verification failed | "Contact support" + let the customer resubmit |
 
-The account (name, email, phone, password) belongs to AtomShop and is **read-only** in v1.
-Password reset is not in v1. Link to AtomShop's flow for now.
+The account's name, email and phone belong to AtomShop and are **read-only** in v1. The
+password can be changed only through [forgot password](auth.md#forgot-password-otp).
+
+`uuid` is deliberately **not** returned. AtomShop's own `/password/reset/{uuid}` page resets
+a password with nothing but the uuid, so it must never reach the app.
+
+## `GET /me/preferences`
+
+```json
+{ "data": { "email_alerts": true } }
+```
+
+## `PATCH /me/preferences`
+
+```json
+{ "email_alerts": false }
+```
+
+The response has the same shape as `GET`. `email_alerts` switches off the **alert emails**
+(limit decided, KYC outcome, instalment reminders, application received). The in-app inbox and
+push are unaffected. Security emails (reset codes, "password changed") and the welcome email
+are always sent. The same switch is behind the unsubscribe link in every alert email.

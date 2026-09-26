@@ -5,6 +5,40 @@ whenever a decision is made or something surprising is discovered, and say **why
 
 ---
 
+### 2026-09-26 — Forgot password (OTP by email / WhatsApp) and email alerts
+
+- **AtomShop's reset is an account-takeover hole.** `/password/reset/{uuid}` (AtomShop
+  `LoginController`) sets a new password for anyone holding the uuid, with no code or expiry,
+  and then logs them in. So AtomPay has its own reset (`PasswordResetService`), `uuid` was
+  removed from `/me`, and `/app-config.password_reset_url` points at AtomPay's page. The fix
+  brief for AtomShop is `docs/atomshop-password-reset-fix.md`.
+- **AtomPay now writes `users.password` + `remember_token`**, at the user's request, and it's
+  the second exception to "AtomShop tables are read-only". It's bcrypt like AtomShop, so the password works on both.
+- **The channel follows what's typed:** an email gets an email code, a mobile gets a WhatsApp code. There's no
+  "send to my other channel" option, because that would reveal whether the account has a phone (enumeration).
+  Unknown accounts get an identical response (a row with `user_id` null).
+- **WhatsApp uses AtomShop's integration only for OTP:** Meta Cloud API, `auth_otp` template
+  (`en_US`, a body param plus a copy-code URL button param, both the code). The payload is the same as
+  AtomShop `WhatsAppTrait::send_otp`, and the phone is sent as `92` + number without the leading 0. Credentials
+  come from `WHATSAPP_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID`. **AtomShop hard-codes its token in
+  `config/website.php` (committed), so treat it as leaked and rotate it.** It was also printed once in a
+  Claude session while reading that file.
+- **Locally without WhatsApp credentials**, the code is logged (`WhatsApp not configured…`), and with
+  `MAIL_MAILER=log` email codes are in `laravel.log` too. In production, WhatsApp without credentials means the
+  mobile option is refused, and `MAIL_MAILER=log` would silently "send" codes to the log. The deploy doc
+  warns about both.
+- **MariaDB gotcha:** the first `NOT NULL TIMESTAMP` column in a table silently gets
+  `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` (without `explicit_defaults_for_timestamp`).
+  That made `atompay_password_resets.expires_at` move on every update, and the DB clock is PKT while the app is UTC,
+  so codes stayed valid for about 5 hours. Timestamps that the app sets must be `->nullable()`. All `atompay_*`
+  tables were checked, and none has `on update` now.
+- **Email alerts** go through `NotificationService::email()` → `CustomerAlertMail`, which has a signed
+  one-click unsubscribe (RFC 8058 `List-Unsubscribe-Post`; the route is CSRF-exempt). The preference is
+  `atompay_user_preferences.email_alerts`, and no row means on. Security mails and the welcome mail ignore it.
+  There's a new sweep type, `application_received`, sent only while the application is still pending.
+- The welcome mail is sent by `AccountService::sendWelcome()` from both register endpoints, not from
+  `registerCustomer()`, so test fixtures don't send mail.
+
 ### 2026-09-24 — v1 API completed (application, dashboard, plans, calculator, push, inbox)
 
 - **Notifications come from a sweep, not events.** Limits and address checks are decided in

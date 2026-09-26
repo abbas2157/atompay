@@ -58,6 +58,19 @@ class RateLimitServiceProvider extends ServiceProvider
         // someone else's CNIC. The ownership check refuses them; this stops
         // them trying thousands of times.
         RateLimiter::for('documents', fn (Request $r) => Limit::perMinute($limits['documents'])->by($this->actor($r)));
+
+        /*
+         * Forgot password. Every code costs a WhatsApp message or an email, and
+         * an unthrottled form is a free way to spam someone's phone, so the
+         * target and the source are both capped (on top of the per-account
+         * cooldown and hourly cap in PasswordResetService). Verifying is capped
+         * per IP; each code also dies after 5 wrong tries.
+         */
+        RateLimiter::for('otp_request', fn (Request $r) => [
+            Limit::perMinute($limits['otp_request'])->by('otp:'.$this->identifier($r).'|'.$r->ip()),
+            Limit::perMinute($limits['otp_request_ip'])->by('otp-ip:'.$r->ip()),
+        ]);
+        RateLimiter::for('otp_verify', fn (Request $r) => Limit::perMinute($limits['otp_verify'])->by('otp-verify:'.$r->ip()));
     }
 
     /** Account id when signed in, client address otherwise. */

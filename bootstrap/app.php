@@ -29,6 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeaders::class,
             'throttle:global',
         ]);
+        // Gmail/Yahoo one-click unsubscribe POSTs with no CSRF token (RFC 8058).
+        // The route is signed, which is what protects it.
+        $middleware->validateCsrfTokens(except: ['email/alerts/*/off']);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('account.dashboard'));
     })

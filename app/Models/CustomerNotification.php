@@ -17,13 +17,16 @@ class CustomerNotification extends Model
     public const TYPE_KYC_VERIFIED = 'kyc_verified';
     public const TYPE_KYC_REJECTED = 'kyc_rejected';
 
-    protected $fillable = ['user_id', 'type', 'title', 'body', 'data', 'dedupe_key', 'pushed_at', 'read_at'];
+    public const TYPE_APPLICATION_RECEIVED = 'application_received';
+
+    protected $fillable = ['user_id', 'type', 'title', 'body', 'data', 'dedupe_key', 'pushed_at', 'emailed_at', 'read_at'];
 
     protected function casts(): array
     {
         return [
             'data' => 'array',
             'pushed_at' => 'datetime',
+            'emailed_at' => 'datetime',
             'read_at' => 'datetime',
         ];
     }

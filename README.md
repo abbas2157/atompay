@@ -101,9 +101,14 @@ resources/views/
 
 `/api/v1/*` (`routes/api.php`) serves the AtomPay Flutter app: Sanctum bearer tokens only, JSON errors, same services and validation as the web. The contract is [docs/api/](docs/api/README.md) (one file per area); product, architecture, rules, design and task list for the app are in [.claude/](.claude/). Tests: `tests/Feature/Api/`.
 
-Notifications: `php artisan atompay:notify` (scheduled every 10 minutes - production needs the `schedule:run` cron, see [docs/deploy.md](docs/deploy.md)) announces limit decisions, KYC outcomes and instalment reminders into the inbox and, when `FCM_CREDENTIALS` is set, as push. It reads state rather than listening for events, so decisions made in AtomShop's admin are announced too.
+Notifications: `php artisan atompay:notify` (scheduled every 10 minutes - production needs the `schedule:run` cron, see [docs/deploy.md](docs/deploy.md)) announces applications received, limit decisions, KYC outcomes and instalment reminders into the inbox, by **email** (unless the customer turned alert emails off - `atompay_user_preferences`, signed unsubscribe link in every email) and, when `FCM_CREDENTIALS` is set, as push. It reads state rather than listening for events, so decisions made in AtomShop's admin are announced too.
+
+## Password reset & email
+
+- **Forgot password** (`/forgot-password` on the web, `/api/v1/auth/password/*` in the app): a 6-digit one-time code by **email** (email typed) or **WhatsApp** (mobile typed, via AtomShop's WhatsApp Cloud API number and `auth_otp` template - WhatsApp is used for nothing else), then a new password. One `PasswordResetService` for both; details and safeguards in [docs/security.md](docs/security.md#password-reset). It writes `users.password` - the one AtomShop column AtomPay updates - so the new password works on both sites.
+- **Emails** (`app/Mail`, `resources/views/emails`, one inline-styled layout in the site's palette): reset code, password changed, welcome on registration, and every customer alert. Locally `MAIL_MAILER=log` writes them to `storage/logs/laravel.log`; production must use real SMTP (see [docs/deploy.md](docs/deploy.md)).
 
 ## Still to build
 
 - Enforce the approved limit at AtomShop checkout.
-- Password reset (AtomShop's flow can be linked instead).
+- Fix AtomShop's own password reset (`/password/reset/{uuid}` needs no code and never expires) - see [docs/atomshop-password-reset-fix.md](docs/atomshop-password-reset-fix.md).

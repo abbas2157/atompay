@@ -18,6 +18,29 @@ the identity documents, not the money.
 | Uploads | `image`/`mimes` + size caps, stored outside the web root | `KycApplicationRequest`, `KycService` |
 | Server | Dotfiles, dumps and framework dirs refused | `.htaccess`, `public/.htaccess` |
 | Transport | HTTPS forced in production | `AppServiceProvider::boot()` |
+| Password reset | One-time code (email / WhatsApp), hashed, 10 min, 5 tries, no account enumeration; reset revokes every app token | `Services/PasswordResetService.php` |
+| Email opt-out | Signed unsubscribe URLs; one-click (RFC 8058) is CSRF-exempt only for that path | `Web/EmailAlertsController.php`, `bootstrap/app.php` |
+
+## Password reset
+
+`PasswordResetService` replaces AtomShop's reset for AtomPay customers. AtomShop's own flow
+(`/password/reset/{uuid}` in AtomShop's `LoginController`) sets a new password for whoever
+opens that URL. It needs no code and never expires, and the uuid is the only secret. AtomPay therefore never
+exposes a user's `uuid` (it was removed from the API's `/me`) and never links to that page.
+
+AtomPay's flow:
+
+- **Proof of ownership.** A 6-digit code is sent by email (email typed) or WhatsApp (mobile typed).
+  It's stored as an HMAC, lasts 10 minutes, allows 5 attempts, and only the newest code works.
+- **No enumeration.** An unknown email or number gets the identical response, and a row is
+  still written with `user_id` null, so timing and shape match too.
+- **Spam limits.** The same account gets no second code within 60 s, and at most 5 codes an hour. Per-IP
+  and per-identifier rate limits apply too, because every code costs a WhatsApp message or an email.
+- **After the code,** a random 64-character reset token (also stored as an HMAC) lasts 15 minutes and
+  works once.
+- **On reset:** new bcrypt password (AtomShop-compatible), `remember_token` rotated, every
+  AtomPay app token and push device revoked, and a "password changed" email sent.
+- **Customers only.** Staff and seller accounts must reset through AtomShop.
 
 Laravel supplies the rest of the baseline: CSRF tokens on every form, prepared
 statements through Eloquent, `{{ }}` escaping in Blade, hashed passwords,

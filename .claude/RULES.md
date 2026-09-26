@@ -21,8 +21,15 @@ If a rule blocks you, raise it. Don't work around it quietly.
 2. **Share validation.** API requests extend the web request or use a shared `Concerns/` trait.
    Never copy rules.
 3. **AtomShop tables are read-only.** Models on AtomShop tables use `BelongsToAtomShop`
-   (everything guarded). AtomPay writes only to `atompay_*` tables. The single exception is
-   registration, which creates a `users` row exactly as AtomShop checkout does (`AccountService`).
+   (everything guarded). AtomPay writes only to `atompay_*` tables. There are exactly two exceptions,
+   both on `users`, and both deliberately `forceFill`:
+   - registration creates the row exactly as AtomShop checkout does (`AccountService`)
+   - password reset sets `password` + `remember_token` (`PasswordResetService`)
+
+   Never use AtomShop's `/password/reset/{uuid}` flow, and never expose a user's `uuid` (it
+   unlocks that flow).
+4a. **WhatsApp is only for password-reset codes** (AtomShop's number, `WhatsAppClient`). Every
+   other customer message goes to the inbox, push and email.
 4. **Tokens live in `atompay_personal_access_tokens`.** Never point Sanctum at AtomShop's
    `personal_access_tokens`.
 5. Every write route has a named rate limit (`config/security.php`). New limits are keyed

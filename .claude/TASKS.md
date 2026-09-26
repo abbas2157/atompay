@@ -10,7 +10,7 @@ Tick items as they land (`[x]`). Keep this list in phase order, and put new work
 
 ## API (Laravel) — v1 complete ✅ 2026-09-24
 
-27 endpoints, all covered by `tests/Feature/Api/*` (40 tests). The contract is `docs/api/`.
+32 endpoints, all covered by feature tests. The contract is `docs/api/`.
 
 - [x] Sanctum, token-only, tokens in `atompay_personal_access_tokens`, 30-day expiry, daily prune
 - [x] Auth: register, login (email or any phone format), logout, logout-all, sessions list/revoke
@@ -26,10 +26,16 @@ Tick items as they land (`[x]`). Keep this list in phase order, and put new work
 - [x] `atompay:notify` sweep every 10 min: limit decisions (either app), KYC outcomes, due/overdue reminders (09:00–21:00 PKT), idempotent
 - [x] FCM HTTP v1 client (no SDK), removes dead tokens
 - [x] Refactors: `AccountService`, `LogsFailedLogins`, `ValidatesKycIdentity`, `ValidatesFinancialProfile`, `StatusBanner`
+- [x] 2026-09-26 Forgot password with OTP (email / WhatsApp via AtomShop's `auth_otp`) on the web + `/auth/password/*`
+- [x] 2026-09-26 Emails: code, password changed, welcome, and every alert (with one-click unsubscribe). `GET/PATCH /me/preferences`
+- [x] 2026-09-26 `application_received` notification. `uuid` removed from `/me`
 
 ### Production rollout
 
-- [ ] `php artisan migrate` (3 new tables: `atompay_personal_access_tokens`, `atompay_devices`, `atompay_notifications`)
+- [ ] `php artisan migrate` (6 new tables/columns: `atompay_personal_access_tokens`, `atompay_devices`, `atompay_notifications` (+ `emailed_at`), `atompay_password_resets`, `atompay_user_preferences`)
+- [ ] **Real SMTP in `.env`** (copy AtomShop's `MAIL_*`). `MAIL_MAILER=log` in production would put reset codes in the log file instead of sending them
+- [ ] `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID`, using AtomShop's number, **after rotating the leaked token** (`docs/atomshop-password-reset-fix.md`)
+- [ ] AtomShop side: fix `/password/reset/{uuid}` and move the WhatsApp token to `.env` (the same brief)
 - [ ] Cron: `* * * * * cd /var/www/atompay.shop && php artisan schedule:run` (for notifications and token pruning; see `docs/deploy.md`)
 - [ ] Create the Firebase project, download the service-account JSON, and set `FCM_CREDENTIALS` (outside the web root)
 - [ ] Set `ATOMPAY_APP_MIN_*`, `ATOMPAY_APP_STORE_*` and `ATOMPAY_SUPPORT_*` in `.env`, then run `php artisan config:cache`
@@ -50,7 +56,8 @@ Tick items as they land (`[x]`). Keep this list in phase order, and put new work
 - [ ] Handle 401/403/409/422/429 end to end
 - [ ] Profile: read screen + form (prefill, city picker, camera/gallery, compression, upload progress)
 - [ ] Authenticated document viewer (no disk cache, `FLAG_SECURE`)
-- [ ] Account: sessions list with "sign out this device", sign out everywhere, forgot password (opens the browser)
+- [ ] Forgot password: 3 native screens (login, code with a resend timer, new password), `/auth/password/*`, channels from `/app-config`
+- [ ] Account: sessions list with "sign out this device", sign out everywhere, an email-alerts switch (`/me/preferences`)
 - [ ] Widget tests: login, register, profile form validation
 
 ### Phase 2 — Application & Dashboard

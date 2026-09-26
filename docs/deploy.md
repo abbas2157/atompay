@@ -103,6 +103,22 @@ ATOMPAY_KYC_ROOT=/var/www/shared/atompay
 # Google Analytics 4. Empty = no tag and no Google hosts in the CSP.
 GOOGLE_ANALYTICS_ID=G-PB9VT5QFML
 
+# Email - REQUIRED: password-reset codes go out by email. Use the same SMTP
+# account as AtomShop (copy its MAIL_* values). Never leave MAIL_MAILER=log
+# in production: codes would be written to the log file instead of sent.
+MAIL_MAILER=smtp
+MAIL_HOST=...
+MAIL_PORT=587
+MAIL_USERNAME=...
+MAIL_PASSWORD=...
+MAIL_FROM_ADDRESS=no-reply@atomshop.pk
+MAIL_FROM_NAME="AtomPay"
+
+# WhatsApp reset codes - AtomShop's Cloud API number (same token and phone
+# number id as AtomShop). Unset = customers can only reset by email.
+WHATSAPP_TOKEN=...
+WHATSAPP_PHONE_NUMBER_ID=...
+
 # Mobile app. Push stays off until FCM_CREDENTIALS points at the Firebase
 # service-account JSON (keep it outside the web root, readable by www-data).
 FCM_CREDENTIALS=/var/www/shared/atompay/firebase-service-account.json
