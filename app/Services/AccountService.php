@@ -41,6 +41,10 @@ class AccountService
     /** Called by both register endpoints. A mail failure never blocks sign-up. */
     public function sendWelcome(User $user): void
     {
+        if (! $user->hasRealEmail()) {
+            return;   // mobile-only sign-up: WhatsApp is for codes only, so no welcome
+        }
+
         try {
             Mail::to($user->email, $user->name)->send(new WelcomeMail($user));
         } catch (Throwable $e) {

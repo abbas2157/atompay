@@ -63,7 +63,8 @@ Each stage is `done | current | upcoming | blocked`. The app renders the same st
 
 - **Splash / launch:** Check the stored token with `GET /me`.
 - **Sign in:** Email or phone + password. Show a clear message for staff/seller accounts.
-- **Register:** Name, mobile, email, password. Creates an AtomShop customer account.
+- **Register (OTP):** Name, **email or mobile** (one field), password, then one code: by email for an email,
+  on WhatsApp for a mobile. The AtomShop customer account is created only once the code is confirmed.
 - **Profile / KYC Section 1:** Full name, CNIC, mobile, DOB, address, city, CNIC front and back
   photos, selfie. Prefilled from AtomShop. Status badge (not started / under review /
   verified / rejected). Warn before editing a verified profile.

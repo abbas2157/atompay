@@ -103,8 +103,9 @@ resources/views/
 
 Notifications: `php artisan atompay:notify` (scheduled every 10 minutes - production needs the `schedule:run` cron, see [docs/deploy.md](docs/deploy.md)) announces applications received, limit decisions, KYC outcomes and instalment reminders into the inbox, by **email** (unless the customer turned alert emails off - `atompay_user_preferences`, signed unsubscribe link in every email) and, when `FCM_CREDENTIALS` is set, as push. It reads state rather than listening for events, so decisions made in AtomShop's admin are announced too.
 
-## Password reset & email
+## Sign-up, password reset & email
 
+- **Sign-up** (`/register` on the web, `/api/v1/auth/register` + `/verify` in the app): name, **one "email or mobile" field** and password. An email gets a 6-digit code **by email**, and a mobile gets it **on WhatsApp**. The AtomShop `users` row is only created once the code is proven (`SignupService`; pending rows in `atompay_pending_signups`, pruned daily). Mobile-only accounts get a placeholder email (`03XXXXXXXXX@no-email.atompay.shop`, because AtomShop requires one) that AtomPay never mails.
 - **Forgot password** (`/forgot-password` on the web, `/api/v1/auth/password/*` in the app): a 6-digit one-time code by **email** (email typed) or **WhatsApp** (mobile typed, via AtomShop's WhatsApp Cloud API number and `auth_otp` template - WhatsApp is used for nothing else), then a new password. One `PasswordResetService` for both; details and safeguards in [docs/security.md](docs/security.md#password-reset). It writes `users.password` - the one AtomShop column AtomPay updates - so the new password works on both sites.
 - **Emails** (`app/Mail`, `resources/views/emails`, one inline-styled layout in the site's palette): reset code, password changed, welcome on registration, and every customer alert. Locally `MAIL_MAILER=log` writes them to `storage/logs/laravel.log`; production must use real SMTP (see [docs/deploy.md](docs/deploy.md)).
 

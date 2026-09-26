@@ -5,7 +5,7 @@ listed below.
 
 - **Server code:** `routes/api.php`, `app/Http/Controllers/Api/V1/`, `app/Http/Resources/Api/V1/`
 - **Tests** that pin every example in these files: `tests/Feature/Api/`
-- **Status:** Every v1 endpoint is live (32 endpoints).
+- **Status:** Every v1 endpoint is live (34 endpoints).
 
 | | |
 |---|---|
@@ -41,7 +41,9 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 | GET | `/calculator` | – | [calculator.md](calculator.md) |
 | POST | `/quote` | – | [calculator.md](calculator.md) |
 | POST | `/estimate` | – | [calculator.md](calculator.md) |
-| POST | `/auth/register` | – | [auth.md](auth.md) |
+| POST | `/auth/register` | – | [auth.md](auth.md#sign-up-one-time-code) |
+| POST | `/auth/register/verify` | – | [auth.md](auth.md#sign-up-one-time-code) |
+| POST | `/auth/register/resend` | – | [auth.md](auth.md#sign-up-one-time-code) |
 | POST | `/auth/login` | – | [auth.md](auth.md) |
 | POST | `/auth/password/forgot` | – | [auth.md](auth.md#forgot-password-otp) |
 | POST | `/auth/password/verify` | – | [auth.md](auth.md#forgot-password-otp) |
@@ -72,7 +74,9 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 ## Suggested app flow
 
 1. Launch: `GET /app-config` (force update?), then `GET /me` if a token is stored.
-2. Sign in or register, then `POST /devices` (if push is enabled). "Forgot password?" runs
+2. Sign in, or register (`/auth/register` with an email or a mobile, then `/auth/register/verify` with the code
+   that arrived by email or on WhatsApp),
+   then `POST /devices` (if push is enabled). "Forgot password?" runs
    `/auth/password/forgot`, then `/verify`, then `/reset`, which ends signed in.
 3. Home: `GET /dashboard`, and follow `banner.action` to the profile or application form.
 4. Profile form: `GET /profile` + `GET /cities`, then `POST /profile` (multipart).
@@ -92,6 +96,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 
 | Date | Change |
 |---|---|
+| 2026-09-27 | **Sign-up needs a one-time code.** `POST /auth/register` now takes `name`, `login` (an email **or** a mobile) and `password`, and returns `202` with a `signup_id` and no account. The code is sent by email or on WhatsApp, depending on what was typed. The new `POST /auth/register/verify` creates the account and returns the login body (`201`), and `POST /auth/register/resend` resends the code. Mobile-only accounts have `email: null`. `/app-config` gains `features.signup_channels`. The request and response of `/auth/register` changed, which is allowed because no app has shipped. |
 | 2026-09-26 | Forgot password with OTP by email or WhatsApp (`/auth/password/forgot`, `/verify`, `/reset`). `GET/PATCH /me/preferences` for alert emails. New notification type `application_received`, and every notification is also emailed. `/app-config`: `password_reset_url` now points at AtomPay's own page, and `features.password_reset_channels` was added. **Removed `uuid` from `/me`**, because it unlocks AtomShop's reset link. No app has shipped yet, so this is allowed within v1. |
 | 2026-09-24 | Docs split into `docs/api/` (one file per area). No API change. |
 | 2026-09-24 | v1 complete: `/app-config`, `/options`, `/calculator`, `/quote`, `/estimate`, `/dashboard`, `/application` (+ history), `/plans`, `/devices`, `/notifications`, `/auth/sessions`. Logout now also unregisters the device. |

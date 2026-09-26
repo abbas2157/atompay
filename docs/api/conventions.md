@@ -59,7 +59,9 @@ Every error is JSON, even if you forget `Accept`.
 | Endpoint | Limit | Keyed by |
 |---|---|---|
 | `POST /auth/login` | 5/min, and 20/min | identifier + IP, and IP |
-| `POST /auth/register` | 5/hour | IP |
+| `POST /auth/register` | 5/hour | IP (plus 3 codes/hour per mobile number or email) |
+| `POST /auth/register/verify` | 10/min | IP (5 tries per sign-up) |
+| `POST /auth/register/resend` | 3/min, and 10/min | IP (60 s cooldown) |
 | `POST /profile`, `POST /application` | 10/min | account |
 | `GET /profile/documents/*` | 60/min | account |
 | `POST /quote` | 60/min | IP |
@@ -73,7 +75,7 @@ Every error is JSON, even if you forget `Accept`.
 
 ## Token lifecycle
 
-1. `register` or `login` returns a token that is valid for **30 days** (`expires_at`).
+1. `register/verify` (sign-up), `login` or `password/reset` returns a token that is valid for **30 days** (`expires_at`).
 2. Store it in **secure storage** (`flutter_secure_storage`). Never store it in shared
    preferences, and never log it.
 3. On app launch, call `GET /me`. A `200` means you're signed in and the user object is fresh.

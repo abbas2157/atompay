@@ -27,7 +27,9 @@ class MetaController extends Controller
             'features' => [
                 'push' => $fcm->enabled(),
                 // Which ways a reset code can be sent: email always, WhatsApp when configured.
-                'password_reset_channels' => $whatsapp->available() ? ['email', 'whatsapp'] : ['email'],
+                // Where codes can go (sign-up and reset): email always, WhatsApp when configured.
+                'password_reset_channels' => $channels = $whatsapp->available() ? ['email', 'whatsapp'] : ['email'],
+                'signup_channels' => $channels,
             ],
         ]]);
     }

@@ -2,32 +2,95 @@
 
 [← API index](README.md) · [Conventions, errors & limits](conventions.md)
 
-## `POST /auth/register`
+## Sign-up (one-time code)
 
-Creates an AtomShop customer account, which also works on atomshop.pk, and signs it in.
+The customer signs up with **one** contact, typed in a single `login` field:
+
+| Typed | Code sent by | The account gets |
+|---|---|---|
+| Email address | **Email** | that email (marked verified), with no phone |
+| Pakistani mobile (any format) | **WhatsApp** (AtomShop's number, `auth_otp` template) | that mobile. `email` is `null` in the API; see below |
+
+It's two screens:
+
+1. `POST /auth/register` with the details. The code is sent, and **no account exists yet**.
+2. `POST /auth/register/verify` with the code. The AtomShop account (which also works on atomshop.pk) is
+   created and this device is signed in. Email sign-ups also get a welcome email.
+
+Check `GET /app-config` → `features.signup_channels` (`["email"]` or `["email","whatsapp"]`). When
+WhatsApp isn't listed, ask for an email only.
+
+Rules:
+
+- The code is **6 digits** and valid for **10 minutes**. The sign-up must finish within **30 minutes**.
+- There are **5** verify attempts. After that, *"Too many wrong codes. Please start again."*
+- Resend has a 60 s cooldown. A number or email address gets at most **3 codes an hour**.
+
+**Mobile-only accounts.** AtomShop requires an email on every account, so one is stored as
+`03XXXXXXXXX@no-email.atompay.shop`. The API shows `email: null` and `email_verified: false`.
+AtomPay never sends mail to it: no welcome email, no alert emails, and no "password changed" email.
+These customers get everything through the inbox and push instead, and they sign in and reset their password with the mobile number.
+
+### `POST /auth/register` → `202 Accepted`
 
 ```json
-{
-  "name": "Ayesha Khan",
-  "phone": "+92 300 1234567",
-  "email": "ayesha@example.com",
-  "password": "at-least-8-chars",
-  "password_confirmation": "at-least-8-chars",
-  "device_name": "Pixel 7 · Android 14"
-}
+{ "name": "Ayesha Khan", "login": "0300 1234567", "password": "at-least-8-chars", "password_confirmation": "at-least-8-chars" }
 ```
 
 | Field | Rules |
 |---|---|
 | `name` | required, ≤ 255 |
-| `phone` | required, Pakistani **mobile** (landlines are refused with an explanation), unique |
-| `email` | required, valid email, ≤ 255, unique (lower-cased by the server) |
+| `login` | required. **Either** a valid email **or** a Pakistani mobile (landlines are refused), not already on an account |
 | `password` | required, ≥ 8, must match `password_confirmation` |
-| `device_name` | optional, ≤ 100. Shown in "signed-in devices" later. Default is `AtomPay app` |
 
-**`201 Created`**, with the same body as login (below).
+```json
+{
+  "data": {
+    "signup_id": "4c949005-3a2c-4ddc-8d3c-15c9b7c6399f",
+    "channel": "whatsapp",
+    "destination": "0300*****67",
+    "expires_in": 1799,
+    "resend_in": 60
+  }
+}
+```
 
-**`422`** examples: `phone` gets *"That looks like a landline. Enter a mobile number so we can text you about payments."*, and `email` gets *"The email has already been taken."*
+**`422`** on `login`:
+
+| Message | When |
+|---|---|
+| *"An account with this email already exists. Sign in or reset your password."* | email taken |
+| *"An account with this mobile number already exists. Sign in or reset your password."* | number taken, in any stored format |
+| *"That looks like a landline. Enter a mobile number so we can text you about payments."* | landline |
+| *"Enter your email address or mobile number, e.g. 0300 1234567."* | neither |
+| *"We couldn't send a WhatsApp code to this number. Make sure it has WhatsApp, or sign up with your email."* | WhatsApp delivery failed |
+| *"We can't send codes to mobile numbers right now. Sign up with your email address instead."* | WhatsApp isn't configured |
+| *"Too many codes have been sent to this number / email. Please try again in an hour."* | hourly cap |
+
+### `POST /auth/register/verify` → `201 Created`
+
+```json
+{ "signup_id": "4c949005-…", "code": "482913", "device_name": "Pixel 7 · Android 14" }
+```
+
+The response is **the same as `POST /auth/login`** (`token`, `expires_at`, `user`).
+
+**`422`**:
+
+- `code`: *"That code isn't right. 4 tries left."* or *"This code has expired. Send a new one."*
+- `signup`: *"This sign-up has expired. Please start again."*, *"Too many wrong codes. Please start again."*, or
+  *"An account with this email / mobile number was created while you were signing up. Please sign in instead."*
+  All of these mean go back to the details screen.
+
+### `POST /auth/register/resend`
+
+```json
+{ "signup_id": "4c949005-…" }
+```
+
+The new code goes to the same email or number. The response is **`200`** with the same body as step 1
+(`resend_in` is back to 60). Within the cooldown you get a `422` on `code`: *"Please wait N seconds before asking for
+another code."*
 
 ## `POST /auth/login`
 

@@ -57,7 +57,7 @@ class NotificationService
      */
     public function email(CustomerNotification $notification, User $user): void
     {
-        if (! $user->email || ! $user->wantsEmailAlerts()) {
+        if (! $user->hasRealEmail() || ! $user->wantsEmailAlerts()) {
             return;
         }
 

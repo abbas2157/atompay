@@ -42,6 +42,19 @@ class User extends Authenticatable
         return $q->where('status', 'active');
     }
 
+    /**
+     * Accounts holding this mobile in any of the forms AtomShop stores it:
+     * 03XXXXXXXXX mostly, but also 3XXXXXXXXX, 92..., +92... and 0092...
+     *
+     * @param string $local canonical 03XXXXXXXXX
+     */
+    public function scopeWithMobile(Builder $q, string $local): Builder
+    {
+        $rest = substr($local, 1);
+
+        return $q->whereIn('phone', [$local, $rest, '92'.$rest, '+92'.$rest, '0092'.$rest]);
+    }
+
     /* ----------------------------------------------------------- relations */
 
     public function customer(): HasOne
@@ -79,6 +92,25 @@ class User extends Authenticatable
     public function preference(): HasOne
     {
         return $this->hasOne(UserPreference::class);
+    }
+
+    /**
+     * False for mobile-only sign-ups, whose email is a placeholder AtomShop
+     * needs but nobody reads. Every email AtomPay sends checks this.
+     */
+    public function hasRealEmail(): bool
+    {
+        return filled($this->email) && ! self::isPlaceholderEmail($this->email);
+    }
+
+    public static function placeholderEmailFor(string $mobile): string
+    {
+        return $mobile.'@'.config('atompay.signup.placeholder_email_domain');
+    }
+
+    public static function isPlaceholderEmail(string $email): bool
+    {
+        return str_ends_with(mb_strtolower($email), '@'.mb_strtolower(config('atompay.signup.placeholder_email_domain')));
     }
 
     /** Alert emails (decisions, reminders) - on unless the customer turned them off. */

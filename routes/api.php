@@ -37,7 +37,10 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('/estimate', [CalculatorController::class, 'estimate'])->middleware('throttle:assess')->name('estimate');
 
     // Sign in / sign up - against AtomShop's users table.
+    // Sign-up: details -> codes on WhatsApp + email -> account created and signed in.
     Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:register')->name('auth.register');
+    Route::post('/auth/register/verify', [AuthController::class, 'verifySignup'])->middleware('throttle:otp_verify')->name('auth.register.verify');
+    Route::post('/auth/register/resend', [AuthController::class, 'resendSignupCode'])->middleware('throttle:otp_request')->name('auth.register.resend');
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('auth.login');
 
     // Forgot password: code by email or WhatsApp -> reset token -> new password (+ signed in).

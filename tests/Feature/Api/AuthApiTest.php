@@ -8,32 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class AuthApiTest extends ApiTestCase
 {
-    public function test_a_new_customer_registers_and_receives_a_token(): void
-    {
-        $response = $this->postJson('/api/v1/auth/register', [
-            'name' => 'Ayesha Khan',
-            'phone' => '+92 399 7654321',
-            'email' => 'Ayesha.API@Example.test',
-            'password' => self::PASSWORD,
-            'password_confirmation' => self::PASSWORD,
-            'device_name' => 'Pixel 7',
-        ]);
-
-        $response->assertCreated()
-            ->assertJsonPath('data.token_type', 'Bearer')
-            ->assertJsonPath('data.user.phone', '03997654321')          // normalised
-            ->assertJsonPath('data.user.email', 'ayesha.api@example.test')
-            ->assertJsonPath('data.user.kyc_status', 'not_started');
-
-        $this->assertStringStartsWith('atompay_', explode('|', $response->json('data.token'))[1]);
-
-        $user = User::where('email', 'ayesha.api@example.test')->firstOrFail();
-        $this->assertTrue($user->isCustomer());
-        $this->assertSame('Pixel 7', $user->tokens()->sole()->name);
-
-        // Only in AtomPay's own token table - never AtomShop's.
-        $this->assertSame(0, DB::table('personal_access_tokens')->where('tokenable_id', $user->id)->count());
-    }
+    // Sign-up (OTP) is covered in SignupTest.
 
     public function test_registration_reports_field_errors_as_json(): void
     {
@@ -41,11 +16,16 @@ class AuthApiTest extends ApiTestCase
 
         $this->postJson('/api/v1/auth/register', [
             'name' => '',
-            'phone' => '021 1234567',
-            'email' => $existing->email,
+            'login' => $existing->email,
             'password' => 'short',
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['name', 'phone', 'email', 'password']);
+            ->assertJsonValidationErrors(['name', 'login', 'password']);
+
+        $this->postJson('/api/v1/auth/register', [
+            'name' => 'Someone', 'login' => 'new@example.test', 'password' => 'long-enough-1', 'password_confirmation' => 'different-1',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['password'])
+            ->assertJsonMissingValidationErrors(['login']);
     }
 
     public function test_a_customer_signs_in_with_email_or_any_phone_format(): void

@@ -115,20 +115,5 @@ class EmailAlertsTest extends ApiTestCase
         $this->freshRequest()->withToken($token)->patchJson('/api/v1/me/preferences', ['email_alerts' => 'maybe'])->assertUnprocessable();
     }
 
-    public function test_new_accounts_get_a_welcome_email_from_the_app_and_the_website(): void
-    {
-        $this->postJson('/api/v1/auth/register', [
-            'name' => 'App Signup', 'phone' => '0399'.random_int(1000000, 9999999), 'email' => 'app-signup@example.test',
-            'password' => 'password-123', 'password_confirmation' => 'password-123',
-        ])->assertCreated();
-
-        $this->post('/register', [
-            'name' => 'Web Signup', 'phone' => '0399'.random_int(1000000, 9999999), 'email' => 'web-signup@example.test',
-            'password' => 'password-123', 'password_confirmation' => 'password-123',
-        ])->assertRedirect();
-
-        Mail::assertSent(WelcomeMail::class, 2);
-        Mail::assertSent(WelcomeMail::class, fn ($m) => $m->hasTo('app-signup@example.test'));
-        Mail::assertSent(WelcomeMail::class, fn ($m) => $m->hasTo('web-signup@example.test'));
-    }
+    // The welcome email is covered in SignupTest (sent only once sign-up is verified).
 }

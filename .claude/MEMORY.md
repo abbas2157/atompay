@@ -5,6 +5,32 @@ whenever a decision is made or something surprising is discovered, and say **why
 
 ---
 
+### 2026-09-27 — Sign-up with ONE contact and a one-time code
+
+- **The user's decision (after first asking for both contacts, then changing it):** a single `login` field. An email
+  gets the code by email, and a mobile gets it on WhatsApp. There's no CAPTCHA. The `users` row is created only after the code is
+  proven. Until then everything lives in `atompay_pending_signups` (password already bcrypt-hashed).
+- **Mobile-only accounts get a placeholder email** `03XXXXXXXXX@no-email.atompay.shop`, because AtomShop's `users.email`
+  is NOT NULL and UNIQUE (AtomShop's own sign-up always requires an email). The domain is
+  `config('atompay.signup.placeholder_email_domain')`, a domain we own with no mailbox, so anything AtomShop sends there
+  bounces instead of reaching a stranger. `User::hasRealEmail()` guards **every** AtomPay mail: welcome, alerts, and
+  password changed. The API shows `email: null`. Password reset by email never matches a placeholder.
+  **AtomShop's team should know these addresses exist** (for example, in their admin UI or when they send email).
+- **Email sign-ups set `users.email_verified_at`.** Mobile sign-ups don't (there's no phone-verified column in AtomShop).
+- **Duplicate check for mobiles covers every stored format** (`User::scopeWithMobile`: 03…, 3…, 92…, +92…, 0092…).
+  Password reset uses the same scope.
+- **Anti-abuse:** 5 verify calls per sign-up, 10-minute codes, a 30-minute sign-up, a 60 s resend cooldown, and
+  3 codes/hour per number or email (whoever asks), plus the `register` throttle (5/hour/IP).
+- **WhatsApp is only needed for mobile sign-ups.** Without it in production, a mobile gets "sign up with your email
+  instead", and `/app-config.features.signup_channels = ["email"]`. Locally the codes go to the log.
+- **Pending rows hold personal data**, so `PendingSignup` is `Prunable`: unfinished after 1 day, finished after 7 days.
+  Scheduled daily with `model:prune`.
+- The already-hashed password passes through `AccountService::registerCustomer` untouched, because the `hashed` cast
+  keeps a valid hash. A test pins that it isn't hashed twice.
+- The code generation/HMAC is shared by sign-up and reset: `App\Support\OneTimeCode`.
+- **Breaking change inside v1:** `POST /auth/register` now returns 202 plus `signup_id`, not a token. This is fine because no
+  app has shipped. Documented in `docs/api/auth.md` and the changelog.
+
 ### 2026-09-26 — Forgot password (OTP by email / WhatsApp) and email alerts
 
 - **AtomShop's reset is an account-takeover hole.** `/password/reset/{uuid}` (AtomShop

@@ -14,7 +14,7 @@ Call this on every launch, before `GET /me`.
     "shop_url": "https://atomshop.pk",
     "password_reset_url": "https://atompay.shop/forgot-password",
     "support": { "phone": null, "whatsapp": null, "email": null },
-    "features": { "push": true, "password_reset_channels": ["email", "whatsapp"] }
+    "features": { "push": true, "password_reset_channels": ["email", "whatsapp"], "signup_channels": ["email", "whatsapp"] }
   }
 }
 ```
@@ -23,6 +23,8 @@ Call this on every launch, before `GET /me`.
   required" screen that links to `store_url[platform]`.
 - **Forgot password** is native in the app ([auth.md](auth.md#forgot-password-otp)). `password_reset_url` is the website's own reset page, a fallback only.
 - `features.password_reset_channels` is `["email"]` or `["email", "whatsapp"]`. Hide the mobile-number option when WhatsApp isn't listed.
+- `features.signup_channels` has the same values. When WhatsApp isn't listed, the sign-up field should ask for
+  an email only, because a mobile number would be refused.
 - `features.push` is `false` when the server has no FCM credentials. Skip the notification
   permission prompt in that case.
 - Hide any `support` entry that is `null`.

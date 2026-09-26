@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Services\AccountService;
+use App\Services\SignupService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,9 @@ use Illuminate\Support\Facades\Auth;
 class AuthController extends Controller
 {
     use LogsFailedLogins;
+
+    /** Session key holding the pending sign-up's public id between the two steps. */
+    private const SIGNUP = 'signup_id';
 
     public function showLogin(): View
     {
@@ -40,15 +44,52 @@ class AuthController extends Controller
         return view('auth.register');
     }
 
-    public function register(RegisterRequest $request, AccountService $accounts): RedirectResponse
+    /**
+     * Step 1: details are checked and a code sent - by email if an email was
+     * given, on WhatsApp if a mobile was. No account exists until it comes back.
+     */
+    public function register(RegisterRequest $request, SignupService $signups): RedirectResponse
     {
-        $user = $accounts->registerCustomer($request->validated());
+        $signup = $signups->start($request->signup(), $request->ip());
+        $request->session()->put(self::SIGNUP, $signup->public_id);
+
+        return redirect()->route('register.verify');
+    }
+
+    public function showVerifySignup(Request $request, SignupService $signups): View|RedirectResponse
+    {
+        $signup = $signups->find($request->session()->get(self::SIGNUP));
+
+        if (! $signup?->isOpen()) {
+            return redirect()->route('register')->withErrors(['signup' => 'Your sign-up expired. Please fill in your details again.']);
+        }
+
+        return view('auth.register-verify', ['state' => $signups->describe($signup)]);
+    }
+
+    /** Step 2: right code -> account created, welcomed and signed in. */
+    public function verifySignup(Request $request, SignupService $signups, AccountService $accounts): RedirectResponse
+    {
+        $request->validate(['code' => ['required', 'string', 'max:12']]);
+
+        $user = $signups->complete($signups->find($request->session()->get(self::SIGNUP)), $request->input('code'));
+
+        $request->session()->forget(self::SIGNUP);
         $accounts->sendWelcome($user);
 
         Auth::login($user);
         $request->session()->regenerate();
 
         return $this->afterSignIn($request);
+    }
+
+    public function resendSignupCode(Request $request, SignupService $signups): RedirectResponse
+    {
+        $signup = $signups->resend($signups->find($request->session()->get(self::SIGNUP)));
+
+        return redirect()->route('register.verify')->with('status', $signup->channel === 'email'
+            ? 'We sent a new code to your email.'
+            : 'We sent a new code to your WhatsApp.');
     }
 
     public function logout(Request $request): RedirectResponse

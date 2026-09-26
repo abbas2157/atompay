@@ -11,6 +11,7 @@ use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
 use App\Services\AccountService;
 use App\Services\PasswordResetService;
+use App\Services\SignupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -26,12 +27,43 @@ class AuthController extends Controller
 {
     use LogsFailedLogins;
 
-    public function register(RegisterRequest $request, AccountService $accounts): JsonResponse
+    /**
+     * Sign-up step 1: details are checked and a code sent - by email when
+     * `login` is an email, on WhatsApp when it is a mobile. No account
+     * exists yet, hence 202 rather than 201.
+     */
+    public function register(RegisterRequest $request, SignupService $signups): JsonResponse
     {
-        $user = $accounts->registerCustomer($request->validated());
+        $signup = $signups->start($request->signup(), $request->ip());
+
+        return response()->json(['data' => $signups->describe($signup)], 202);
+    }
+
+    /** Step 2: right code -> the account is created and this device signed in. */
+    public function verifySignup(Request $request, SignupService $signups, AccountService $accounts): JsonResponse
+    {
+        $request->validate([
+            'signup_id' => ['required', 'string', 'max:64'],
+            'code' => ['required', 'string', 'max:12'],
+            'device_name' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $user = $signups->complete($signups->find($request->input('signup_id')), $request->input('code'));
         $accounts->sendWelcome($user);
 
-        return $this->issueToken($user, $request->deviceName(), 201);
+        $device = trim((string) $request->input('device_name')) ?: config('atompay.api.default_device_name');
+
+        return $this->issueToken($user, $device, 201);
+    }
+
+    /** A fresh code, on the same channel (60 s cooldown). */
+    public function resendSignupCode(Request $request, SignupService $signups): JsonResponse
+    {
+        $request->validate(['signup_id' => ['required', 'string', 'max:64']]);
+
+        $signup = $signups->resend($signups->find($request->input('signup_id')));
+
+        return response()->json(['data' => $signups->describe($signup)]);
     }
 
     public function login(LoginRequest $request): JsonResponse

@@ -23,8 +23,9 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'short_name' => $this->shortName(),
-            'email' => $this->email,
-            'email_verified' => $this->email_verified_at !== null,
+            // null for mobile-only sign-ups (their stored email is a placeholder).
+            'email' => $this->hasRealEmail() ? $this->email : null,
+            'email_verified' => $this->hasRealEmail() && $this->email_verified_at !== null,
             'phone' => $this->phone,
             'phone_formatted' => $this->phone ? Pakistan::formatMobile($this->phone) : null,
             'member_since' => $this->created_at?->toDateString(),

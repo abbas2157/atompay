@@ -8,6 +8,7 @@ use App\Models\PasswordReset;
 use App\Models\User;
 use App\Services\Messaging\WhatsAppClient;
 use App\Support\Mask;
+use App\Support\OneTimeCode;
 use App\Support\Pakistan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -140,7 +141,9 @@ class PasswordResetService
             $user->tokens()->delete();
         });
 
-        $this->mail($user, new PasswordChangedMail($user));
+        if ($user->hasRealEmail()) {
+            $this->mail($user, new PasswordChangedMail($user));
+        }
 
         return $user;
     }
@@ -192,8 +195,13 @@ class PasswordResetService
         }
     }
 
+    /** A mobile-only account's placeholder email can't receive a code, so it never matches. */
     private function findByEmail(string $email): ?User
     {
+        if (User::isPlaceholderEmail($email)) {
+            return null;
+        }
+
         return User::customers()->active()->where('email', $email)->first();
     }
 
@@ -204,10 +212,7 @@ class PasswordResetService
      */
     private function findByMobile(string $local): ?User
     {
-        $rest = substr($local, 1);   // 3001234567
-
-        return User::customers()->active()
-            ->whereIn('phone', [$local, $rest, '92'.$rest, '+92'.$rest, '0092'.$rest])
+        return User::customers()->active()->withMobile($local)
             ->orderByDesc('last_login_at')->orderByDesc('id')
             ->first();
     }
@@ -230,13 +235,11 @@ class PasswordResetService
 
     private function newCode(): string
     {
-        $length = config('atompay.password_reset.code_length');
-
-        return str_pad((string) random_int(0, 10 ** $length - 1), $length, '0', STR_PAD_LEFT);
+        return OneTimeCode::generate();
     }
 
     private function hash(string $value): string
     {
-        return hash_hmac('sha256', $value, (string) config('app.key'));
+        return OneTimeCode::hash($value);
     }
 }

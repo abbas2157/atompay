@@ -95,8 +95,11 @@ Bundle the fonts (don't fetch them at runtime) so first launch works offline.
    - New password + confirm. Success lands signed in on Home, with a toast: "Password changed. It works
      on AtomShop.pk too."
    - Never say "no account found". Use the neutral "If this belongs to an AtomShop account…" copy.
-3. **Register:** Name, mobile, email, password, confirm. A small print line: "This also creates your
-   AtomShop.pk account."
+3. **Register (2 screens):** Name, **one "Email or mobile number" field**, password and confirm, with the small print
+   "This also creates your AtomShop.pk account." Below the field, a hint follows what's typed: "We'll email you a
+   code" or "We'll send the code on WhatsApp". Then **Enter your code**: one 6-box input showing the masked
+   destination, a "Send a new code" countdown, and a "Create account" button. If `features.signup_channels` has no
+   `whatsapp`, label the field "Email" and use the email keyboard.
 4. **Home (Phase 1 placeholder):** Greeting (`short_name`), KYC status card with a CTA to the profile,
    and a "Shop on AtomShop.pk" button. Phase 2 replaces this with the dashboard.
 5. **Profile:** Read view with a status pill, identity rows, 3 document tiles, and an "Edit" button.

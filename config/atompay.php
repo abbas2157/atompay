@@ -99,6 +99,26 @@ return [
         'token_ttl_minutes' => 15, // time to choose a new password after the code
     ],
 
+    /*
+    | Sign-up with ONE contact: an email gets its code by email, a mobile
+    | gets it on WhatsApp. The account is only created once that code is
+    | proven. See SignupService.
+    */
+    'signup' => [
+        'ttl_minutes' => 30,          // the whole pending sign-up
+        'code_ttl_minutes' => 10,     // each code
+        'max_attempts' => 5,          // verify calls per sign-up
+        'resend_seconds' => 60,
+        'hourly_limit' => 3,          // codes per phone number / email address per hour
+        /*
+        | AtomShop's users.email is required and unique, so a mobile-only
+        | account is given "<03XXXXXXXXX>@<this domain>". AtomPay never mails
+        | these (User::hasRealEmail). Use a domain you own with no mailbox, so
+        | anything AtomShop sends there bounces instead of reaching a stranger.
+        */
+        'placeholder_email_domain' => env('ATOMPAY_PLACEHOLDER_EMAIL_DOMAIN', 'no-email.atompay.shop'),
+    ],
+
     'kyc' => [
         // Shared private disk + folder for CNIC, selfie and signed verification
         // forms. AtomShop's admin panel points its own disk at the same root,

@@ -29,12 +29,13 @@ Tick items as they land (`[x]`). Keep this list in phase order, and put new work
 - [x] 2026-09-26 Forgot password with OTP (email / WhatsApp via AtomShop's `auth_otp`) on the web + `/auth/password/*`
 - [x] 2026-09-26 Emails: code, password changed, welcome, and every alert (with one-click unsubscribe). `GET/PATCH /me/preferences`
 - [x] 2026-09-26 `application_received` notification. `uuid` removed from `/me`
+- [x] 2026-09-27 Sign-up with ONE contact and a one-time code (email means a code by email, mobile means a code on WhatsApp; mobile-only accounts get a placeholder email that is never mailed), on the web + `/auth/register`, `/verify` and `/resend`. Pending sign-ups are pruned daily
 
 ### Production rollout
 
-- [ ] `php artisan migrate` (6 new tables/columns: `atompay_personal_access_tokens`, `atompay_devices`, `atompay_notifications` (+ `emailed_at`), `atompay_password_resets`, `atompay_user_preferences`)
+- [ ] `php artisan migrate` (new: `atompay_personal_access_tokens`, `atompay_devices`, `atompay_notifications` (+ `emailed_at`), `atompay_password_resets`, `atompay_user_preferences`, `atompay_pending_signups`)
 - [ ] **Real SMTP in `.env`** (copy AtomShop's `MAIL_*`). `MAIL_MAILER=log` in production would put reset codes in the log file instead of sending them
-- [ ] `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID`, using AtomShop's number, **after rotating the leaked token** (`docs/atomshop-password-reset-fix.md`)
+- [ ] `WHATSAPP_TOKEN` + `WHATSAPP_PHONE_NUMBER_ID`, using AtomShop's number (needed for sign-up/reset by mobile), **after rotating the leaked token** (`docs/atomshop-password-reset-fix.md`)
 - [ ] AtomShop side: fix `/password/reset/{uuid}` and move the WhatsApp token to `.env` (the same brief)
 - [ ] Cron: `* * * * * cd /var/www/atompay.shop && php artisan schedule:run` (for notifications and token pruning; see `docs/deploy.md`)
 - [ ] Create the Firebase project, download the service-account JSON, and set `FCM_CREDENTIALS` (outside the web root)
@@ -52,7 +53,7 @@ Tick items as they land (`[x]`). Keep this list in phase order, and put new work
 - [ ] Core widgets: PrimaryButton, GhostButton, AppTextField, CnicField, MobileField, StatusPill, Banner, ErrorView
 - [ ] `pk_formatters.dart` covering CNIC/mobile masks + validators, with unit tests mirroring `app/Support/Pakistan.php`
 - [ ] Launch: `GET /app-config`, then force-update gate, then `GET /me`
-- [ ] Auth: models, repository, controller (sealed state), go_router redirect. Screens: Splash, Sign in, Register
+- [ ] Auth: models, repository, controller (sealed state), go_router redirect. Screens: Splash, Sign in, Register (name + one "Email or mobile" field + password, then an "Enter your code" screen)
 - [ ] Handle 401/403/409/422/429 end to end
 - [ ] Profile: read screen + form (prefill, city picker, camera/gallery, compression, upload progress)
 - [ ] Authenticated document viewer (no disk cache, `FLAG_SECURE`)

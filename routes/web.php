@@ -43,6 +43,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.perform');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register')->name('register.perform');
+    // Sign-up codes: WhatsApp (mobile) + email, then the account is created.
+    Route::get('/register/verify', [AuthController::class, 'showVerifySignup'])->name('register.verify');
+    Route::post('/register/verify', [AuthController::class, 'verifySignup'])->middleware('throttle:otp_verify')->name('register.verify.perform');
+    Route::post('/register/resend', [AuthController::class, 'resendSignupCode'])->middleware('throttle:otp_request')->name('register.resend');
 
     // Forgot password: code by email or WhatsApp, then a new password.
     Route::get('/forgot-password', [PasswordResetController::class, 'showRequest'])->name('password.request');

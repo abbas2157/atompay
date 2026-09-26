@@ -114,8 +114,10 @@ MAIL_PASSWORD=...
 MAIL_FROM_ADDRESS=no-reply@atomshop.pk
 MAIL_FROM_NAME="AtomPay"
 
-# WhatsApp reset codes - AtomShop's Cloud API number (same token and phone
-# number id as AtomShop). Unset = customers can only reset by email.
+# WhatsApp codes (sign-up + password reset by mobile number) - AtomShop's
+# Cloud API number (same token and phone number id as AtomShop). Without these
+# two lines customers can still sign up and reset with an EMAIL; anyone who
+# types a mobile number is asked to use their email instead.
 WHATSAPP_TOKEN=...
 WHATSAPP_PHONE_NUMBER_ID=...
 
