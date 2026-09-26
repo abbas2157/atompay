@@ -37,6 +37,7 @@ class SendCustomerNotifications extends Command
         $local = $now->copy()->setTimezone($config['timezone']);
         $since = $now->copy()->subDays($config['lookback_days']);
 
+        $this->received($notifications, $since);
         $this->decisions($notifications, $since);
         $this->verifications($notifications, $since);
 
@@ -47,6 +48,28 @@ class SendCustomerNotifications extends Command
         $this->info("Notifications created: {$this->sent}");
 
         return self::SUCCESS;
+    }
+
+    /** Confirmation that an application (web or app) arrived and what happens next. */
+    private function received(NotificationService $notifications, Carbon $since): void
+    {
+        CreditAssessment::query()
+            ->where('created_at', '>=', $since)
+            ->where('status', AssessmentStatus::Pending)   // already decided? the decision says it all
+            ->with('user')
+            ->chunkById(200, function ($assessments) use ($notifications) {
+                foreach ($assessments as $a) {
+                    if (! $a->user?->isCustomer()) {
+                        continue;
+                    }
+
+                    $this->record($notifications->notify($a->user, CustomerNotification::TYPE_APPLICATION_RECEIVED,
+                        "We've received your application",
+                        'Our team will verify your details and confirm your purchase limit. We will let you know as soon as it is decided.',
+                        ['screen' => 'dashboard', 'assessment_id' => $a->id],
+                        "assessment:{$a->id}:received"));
+                }
+            });
     }
 
     private function decisions(NotificationService $notifications, Carbon $since): void

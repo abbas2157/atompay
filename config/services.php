@@ -54,4 +54,19 @@ return [
         'measurement_id' => env('GOOGLE_ANALYTICS_ID'),
     ],
 
+    /*
+    | WhatsApp Cloud API (Meta) - AtomShop's business number, used by AtomPay
+    | ONLY for password-reset codes. Same account, number and approved
+    | `auth_otp` template as AtomShop's WhatsAppTrait::send_otp(); copy the
+    | token and phone number id from AtomShop's WhatsApp settings.
+    | Unset outside production = the code is written to the log instead.
+    */
+    'whatsapp' => [
+        'token' => env('WHATSAPP_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'api_version' => env('WHATSAPP_API_VERSION', 'v19.0'),
+        'otp_template' => env('WHATSAPP_OTP_TEMPLATE', 'auth_otp'),
+        'otp_language' => env('WHATSAPP_OTP_LANGUAGE', 'en_US'),
+    ],
+
 ];

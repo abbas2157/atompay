@@ -68,7 +68,11 @@ Each stage is `done | current | upcoming | blocked`. The app renders the same st
   photos, selfie. Prefilled from AtomShop. Status badge (not started / under review /
   verified / rejected). Warn before editing a verified profile.
 - **Account screen:** Name, email, phone (read-only), sign out, sign out of all devices.
-- **Forgot password:** Opens AtomShop's reset page in the browser (no native flow in v1).
+- **Forgot password (native):** Email or mobile, then a 6-digit code by email or WhatsApp, then a new
+  password, and the customer is signed in. The same flow exists on the website at `/forgot-password`.
+- **Email alerts:** Every notification is also emailed (application received, limit decided,
+  KYC outcome, instalment due/overdue). There's a switch in Account → Notifications
+  (`PATCH /me/preferences`). A welcome email is sent on sign-up.
 
 ### Phase 2 — Application & Dashboard
 
@@ -130,8 +134,9 @@ Each stage is `done | current | upcoming | blocked`. The app renders the same st
 
 ## 8. Open questions
 
-1. **Password reset.** v1 links out to AtomShop's `/password/forgot` (URL comes from `/app-config`).
-   Is a native OTP flow wanted later? It would need AtomShop's agreement, because it writes `users.password`.
+1. ~~**Password reset.**~~ *Resolved 2026-09-26:* native OTP reset by email or WhatsApp, on the web and in the
+   app (it writes `users.password`, as requested). AtomShop's own reset is insecure and still needs fixing
+   on the AtomShop side (`docs/atomshop-password-reset-fix.md`).
 2. **Register throttle** is 5/hour per IP. Pakistani carriers put many users behind one
    IP (CGNAT). This may need to be keyed differently for the app before launch.
 3. **Paying in-app.** Is there a payment gateway (JazzCash / Easypaisa / card) to integrate, or

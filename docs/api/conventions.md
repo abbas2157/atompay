@@ -65,6 +65,8 @@ Every error is JSON, even if you forget `Accept`.
 | `POST /quote` | 60/min | IP |
 | `POST /estimate` | 10/min and 40/hour | IP |
 | `/app-config`, `/options`, `/calculator` | 600/min | IP |
+| `POST /auth/password/forgot` | 3/min, and 10/min | identifier + IP, and IP (plus 5 codes/hour per account) |
+| `POST /auth/password/verify`, `/reset` | 10/min | IP |
 | Every signed-in endpoint | 120/min | account |
 
 ---

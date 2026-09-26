@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\KycProfileController;
 use App\Http\Controllers\Api\V1\MetaController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PlanController;
+use App\Http\Controllers\Api\V1\PreferenceController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Models\KycProfile;
 use Illuminate\Support\Facades\Route;
@@ -39,6 +40,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:register')->name('auth.register');
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('auth.login');
 
+    // Forgot password: code by email or WhatsApp -> reset token -> new password (+ signed in).
+    Route::post('/auth/password/forgot', [AuthController::class, 'forgotPassword'])->middleware('throttle:otp_request')->name('auth.password.forgot');
+    Route::post('/auth/password/verify', [AuthController::class, 'verifyResetCode'])->middleware('throttle:otp_verify')->name('auth.password.verify');
+    Route::post('/auth/password/reset', [AuthController::class, 'resetPassword'])->middleware('throttle:otp_verify')->name('auth.password.reset');
+
     // Signed-in customers. `customer` also turns away (and signs out) blocked accounts.
     Route::middleware(['auth:sanctum', 'customer', 'throttle:api'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout'])->name('auth.logout');
@@ -47,6 +53,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::delete('/auth/sessions/{session}', [SessionController::class, 'destroy'])->whereNumber('session')->name('auth.sessions.destroy');
 
         Route::get('/me', [AccountController::class, 'show'])->name('me');
+        Route::get('/me/preferences', [PreferenceController::class, 'show'])->name('me.preferences');
+        Route::patch('/me/preferences', [PreferenceController::class, 'update'])->name('me.preferences.update');
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
 
         // KYC Section 1 - identity and documents.

@@ -81,3 +81,81 @@ itself is never returned.
 
 Signs that device out and stops its pushes. Returns `404` for an id that isn't yours. Deleting
 the `current` session is the same as `POST /auth/logout`.
+
+## Forgot password (OTP)
+
+This is three public calls. What the customer types decides the channel:
+
+| Typed | Code sent by |
+|---|---|
+| Email address | Email |
+| Pakistani mobile (any format) | WhatsApp, on AtomShop's business number (`auth_otp` template with a copy-code button) |
+
+Check `GET /app-config` → `features.password_reset_channels` before offering the mobile option.
+
+Rules:
+
+- The code is **6 digits**, lasts **10 minutes** and allows **5 attempts**. Only the newest code works.
+- Asking again within **60 s** returns the same request and doesn't send a second code. Use `resend_in`
+  for the "Resend" timer.
+- An account gets at most 5 codes per hour. Rate limits: 3 requests/min per identifier + IP, 10/min per IP,
+  and 10 verify/reset calls per minute per IP.
+- **Unknown accounts get exactly the same response.** Don't tell the customer "no account found".
+  Say "If this belongs to an AtomShop account, we've sent a code".
+- Only active **customer** accounts can reset here. Staff and sellers use AtomShop.
+
+### `POST /auth/password/forgot` → `202 Accepted`
+
+```json
+{ "login": "0300 1234567" }
+```
+```json
+{
+  "data": {
+    "request_id": "34fc3e23-3052-4366-88c4-ffcb8c2a1919",
+    "channel": "whatsapp",
+    "destination": "0300*****67",
+    "expires_in": 599,
+    "resend_in": 60
+  }
+}
+```
+
+| `422` on `login` | Meaning |
+|---|---|
+| "Enter your email address or mobile number, e.g. 0300 1234567." | Neither an email nor a Pakistani mobile. |
+| "Codes by WhatsApp aren't available right now. Enter your email address instead." | WhatsApp isn't configured on the server. |
+| "We couldn't send your code just now. Please try again in a minute." | The email or WhatsApp provider failed. |
+
+### `POST /auth/password/verify`
+
+```json
+{ "request_id": "34fc3e23-…", "code": "863230" }
+```
+```json
+{ "data": { "reset_token": "N0gfGI…(64 chars)", "expires_in": 900 } }
+```
+
+**`422`** on `code` returns *"That code isn't right. 4 tries left."*, *"Too many wrong codes. Request a new one."*,
+or *"This code has expired. Request a new one."* The last two mean go back to step 1.
+
+Use `autofillHints: [AutofillHints.oneTimeCode]` on the code field. The WhatsApp message has
+a copy-code button.
+
+### `POST /auth/password/reset`
+
+```json
+{ "reset_token": "N0gfGI…", "password": "new-pass-456", "password_confirmation": "new-pass-456", "device_name": "Pixel 7" }
+```
+
+On success:
+
+- the password changes, and works on AtomShop.pk too
+- **every** AtomPay app sign-in and push registration is revoked
+- a "password changed" email is sent
+- this device is signed in
+
+The response is **the same as `POST /auth/login`** (`token`, `expires_at`, `user`).
+
+**`422`**: `password` uses the same rules as registration (≥ 8, confirmed). `reset_token` returns *"This reset has
+expired. Please start again."* (after 15 minutes, or when used already).

@@ -2,8 +2,12 @@
 
 namespace App\Services;
 
+use App\Mail\WelcomeMail;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * Creating AtomShop customer accounts from AtomPay - the website's
@@ -32,5 +36,15 @@ class AccountService
         ])->save();
 
         return $user;
+    }
+
+    /** Called by both register endpoints. A mail failure never blocks sign-up. */
+    public function sendWelcome(User $user): void
+    {
+        try {
+            Mail::to($user->email, $user->name)->send(new WelcomeMail($user));
+        } catch (Throwable $e) {
+            Log::error('AtomPay welcome email failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+        }
     }
 }

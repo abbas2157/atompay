@@ -4,6 +4,8 @@ use App\Http\Controllers\Account\ApplicationController;
 use App\Http\Controllers\Account\DashboardController;
 use App\Http\Controllers\Account\DocumentController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Web\EmailAlertsController;
 use App\Http\Controllers\Staff\AssessmentController as StaffAssessmentController;
 use App\Http\Controllers\Web\AssessmentController;
 use App\Http\Controllers\Web\HomeController;
@@ -41,8 +43,23 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.perform');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register')->name('register.perform');
+
+    // Forgot password: code by email or WhatsApp, then a new password.
+    Route::get('/forgot-password', [PasswordResetController::class, 'showRequest'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendCode'])->middleware('throttle:otp_request')->name('password.email');
+    Route::get('/forgot-password/verify', [PasswordResetController::class, 'showVerify'])->name('password.verify');
+    Route::post('/forgot-password/verify', [PasswordResetController::class, 'verify'])->middleware('throttle:otp_verify')->name('password.verify.perform');
+    Route::post('/forgot-password/resend', [PasswordResetController::class, 'resend'])->middleware('throttle:otp_request')->name('password.resend');
+    Route::get('/reset-password', [PasswordResetController::class, 'showReset'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:otp_verify')->name('password.update');
 });
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
+// Alert-email unsubscribe from the email itself - signed links, no sign-in.
+Route::match(['get', 'post'], '/email/alerts/{user}/off', [EmailAlertsController::class, 'off'])
+    ->middleware('signed')->whereNumber('user')->name('email.alerts.off');
+Route::post('/email/alerts/{user}/on', [EmailAlertsController::class, 'on'])
+    ->middleware('signed')->whereNumber('user')->name('email.alerts.on');
 
 /*
 |--------------------------------------------------------------------------

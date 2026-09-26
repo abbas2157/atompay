@@ -6,9 +6,11 @@ use App\Http\Controllers\Auth\Concerns\LogsFailedLogins;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Http\Requests\Api\V1\RegisterRequest;
+use App\Http\Requests\Api\V1\ResetPasswordRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
 use App\Services\AccountService;
+use App\Services\PasswordResetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -27,6 +29,7 @@ class AuthController extends Controller
     public function register(RegisterRequest $request, AccountService $accounts): JsonResponse
     {
         $user = $accounts->registerCustomer($request->validated());
+        $accounts->sendWelcome($user);
 
         return $this->issueToken($user, $request->deviceName(), 201);
     }
@@ -64,6 +67,54 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
 
         return response()->noContent();
+    }
+
+    /* ------------------------------------------------------- forgot password */
+
+    /**
+     * Step 1. Always 202 with the same shape, whether or not an account
+     * matched - the app cannot be used to discover who has an account.
+     */
+    public function forgotPassword(Request $request, PasswordResetService $resets): JsonResponse
+    {
+        $request->validate(['login' => ['required', 'string', 'max:255']]);
+
+        $reset = $resets->request($request->input('login'), $request->ip());
+
+        return response()->json(['data' => [
+            'request_id' => $reset->public_id,
+            'channel' => $reset->channel,                    // email | whatsapp
+            'destination' => $reset->destination,            // masked, e.g. "0300*****67"
+            'expires_in' => max(0, (int) now()->diffInSeconds($reset->expires_at, false)),
+            'resend_in' => $resets->resendIn($reset),
+        ]], 202);
+    }
+
+    /** Step 2. A right code is swapped for a reset token. */
+    public function verifyResetCode(Request $request, PasswordResetService $resets): JsonResponse
+    {
+        $request->validate([
+            'request_id' => ['required', 'string', 'max:64'],
+            'code' => ['required', 'string', 'max:12'],
+        ]);
+
+        $token = $resets->verify($resets->findRequest($request->input('request_id')), $request->input('code'));
+
+        return response()->json(['data' => [
+            'reset_token' => $token,
+            'expires_in' => config('atompay.password_reset.token_ttl_minutes') * 60,
+        ]]);
+    }
+
+    /**
+     * Step 3. Sets the password, signs out every other device, and signs this
+     * one in - the response is the same as a login.
+     */
+    public function resetPassword(ResetPasswordRequest $request, PasswordResetService $resets): JsonResponse
+    {
+        $user = $resets->reset($request->input('reset_token'), $request->input('password'));
+
+        return $this->issueToken($user, $request->deviceName());
     }
 
     /**

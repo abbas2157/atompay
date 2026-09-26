@@ -12,16 +12,17 @@ Call this on every launch, before `GET /me`.
     "min_version": { "android": "1.0.0", "ios": "1.0.0" },
     "store_url": { "android": "https://play.google.com/…", "ios": null },
     "shop_url": "https://atomshop.pk",
-    "password_reset_url": "https://atomshop.pk/password/forgot",
+    "password_reset_url": "https://atompay.shop/forgot-password",
     "support": { "phone": null, "whatsapp": null, "email": null },
-    "features": { "push": true }
+    "features": { "push": true, "password_reset_channels": ["email", "whatsapp"] }
   }
 }
 ```
 
 - If the app's version is **lower than** `min_version[platform]`, show a blocking "Update
   required" screen that links to `store_url[platform]`.
-- The **Forgot password?** link opens `password_reset_url` in the browser. AtomShop owns passwords.
+- **Forgot password** is native in the app ([auth.md](auth.md#forgot-password-otp)). `password_reset_url` is the website's own reset page, a fallback only.
+- `features.password_reset_channels` is `["email"]` or `["email", "whatsapp"]`. Hide the mobile-number option when WhatsApp isn't listed.
 - `features.push` is `false` when the server has no FCM credentials. Skip the notification
   permission prompt in that case.
 - Hide any `support` entry that is `null`.

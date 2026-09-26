@@ -76,6 +76,17 @@ class User extends Authenticatable
         return $this->hasMany(CustomerNotification::class)->latest('id');
     }
 
+    public function preference(): HasOne
+    {
+        return $this->hasOne(UserPreference::class);
+    }
+
+    /** Alert emails (decisions, reminders) - on unless the customer turned them off. */
+    public function wantsEmailAlerts(): bool
+    {
+        return $this->preference?->email_alerts ?? UserPreference::DEFAULTS['email_alerts'];
+    }
+
     /** Most recent assessment of any status - what the customer is waiting on. */
     public function creditAssessment(): HasOne
     {

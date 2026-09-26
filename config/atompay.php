@@ -55,8 +55,6 @@ return [
             'android' => env('ATOMPAY_APP_STORE_ANDROID'),
             'ios' => env('ATOMPAY_APP_STORE_IOS'),
         ],
-        // AtomShop owns passwords; the app sends people to its reset page.
-        'password_reset_url' => env('ATOMPAY_PASSWORD_RESET_URL', rtrim(env('ATOMSHOP_URL', 'https://atomshop.pk'), '/').'/password/forgot'),
         'support' => [
             'phone' => env('ATOMPAY_SUPPORT_PHONE'),
             'whatsapp' => env('ATOMPAY_SUPPORT_WHATSAPP'),
@@ -87,6 +85,19 @@ return [
 
     // AtomShop roles allowed into the AtomPay staff review area.
     'staff_roles' => ['admin', 'amos', 'manager', 'recovery'],
+
+    /*
+    | Forgot password: a one-time code by email (email typed) or WhatsApp
+    | (mobile typed), then a short-lived reset token. See PasswordResetService.
+    */
+    'password_reset' => [
+        'code_length' => 6,
+        'code_ttl_minutes' => 10,
+        'max_attempts' => 5,       // wrong codes before the code is burnt
+        'resend_seconds' => 60,    // a new code is not sent sooner than this
+        'hourly_limit' => 5,       // codes actually sent per account per hour
+        'token_ttl_minutes' => 15, // time to choose a new password after the code
+    ],
 
     'kyc' => [
         // Shared private disk + folder for CNIC, selfie and signed verification

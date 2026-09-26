@@ -14,9 +14,12 @@
                     @csrf
                     <x-input name="login" label="Phone or email" autocomplete="username" required autofocus />
                     <x-input name="password" label="Password" type="password" autocomplete="current-password" required />
-                    <label class="flex items-center gap-2 text-[14px] text-muted">
-                        <input type="checkbox" name="remember" value="1" class="accent-nucleus"> Keep me signed in
-                    </label>
+                    <div class="flex items-center justify-between gap-3">
+                        <label class="flex items-center gap-2 text-[14px] text-muted">
+                            <input type="checkbox" name="remember" value="1" class="accent-nucleus"> Keep me signed in
+                        </label>
+                        <a href="{{ route('password.request') }}" class="text-[14px] underline text-ink">Forgot password?</a>
+                    </div>
                     <button type="submit" class="btn btn-primary w-full justify-center">Sign in</button>
                 </form>
 

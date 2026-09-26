@@ -18,8 +18,9 @@ class UserResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            // No `uuid`: AtomShop's /password/reset/{uuid} link resets the
+            // password with nothing else, so the uuid is kept out of the app.
             'id' => $this->id,
-            'uuid' => $this->uuid,
             'name' => $this->name,
             'short_name' => $this->shortName(),
             'email' => $this->email,
