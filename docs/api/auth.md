@@ -63,6 +63,8 @@ These customers get everything through the inbox and push instead, and they sign
 | *"An account with this mobile number already exists. Sign in or reset your password."* | number taken, in any stored format |
 | *"That looks like a landline. Enter a mobile number so we can text you about payments."* | landline |
 | *"Enter your email address or mobile number, e.g. 0300 1234567."* | neither |
+| *"Enter a valid email address."* | malformed email |
+| *"We couldn't send a code to this email just now. Please check it and try again."* | email delivery failed |
 | *"We couldn't send a WhatsApp code to this number. Make sure it has WhatsApp, or sign up with your email."* | WhatsApp delivery failed |
 | *"We can't send codes to mobile numbers right now. Sign up with your email address instead."* | WhatsApp isn't configured |
 | *"Too many codes have been sent to this number / email. Please try again in an hour."* | hourly cap |
