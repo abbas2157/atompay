@@ -37,7 +37,7 @@ The whole home screen in one call. Refresh it on pull-to-refresh and when the ap
       { "key": "shop", "title": "AtomShop purchase", "hint": "Choose AtomPay at checkout", "state": "current" }
     ],
     "next_due": {
-      "id": 812, "order_id": 1043, "label": "Instalment 2", "due_date": "2026-10-05",
+      "id": 812, "order_id": 1043, "label": "2nd Instalment", "due_date": "2026-10-05",
       "amount": 12500, "paid_amount": null, "paid_on": null, "state": "due",
       "order_reference": "AS-01043", "product_title": "Poco C75 8GB RAM"
     },
@@ -52,7 +52,7 @@ The whole home screen in one call. Refresh it on pull-to-refresh and when the ap
 | `application_status` | `null` (never applied) · `pending` · `approved` · `conditional` · `rejected`. This is the **latest** application, which may be a pending re-application while an older limit is still in force. |
 | `banner.tone` | `pending` (amber) · `blocked` (coral) · `done` (green). |
 | `banner.action` | Where the button goes. `apply` means start with the profile, then the application. `profile` opens the profile form. `application` opens the income form. The `text` may be the reviewer's own note. |
-| `limit` | The limit **in force**. When `has_limit` is `false`, show "Not set yet" and every number is `0`. `status` is `approved` or `conditional`. |
+| `limit` | The limit **in force**. When `has_limit` is `false`, show "Not set yet": the money fields are `0`, and `status` and `tenure` are `null`. `status` is `approved` or `conditional`. |
 | `limit.used` | Unpaid AtomShop instalments. `available = max(0, approved − used)`. |
 | `stages[].state` | `done` · `current` · `upcoming` · `blocked`. There are always six stages in this order. |
 | `next_due` | The earliest unpaid monthly instalment across all orders, or `null`. `state` is `paid`, `late`, `due` (within 14 days) or `upcoming`. |

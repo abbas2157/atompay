@@ -57,6 +57,8 @@ Returns the same object plus the full schedule. It returns `404` if the order is
 }
 ```
 
+`label` is AtomShop's own text (e.g. "1st Instalment"), so display it as it is.
+
 Instalment `state` and colour:
 
 | State | Meaning | Colour |

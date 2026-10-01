@@ -10,6 +10,8 @@ use App\Services\Messaging\WhatsAppClient;
 use App\Support\Mask;
 use App\Support\OneTimeCode;
 use App\Support\Pakistan;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -57,17 +59,42 @@ class PasswordResetService
 
         $channel = $byEmail ? PasswordReset::CHANNEL_EMAIL : PasswordReset::CHANNEL_WHATSAPP;
         $destination = $byEmail ? mb_strtolower($login) : Pakistan::normalizeMobile($login);
-        $user = $byEmail ? $this->findByEmail($destination) : $this->findByMobile($destination);
+
+        // A double tap sends two requests at once; while the first is still
+        // talking to WhatsApp or the mail server it isn't marked sent, so the
+        // second would send a second code. One request per destination at a time.
+        try {
+            return Cache::lock('password-reset:'.hash('sha256', $channel.'|'.$destination), 30)
+                ->block(20, fn () => $this->createAndSend($channel, $destination, $ip));
+        } catch (LockTimeoutException) {
+            throw ValidationException::withMessages(['login' => "We couldn't send your code just now. Please try again in a minute."]);
+        }
+    }
+
+    private function createAndSend(string $channel, string $destination, ?string $ip): PasswordReset
+    {
+        $user = $channel === PasswordReset::CHANNEL_EMAIL ? $this->findByEmail($destination) : $this->findByMobile($destination);
 
         // Asked again within the cooldown: keep the code already on its way.
         if ($user && ($recent = $this->recentOpenRequest($user, $channel))) {
             return $recent;
         }
 
+        $limited = $user && $this->overHourlyLimit($user);
+
+        // The client is told "sent" either way, so say in the log why nothing went out.
+        if (! $user || $limited) {
+            Log::info('Password reset code not sent', [
+                'channel' => $channel,
+                'to' => Mask::identifier($destination),
+                'reason' => $user ? 'hourly limit reached' : 'no active customer account',
+            ]);
+        }
+
         $code = $this->newCode();
         $reset = PasswordReset::create([
             'public_id' => (string) Str::uuid(),
-            'user_id' => $user && ! $this->overHourlyLimit($user) ? $user->id : null,
+            'user_id' => $user && ! $limited ? $user->id : null,
             'channel' => $channel,
             'destination' => Mask::identifier($destination),
             'code_hash' => $this->hash($code),

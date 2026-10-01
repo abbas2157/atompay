@@ -110,7 +110,7 @@ Each stage is `done | current | upcoming | blocked`. The app renders the same st
 
 | # | Requirement |
 |---|---|
-| F1 | A user can register with name, Pakistani mobile, email, password (≥ 8). Errors show per field. |
+| F1 | A user can register with name, **one contact (email or Pakistani mobile)** and password (≥ 8, confirmed), then confirm a 6-digit code (by email or on WhatsApp). Errors show per field. |
 | F2 | A user can sign in with email **or** mobile in any common format. |
 | F3 | Non-customer accounts are refused with *"Please sign in with an AtomShop customer account."* |
 | F4 | The session persists for 30 days. After a `401` the app returns to sign-in without a crash or loop. |

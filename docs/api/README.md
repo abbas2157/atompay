@@ -1,7 +1,8 @@
 # AtomPay Mobile API — v1
 
 The contract the AtomPay Flutter app is built against. It has one file per area, and they're
-listed below.
+listed below. For one self-contained file to hand to the app builder (PRD, architecture, design, screens,
+rules, tasks and this whole API), see [../MOBILE_APP_HANDBOOK.md](../MOBILE_APP_HANDBOOK.md).
 
 - **Server code:** `routes/api.php`, `app/Http/Controllers/Api/V1/`, `app/Http/Resources/Api/V1/`
 - **Tests** that pin every example in these files: `tests/Feature/Api/`
