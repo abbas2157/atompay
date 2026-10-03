@@ -42,6 +42,7 @@
                     <a href="{{ route('home') }}#relation" class="text-muted hover:text-ink no-underline">What is AtomPay</a>
                     <a href="{{ route('home') }}#how" class="text-muted hover:text-ink no-underline">How it works</a>
                     <a href="{{ route('faq') }}" class="text-muted hover:text-ink no-underline">FAQ</a>
+                    <a href="{{ route('privacy') }}" class="text-muted hover:text-ink no-underline">Privacy</a>
                     <a href="{{ $shopUrl }}" target="_blank" rel="noopener" class="text-muted hover:text-ink no-underline">AtomShop.pk</a>
                 </nav>
             </div>

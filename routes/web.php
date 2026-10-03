@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/faq', [HomeController::class, 'faq'])->name('faq');
+Route::get('/privacy', [HomeController::class, 'privacy'])->name('privacy');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 // Generated, not public/robots.txt: the Sitemap line needs this host's absolute URL.
 Route::get('/robots.txt', RobotsController::class)->name('robots');

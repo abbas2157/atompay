@@ -27,6 +27,10 @@ class SitemapController extends Controller
                 'loc' => route('faq'), 'priority' => '0.7', 'changefreq' => 'monthly',
                 'lastmod' => $this->lastModified([resource_path('views/pages/faq.blade.php'), config_path('atompay.php')]),
             ],
+            [
+                'loc' => route('privacy'), 'priority' => '0.3', 'changefreq' => 'yearly',
+                'lastmod' => $this->lastModified([resource_path('views/pages/privacy.blade.php')]),
+            ],
         ];
 
         return response()->view('seo.sitemap', ['urls' => $urls])

@@ -17,7 +17,7 @@ class SeoFilesTest extends TestCase
         $this->assertNotFalse($doc, 'sitemap is well-formed XML');
 
         $locs = array_map('strval', $doc->xpath('//*[local-name()="loc"]'));
-        $this->assertSame([route('home'), route('faq')], $locs);
+        $this->assertSame([route('home'), route('faq'), route('privacy')], $locs);
 
         foreach ($doc->xpath('//*[local-name()="lastmod"]') as $lastmod) {
             $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', (string) $lastmod);

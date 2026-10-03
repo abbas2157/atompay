@@ -32,4 +32,10 @@ class HomeController extends Controller
     {
         return view('pages.faq', ['faqs' => config('atompay.faqs')]);
     }
+
+    // Linked from the app store listings as well as the footer.
+    public function privacy(): View
+    {
+        return view('pages.privacy', ['support' => config('atompay.api.support')]);
+    }
 }

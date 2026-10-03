@@ -33,6 +33,7 @@ class SiteTest extends TestCase
     public function test_public_pages_and_sitemap(): void
     {
         $this->get('/faq')->assertOk()->assertSee('FAQPage');
+        $this->get('/privacy')->assertOk()->assertSee('Privacy policy')->assertDontSee('noindex');
         $this->get('/sitemap.xml')->assertOk()->assertHeader('Content-Type', 'application/xml; charset=UTF-8');
         $this->get('/login')->assertOk()->assertSee('noindex');
     }
