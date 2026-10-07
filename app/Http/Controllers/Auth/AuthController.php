@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Services\AccountService;
+use App\Services\LoginService;
 use App\Services\SignupService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -25,15 +26,18 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-    public function login(LoginRequest $request): RedirectResponse
+    public function login(LoginRequest $request, LoginService $logins): RedirectResponse
     {
-        if (! Auth::attempt($request->credentials(), $request->boolean('remember'))) {
+        $user = $logins->attempt($request->input('login'), $request->input('password'));
+
+        if (! $user) {
             $this->logFailedLogin($request, $request->credentials());
 
             return back()->withInput($request->only('login'))
                 ->withErrors(['login' => 'Those details do not match an AtomShop account.']);
         }
 
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
         return $this->afterSignIn($request);

@@ -63,6 +63,55 @@ class PasswordResetApiTest extends ApiTestCase
             ->assertUnprocessable()->assertJsonValidationErrors(['reset_token']);
     }
 
+    /**
+     * The reported bug: reset picked the most recently used account on the
+     * number, but sign-in checked the password of whichever row came first,
+     * so the new password worked once (the reset signs you in) and never again.
+     */
+    public function test_the_new_password_keeps_working_when_the_number_is_on_two_accounts(): void
+    {
+        config(['services.whatsapp.token' => 'test-token', 'services.whatsapp.phone_number_id' => '1013']);
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.1']]])]);
+
+        $this->makeCustomer(['phone' => '03995550009']);
+        $user = $this->makeCustomer(['phone' => '0399 555-0009']);
+        $user->forceFill(['last_login_at' => now()])->save();
+
+        $requestId = $this->postJson('/api/v1/auth/password/forgot', ['login' => '03995550009'])->assertStatus(202)->json('data.request_id');
+
+        $code = null;
+        Http::assertSent(function ($r) use (&$code) {
+            $code = $r['template']['components'][0]['parameters'][0]['text'] ?? $code;
+
+            return true;
+        });
+
+        $resetToken = $this->postJson('/api/v1/auth/password/verify', ['request_id' => $requestId, 'code' => $code])->assertOk()->json('data.reset_token');
+        $this->postJson('/api/v1/auth/password/reset', ['reset_token' => $resetToken, 'password' => 'brand-new-pass', 'password_confirmation' => 'brand-new-pass'])
+            ->assertOk()->assertJsonPath('data.user.id', $user->id);
+
+        foreach ([1, 2] as $_) {
+            $this->freshRequest()->postJson('/api/v1/auth/login', ['login' => '0399 5550009', 'password' => 'brand-new-pass'])
+                ->assertOk()->assertJsonPath('data.user.id', $user->id);
+        }
+        $this->post('/login', ['login' => '03995550009', 'password' => 'brand-new-pass'])->assertRedirect(route('account.dashboard'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    /** Reported: "too many attempts" after the second try (double-firing taps + resend). */
+    public function test_repeated_requests_for_a_code_are_not_a_429_and_send_one_code(): void
+    {
+        $user = $this->makeCustomer();
+
+        $ids = [];
+        for ($i = 0; $i < 6; $i++) {
+            $ids[] = $this->postJson('/api/v1/auth/password/forgot', ['login' => $user->email])->assertStatus(202)->json('data.request_id');
+        }
+
+        $this->assertCount(1, array_unique($ids));
+        Mail::assertSent(PasswordResetCodeMail::class, 1);
+    }
+
     public function test_a_mobile_number_gets_the_code_on_whatsapp_via_atomshops_template(): void
     {
         config(['services.whatsapp.token' => 'test-token', 'services.whatsapp.phone_number_id' => '1013']);

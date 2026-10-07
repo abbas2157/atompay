@@ -10,6 +10,7 @@ use App\Http\Requests\Api\V1\ResetPasswordRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
 use App\Services\AccountService;
+use App\Services\LoginService;
 use App\Services\PasswordResetService;
 use App\Services\SignupService;
 use Illuminate\Http\JsonResponse;
@@ -66,9 +67,10 @@ class AuthController extends Controller
         return response()->json(['data' => $signups->describe($signup)]);
     }
 
-    public function login(LoginRequest $request): JsonResponse
+    /** No session is started: the password is checked and a token issued. */
+    public function login(LoginRequest $request, LoginService $logins): JsonResponse
     {
-        $user = $this->verify($request);
+        $user = $logins->attempt($request->input('login'), $request->input('password'));
 
         if (! $user) {
             $this->logFailedLogin($request, $request->credentials(), 'api');
@@ -147,23 +149,6 @@ class AuthController extends Controller
         $user = $resets->reset($request->input('reset_token'), $request->input('password'));
 
         return $this->issueToken($user, $request->deviceName());
-    }
-
-    /**
-     * Checks the password without starting a session. validate() never
-     * logs anyone in, so nothing is written to the session store.
-     */
-    private function verify(LoginRequest $request): ?User
-    {
-        $guard = Auth::guard('web');
-
-        foreach ($request->credentialAttempts() as $credentials) {
-            if ($guard->validate($credentials)) {
-                return $guard->getLastAttempted();
-            }
-        }
-
-        return null;
     }
 
     private function issueToken(User $user, string $device, int $status = 200): JsonResponse

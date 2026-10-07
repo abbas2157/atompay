@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -44,15 +45,19 @@ class User extends Authenticatable
 
     /**
      * Accounts holding this mobile in any of the forms AtomShop stores it:
-     * 03XXXXXXXXX mostly, but also 3XXXXXXXXX, 92..., +92... and 0092...
+     * 03XXXXXXXXX mostly, but also 3XXXXXXXXX, 92..., +92... and 0092...,
+     * and any of those typed with spaces, dashes or brackets
+     * ("0300 1234567", "+92 (300) 123-4567") - checkout saves the phone as typed.
      *
      * @param string $local canonical 03XXXXXXXXX
      */
     public function scopeWithMobile(Builder $q, string $local): Builder
     {
         $rest = substr($local, 1);
+        $phone = $q->getQuery()->getGrammar()->wrap($q->qualifyColumn('phone'));
+        $digits = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE({$phone}, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '')";
 
-        return $q->whereIn('phone', [$local, $rest, '92'.$rest, '+92'.$rest, '0092'.$rest]);
+        return $q->whereIn(DB::raw($digits), [$local, $rest, '92'.$rest, '0092'.$rest]);
     }
 
     /* ----------------------------------------------------------- relations */

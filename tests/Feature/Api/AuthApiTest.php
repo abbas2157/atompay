@@ -43,6 +43,29 @@ class AuthApiTest extends ApiTestCase
         $this->assertSame('AtomPay app', $user->tokens()->first()->name);   // default device name
     }
 
+    public function test_a_number_stored_with_spaces_signs_in_however_it_is_typed(): void
+    {
+        // Checkout saves the phone as typed.
+        $user = $this->makeCustomer(['phone' => '+92 399 777-0001']);
+
+        foreach (['03997770001', '3997770001', '+923997770001', '0399 7770001'] as $login) {
+            $this->postJson('/api/v1/auth/login', ['login' => $login, 'password' => self::PASSWORD])
+                ->assertOk()
+                ->assertJsonPath('data.user.id', $user->id);
+        }
+    }
+
+    public function test_a_number_on_two_accounts_signs_in_to_the_one_the_password_belongs_to(): void
+    {
+        // An older account on the same number (e.g. made by checkout) with another password.
+        $this->makeCustomer(['phone' => '03997770002', 'password' => 'someone-elses-pass']);
+        $user = $this->makeCustomer(['phone' => '+923997770002']);
+
+        $this->postJson('/api/v1/auth/login', ['login' => '03997770002', 'password' => self::PASSWORD])
+            ->assertOk()
+            ->assertJsonPath('data.user.id', $user->id);
+    }
+
     public function test_a_wrong_password_is_a_validation_error_not_a_token(): void
     {
         $user = $this->makeCustomer();
