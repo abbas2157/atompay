@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\Pakistan;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -39,8 +40,17 @@ class RateLimitServiceProvider extends ServiceProvider
             Limit::perMinute($limits['login_ip'])->by($r->ip()),
         ]);
 
-        // Accounts are free to create and carry a CNIC form behind them.
-        RateLimiter::for('register', fn (Request $r) => Limit::perHour($limits['register'])->by($r->ip()));
+        /*
+         * Accounts are free to create and carry a CNIC form behind them. Keyed
+         * by the contact as well as the address: every try counts, typos
+         * included, so an IP-only cap locked a whole carrier address out for
+         * an hour after a few mistakes, whatever number was tried next.
+         * SignupService also caps the codes sent to each contact.
+         */
+        RateLimiter::for('register', fn (Request $r) => [
+            Limit::perHour($limits['register'])->by('register:'.$this->identifier($r).'|'.$r->ip()),
+            Limit::perHour($limits['register_ip'])->by('register-ip:'.$r->ip()),
+        ]);
 
         RateLimiter::for('quote', fn (Request $r) => Limit::perMinute($limits['quote'])->by($this->actor($r)));
 
@@ -60,17 +70,25 @@ class RateLimitServiceProvider extends ServiceProvider
         RateLimiter::for('documents', fn (Request $r) => Limit::perMinute($limits['documents'])->by($this->actor($r)));
 
         /*
-         * Forgot password. Every code costs a WhatsApp message or an email, and
-         * an unthrottled form is a free way to spam someone's phone, so the
-         * target and the source are both capped (on top of the per-account
-         * cooldown and hourly cap in PasswordResetService). Verifying is capped
-         * per IP; each code also dies after 5 wrong tries.
+         * Sending codes (forgot password, sign-up resend). What stops someone's
+         * phone being spammed is the services, not these: PasswordResetService
+         * and SignupService send at most one code per 60 s and a few an hour,
+         * and a repeat inside the cooldown just returns the code already sent.
+         * These only stop floods. At 3 a minute, a double-firing tap plus a
+         * "resend" was a 429 after the second try.
+         *
+         * Verifying is keyed by the pending reset / sign-up as well as the
+         * address, so one customer's typos don't lock out their neighbours;
+         * each code also dies after 5 wrong tries.
          */
         RateLimiter::for('otp_request', fn (Request $r) => [
             Limit::perMinute($limits['otp_request'])->by('otp:'.$this->identifier($r).'|'.$r->ip()),
             Limit::perMinute($limits['otp_request_ip'])->by('otp-ip:'.$r->ip()),
         ]);
-        RateLimiter::for('otp_verify', fn (Request $r) => Limit::perMinute($limits['otp_verify'])->by('otp-verify:'.$r->ip()));
+        RateLimiter::for('otp_verify', fn (Request $r) => [
+            Limit::perMinute($limits['otp_verify'])->by('otp-verify:'.$this->identifier($r).'|'.$r->ip()),
+            Limit::perMinute($limits['otp_verify_ip'])->by('otp-verify-ip:'.$r->ip()),
+        ]);
     }
 
     /** Account id when signed in, client address otherwise. */
@@ -81,9 +99,23 @@ class RateLimitServiceProvider extends ServiceProvider
             : 'ip:'.$request->ip();
     }
 
-    /** The email or phone being attempted, normalised so case cannot dodge the limit. */
+    /**
+     * The email or phone being attempted, normalised so case, or "+92 300..."
+     * against "0300...", cannot dodge the limit. A resend names the pending
+     * sign-up / reset instead (the website keeps it in the session), so one
+     * person's resends do not use up everyone's on the same address.
+     */
     private function identifier(Request $request): string
     {
-        return mb_strtolower(trim((string) $request->input('login')));
+        $login = trim((string) $request->input('login'));
+
+        if ($login !== '') {
+            return Pakistan::normalizeMobile($login) ?: mb_strtolower($login);
+        }
+
+        return (string) ($request->input('signup_id')
+            ?? $request->input('request_id')
+            ?? ($request->filled('reset_token') ? 'reset:'.hash('sha256', (string) $request->input('reset_token')) : null)
+            ?? ($request->hasSession() ? 'session:'.$request->session()->getId() : ''));
     }
 }

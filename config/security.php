@@ -99,16 +99,18 @@ return [
         'global' => 600,   // any web request
         'login' => 5,     // per identifier + IP
         'login_ip' => 20,    // per IP, all identifiers
-        'register' => 5,     // per hour
+        'register' => 10,    // sign-up tries per hour, per contact + IP
+        'register_ip' => 30,    // per hour, per IP, all contacts
         'quote' => 60,    // calculator, read-only
         'assess' => 10,
         'assess_hourly' => 40,
         'application' => 10,
         'documents' => 60,    // KYC file streams
         'api' => 120,   // any signed-in mobile API request
-        'otp_request' => 3,     // forgot-password codes, per identifier + IP
-        'otp_request_ip' => 10,    // per IP, all identifiers
-        'otp_verify' => 10,    // code / reset attempts per IP (each code also caps at 5 tries)
+        'otp_request' => 10,    // code requests, per identifier + IP (the services cap actual sends)
+        'otp_request_ip' => 30,    // per IP, all identifiers
+        'otp_verify' => 10,    // code / reset attempts, per pending request + IP (each code also caps at 5 tries)
+        'otp_verify_ip' => 30,    // per IP, all requests
     ],
 
     /*

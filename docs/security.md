@@ -95,11 +95,17 @@ Defined in `RateLimitServiceProvider`, ceilings in `config/security.php`:
 |---|---|---|
 | `global` | 600/min | account, or IP when anonymous |
 | `login` | 5/min **and** 20/min | identifier+IP, and IP |
-| `register` | 5/hour | IP |
+| `register` | 10/hour **and** 30/hour | email/mobile+IP, and IP |
 | `quote` | 60/min | account or IP |
 | `assess` | 10/min, 40/hour | account or IP |
 | `application` | 10/min | account |
 | `documents` | 60/min | account |
+| `otp_request` | 10/min **and** 30/min | email/mobile (or pending request)+IP, and IP |
+| `otp_verify` | 10/min **and** 30/min | pending request+IP, and IP |
+
+The OTP limits only stop floods. How many codes are actually *sent* is capped in
+`PasswordResetService` / `SignupService` (one per 60 s, a few per hour), and a
+repeat inside the cooldown returns the code already sent instead of a 429.
 
 Two principles shape these. **Key by account where we know it** — Pakistani
 mobile carriers put thousands of customers behind one address, so an IP-only
