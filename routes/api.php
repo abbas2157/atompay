@@ -56,6 +56,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::delete('/auth/sessions/{session}', [SessionController::class, 'destroy'])->whereNumber('session')->name('auth.sessions.destroy');
 
         Route::get('/me', [AccountController::class, 'show'])->name('me');
+        Route::post('/me/delete', [AccountController::class, 'destroy'])->middleware('throttle:account_delete')->name('me.delete');
         Route::get('/me/preferences', [PreferenceController::class, 'show'])->name('me.preferences');
         Route::patch('/me/preferences', [PreferenceController::class, 'update'])->name('me.preferences.update');
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');

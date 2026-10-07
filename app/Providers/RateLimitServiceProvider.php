@@ -69,6 +69,9 @@ class RateLimitServiceProvider extends ServiceProvider
         // them trying thousands of times.
         RateLimiter::for('documents', fn (Request $r) => Limit::perMinute($limits['documents'])->by($this->actor($r)));
 
+        // Deleting the account asks for the password, so it is a guess like a login.
+        RateLimiter::for('account_delete', fn (Request $r) => Limit::perMinute($limits['account_delete'])->by('delete:'.$this->actor($r)));
+
         /*
          * Sending codes (forgot password, sign-up resend). What stops someone's
          * phone being spammed is the services, not these: PasswordResetService

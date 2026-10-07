@@ -113,9 +113,13 @@ class User extends Authenticatable
         return $mobile.'@'.config('atompay.signup.placeholder_email_domain');
     }
 
+    /** Mobile-only sign-ups, and deleted accounts (`deleted+<id>@deleted.invalid`). */
     public static function isPlaceholderEmail(string $email): bool
     {
-        return str_ends_with(mb_strtolower($email), '@'.mb_strtolower(config('atompay.signup.placeholder_email_domain')));
+        $email = mb_strtolower($email);
+
+        return str_ends_with($email, '@'.mb_strtolower(config('atompay.signup.placeholder_email_domain')))
+            || str_ends_with($email, '.invalid');
     }
 
     /** Alert emails (decisions, reminders) - on unless the customer turned them off. */

@@ -23,6 +23,9 @@ class MetaController extends Controller
             'shop_url' => config('atompay.shop_url'),
             // The website's own forgot-password page; the app uses /auth/password/* natively.
             'password_reset_url' => route('password.request'),
+            'privacy_url' => $api['links']['privacy_url'] ?: route('privacy'),
+            'terms_url' => $api['links']['terms_url'] ?: null,
+            'account_deletion_url' => $api['links']['account_deletion_url'] ?: null,
             'support' => $api['support'],
             'features' => [
                 'push' => $fcm->enabled(),

@@ -107,6 +107,7 @@ return [
         'application' => 10,
         'documents' => 60,    // KYC file streams
         'api' => 120,   // any signed-in mobile API request
+        'account_delete' => 5,     // POST /me/delete password checks, per account
         'otp_request' => 10,    // code requests, per identifier + IP (the services cap actual sends)
         'otp_request_ip' => 30,    // per IP, all identifiers
         'otp_verify' => 10,    // code / reset attempts, per pending request + IP (each code also caps at 5 tries)

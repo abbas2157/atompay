@@ -55,6 +55,12 @@ return [
             'android' => env('ATOMPAY_APP_STORE_ANDROID'),
             'ios' => env('ATOMPAY_APP_STORE_IOS'),
         ],
+        // Store-listing links. Privacy falls back to this site's /privacy page when unset.
+        'links' => [
+            'privacy_url' => env('ATOMPAY_PRIVACY_URL'),
+            'terms_url' => env('ATOMPAY_TERMS_URL'),
+            'account_deletion_url' => env('ATOMPAY_ACCOUNT_DELETION_URL'),
+        ],
         'support' => [
             'phone' => env('ATOMPAY_SUPPORT_PHONE'),
             'whatsapp' => env('ATOMPAY_SUPPORT_WHATSAPP'),

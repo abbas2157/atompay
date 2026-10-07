@@ -6,7 +6,7 @@ rules, tasks and this whole API), see [../MOBILE_APP_HANDBOOK.md](../MOBILE_APP_
 
 - **Server code:** `routes/api.php`, `app/Http/Controllers/Api/V1/`, `app/Http/Resources/Api/V1/`
 - **Tests** that pin every example in these files: `tests/Feature/Api/`
-- **Status:** Every v1 endpoint is live (34 endpoints).
+- **Status:** Every v1 endpoint is live (35 endpoints).
 
 | | |
 |---|---|
@@ -24,7 +24,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 |---|---|
 | [conventions.md](conventions.md) | Base URLs, conventions, errors, rate limits, token lifecycle |
 | [auth.md](auth.md) | Register, login, logout, logout everywhere, signed-in sessions, **forgot password (OTP by email / WhatsApp)** |
-| [account.md](account.md) | `GET /me`, `kyc_status` values, email-alert preference |
+| [account.md](account.md) | `GET /me`, `kyc_status` values, email-alert preference, **account deletion** |
 | [profile.md](profile.md) | KYC Section 1 (identity + CNIC/selfie uploads), own documents, cities |
 | [application.md](application.md) | KYC Section 3 (income → limit), the assessment object, history |
 | [dashboard.md](dashboard.md) | Home screen: limit card, status banner, stepper, next due |
@@ -56,6 +56,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 | GET | `/me` | ✓ | [account.md](account.md) |
 | GET | `/me/preferences` | ✓ | [account.md](account.md) |
 | PATCH | `/me/preferences` | ✓ | [account.md](account.md) |
+| POST | `/me/delete` | ✓ | [account.md](account.md#post-medelete) |
 | GET | `/dashboard` | ✓ | [dashboard.md](dashboard.md) |
 | GET | `/profile` | ✓ | [profile.md](profile.md) |
 | POST | `/profile` | ✓ | [profile.md](profile.md) |
