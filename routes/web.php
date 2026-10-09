@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Account\ApplicationController;
 use App\Http\Controllers\Account\DashboardController;
+use App\Http\Controllers\Account\DeleteAccountController;
 use App\Http\Controllers\Account\DocumentController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -23,6 +24,8 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/faq', [HomeController::class, 'faq'])->name('faq');
 Route::get('/privacy', [HomeController::class, 'privacy'])->name('privacy');
 Route::permanentRedirect('/privacy-policy', '/privacy');   // the mobile app's built-in fallback link
+// The store listings' "delete account" link: works without the app.
+Route::get('/delete-account', [DeleteAccountController::class, 'info'])->name('account.delete.info');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 // Generated, not public/robots.txt: the Sitemap line needs this host's absolute URL.
 Route::get('/robots.txt', RobotsController::class)->name('robots');
@@ -76,6 +79,8 @@ Route::middleware(['auth', 'customer'])->prefix('my')->name('account.')->group(f
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/application', [ApplicationController::class, 'create'])->name('application');
     Route::post('/application', [ApplicationController::class, 'store'])->middleware('throttle:application')->name('application.store');
+    Route::get('/delete', [DeleteAccountController::class, 'show'])->name('delete');
+    Route::post('/delete', [DeleteAccountController::class, 'destroy'])->middleware('throttle:account_delete')->name('delete.perform');
 });
 
 // KYC documents - owner or staff only (checked in the controller).

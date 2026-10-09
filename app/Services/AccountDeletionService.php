@@ -22,7 +22,7 @@ use Throwable;
 
 /**
  * Self-service account deletion, required by Google Play and the App Store.
- * Used by `POST /me/delete`; the website's delete page is meant to reuse it.
+ * Used by `POST /me/delete` and the website's /my/delete page.
  *
  * What goes: sign-ins (every token, push device, web session), the KYC
  * profile and its documents, the inbox, preferences, reset and sign-up

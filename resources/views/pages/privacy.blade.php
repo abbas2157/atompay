@@ -4,7 +4,7 @@
     rule is added, update the matching section and the "Last updated" date.
 --}}
 @php
-    $updated = '3 October 2026';
+    $updated = '9 October 2026';
     $contacts = array_filter([
         'Email'    => $support['email'] ? '<a href="mailto:'.e($support['email']).'" class="underline">'.e($support['email']).'</a>' : null,
         'WhatsApp' => $support['whatsapp'] ? e($support['whatsapp']) : null,
@@ -116,7 +116,7 @@
                     <ul>
                         <li><strong>Access and correction:</strong> you can see your details in My {{ config('app.name') }}, and ask us to correct anything that is wrong.</li>
                         <li><strong>Notifications:</strong> you can turn off alert emails with the link in any alert email, and turn off push notifications in your phone's settings. We will still send messages you need for security or about money you owe.</li>
-                        <li><strong>Deleting your account:</strong> contact us to ask for your account and data to be deleted. We will delete it, or anonymise it where we must keep records by law or while an instalment is still owed, and tell you what we keep and why.</li>
+                        <li><strong>Deleting your account:</strong> you can delete your account yourself in the app or on our <a href="{{ route('account.delete.info') }}" class="underline">delete account page</a> once nothing is owed. Your identity details and documents are deleted, and the financial records we must keep by law are anonymised.</li>
                     </ul>
                 </div>
 

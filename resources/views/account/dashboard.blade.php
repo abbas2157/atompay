@@ -44,4 +44,8 @@
             </div>
         @endforelse
     </section>
+
+    <p class="mt-12 text-[13.5px] text-muted">
+        Want to close your account? <a href="{{ route('account.delete') }}" class="underline text-ink">Delete my account</a>
+    </p>
 </x-layouts.account>
