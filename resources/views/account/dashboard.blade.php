@@ -23,7 +23,7 @@
             <x-side-row label="Limit decision">{{ $credit['latest']?->status->label() ?? 'Not started' }}</x-side-row>
             <x-side-row label="Approved tenure">{{ $credit['tenure'] ? $credit['tenure'].' months' : '—' }}</x-side-row>
             <x-side-row label="Max instalment / month">{{ $credit['max_instalment'] ? \App\Support\Money::format($credit['max_instalment']) : '—' }}</x-side-row>
-            <x-side-row label="Active plans">{{ $plans->count() }}</x-side-row>
+            <x-side-row label="Active plans">{{ $plans->where('is_active', true)->count() }}</x-side-row>
             <x-side-row label="Next payment due">{{ $nextDue?->installment_date?->format('d M Y') ?? '—' }}</x-side-row>
             <x-side-row label="Next payment amount">{{ $nextDue ? \App\Support\Money::format($nextDue->installment_price) : '—' }}</x-side-row>
         </div>
@@ -31,15 +31,15 @@
 
     <section class="mt-10">
         <div class="mb-4">
-            <span class="eyebrow">Payment schedule</span>
-            <h2 class="mt-2 text-[22px]">All instalments across your orders</h2>
+            <span class="eyebrow">Orders &amp; payment schedule</span>
+            <h2 class="mt-2 text-[22px]">Your AtomShop orders</h2>
         </div>
 
         @forelse ($plans as $plan)
             @include('account.partials.plan-card', $plan)
         @empty
             <div class="card p-7 text-center">
-                <p class="text-muted text-[15px]">No instalment plans yet. Choose AtomPay at checkout on AtomShop to start one.</p>
+                <p class="text-muted text-[15px]">No orders yet. Choose AtomPay at checkout on AtomShop to start one.</p>
                 <a class="btn btn-primary mt-4" href="{{ $shopUrl }}" target="_blank" rel="noopener">Browse AtomShop.pk <span aria-hidden="true">&rarr;</span></a>
             </div>
         @endforelse

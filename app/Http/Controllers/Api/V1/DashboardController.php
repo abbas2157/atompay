@@ -46,7 +46,8 @@ class DashboardController extends Controller
             'stages' => $this->tracker->stages($user->kycProfile, $credit['latest']),
             'next_due' => $nextDue ? new InstalmentResource($nextDue) : null,
             'plans' => [
-                'active_count' => $plans->count(),
+                'active_count' => $plans->where('is_active', true)->count(),
+                'pending_count' => $plans->where('state', 'pending')->count(),
                 'has_late' => $plans->contains('has_late', true),
             ],
             'unread_notifications' => $user->appNotifications()->unread()->count(),

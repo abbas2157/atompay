@@ -9,25 +9,17 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 
 /**
- * Builds the "All instalments across your orders" view: each active order
- * with its schedule, progress and next due instalment - in two queries,
- * regardless of how many orders the customer has.
+ * Builds the "Your orders" view: every order, whatever its status, with its
+ * schedule, progress and next due instalment - in a fixed number of
+ * queries, regardless of how many orders the customer has.
  */
 class PaymentScheduleService
 {
-    /**
-     * @param bool $withCompleted also list fully repaid orders (the app's "history" tab)
-     * @return Collection<int, array> one entry per order, newest first
-     */
-    public function forUser(User $user, bool $withCompleted = false): Collection
+    /** @return Collection<int, array> one entry per order in any status, newest first */
+    public function forUser(User $user): Collection
     {
         $orders = Order::query()
             ->where('user_id', $user->id)
-            ->when(
-                $withCompleted,
-                fn ($q) => $q->whereIn('status', [...OrderStatus::active(), OrderStatus::Completed]),
-                fn ($q) => $q->active(),
-            )
             ->with(['cart.product', 'instalments', 'mirrorInstalments'])
             ->latest('id')
             ->get();
@@ -70,6 +62,8 @@ class PaymentScheduleService
 
         $paidAmount  = (int) $paid->sum('installment_price');
         $totalAmount = (int) $monthly->sum('installment_price');
+        $isActive    = in_array($order->status, OrderStatus::active(), true);
+        $hasLate     = $isActive && $monthly->contains->isOverdue();
 
         return [
             'order'        => $order,
@@ -80,7 +74,26 @@ class PaymentScheduleService
             'paid_amount'  => $paidAmount,
             'total_amount' => $totalAmount,
             'progress'     => $totalAmount > 0 ? (int) round($paidAmount / $totalAmount * 100) : 0,
-            'has_late'     => $monthly->contains->isOverdue(),
+            'is_active'    => $isActive,      // still being repaid; what "active plans" counts
+            'has_late'     => $hasLate,
+            'state'        => $this->state($order, $monthly->count(), $paid->count(), $hasLate),
         ];
+    }
+
+    /**
+     * One word for where the order stands:
+     * pending (awaiting AtomShop's approval) | processing (approved, no schedule yet)
+     * | on_track | late | completed | cancelled.
+     */
+    private function state(Order $order, int $total, int $paid, bool $hasLate): string
+    {
+        return match (true) {
+            $order->status === OrderStatus::Cancelled => 'cancelled',
+            in_array($order->status, [OrderStatus::Pending, OrderStatus::Verification], true) => 'pending',
+            $hasLate => 'late',
+            $order->status === OrderStatus::Completed || ($total > 0 && $paid === $total) => 'completed',
+            $total === 0 => 'processing',
+            default => 'on_track',
+        };
     }
 }

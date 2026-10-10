@@ -6,7 +6,7 @@ use App\Services\InstalmentQuoteService;
 
 class PlanApiTest extends ApiTestCase
 {
-    public function test_plans_list_active_orders_with_progress(): void
+    public function test_plans_list_orders_with_progress(): void
     {
         $user = $this->makeCustomer();
         $orderId = $this->makeOrder($user, [
@@ -14,7 +14,6 @@ class PlanApiTest extends ApiTestCase
             [now()->subDays(5), 10000, false],       // late
             [now()->addMonth(), 10000, false],
         ]);
-        $this->makeOrder($user, [[now()->subMonth(), 5000, true]], 'Completed');
 
         $this->withToken($this->tokenFor($user))->getJson('/api/v1/plans')
             ->assertOk()
@@ -30,15 +29,43 @@ class PlanApiTest extends ApiTestCase
             ->assertJsonMissingPath('data.0.instalments');
     }
 
-    public function test_completed_plans_are_included_on_request(): void
+    public function test_orders_in_every_status_are_listed_with_their_state(): void
     {
         $user = $this->makeCustomer();
-        $this->makeOrder($user, [[now()->subMonth(), 5000, true]], 'Completed');
+        $completed = $this->makeOrder($user, [[now()->subMonth(), 5000, true]], 'Completed');
+        $cancelled = $this->makeOrder($user, [[now()->subMonth(), 5000, false]], 'Cancelled');
+        $pending = $this->makeOrder($user, [], 'Pending');
+        $verifying = $this->makeOrder($user, [], 'Varification');
+        $processing = $this->makeOrder($user, [], 'Processing');
+        $token = $this->tokenFor($user);
 
-        $this->withToken($this->tokenFor($user))->getJson('/api/v1/plans?include=completed')
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.state', 'completed')
-            ->assertJsonPath('data.0.next_due', null);
+        $states = collect($this->withToken($token)->getJson('/api/v1/plans')->assertOk()->json('data'))
+            ->mapWithKeys(fn ($plan) => [$plan['order']['id'] => [$plan['state'], $plan['order']['status_label']]]);
+
+        $this->assertEquals([
+            $completed => ['completed', 'Completed'],
+            $cancelled => ['cancelled', 'Cancelled'],                // an unpaid row on a cancelled order is not "late"
+            $pending => ['pending', 'Pending'],
+            $verifying => ['pending', 'Verification'],
+            $processing => ['processing', 'Processing'],
+        ], $states->all());
+
+        $this->freshRequest()->withToken($token)->getJson('/api/v1/dashboard')
+            ->assertJsonPath('data.plans.active_count', 1)          // only Processing is still being repaid
+            ->assertJsonPath('data.plans.pending_count', 2)
+            ->assertJsonPath('data.plans.has_late', false);
+    }
+
+    public function test_the_web_dashboard_lists_a_pending_order_with_what_happens_next(): void
+    {
+        $user = $this->makeCustomer();
+        $orderId = $this->makeOrder($user, [], 'Pending');
+
+        $this->actingAs($user)->get(route('account.dashboard'))
+            ->assertOk()
+            ->assertSee('AS-'.str_pad((string) $orderId, 5, '0', STR_PAD_LEFT))
+            ->assertSee('Awaiting approval')
+            ->assertSee('AtomShop is reviewing this order.');
     }
 
     public function test_a_plan_shows_its_schedule_only_to_its_owner(): void

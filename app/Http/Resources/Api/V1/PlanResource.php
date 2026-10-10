@@ -52,11 +52,7 @@ class PlanResource extends JsonResource
                 'picture_url' => $product->picture_url,
                 'shop_url' => $product->shop_url,
             ] : null,
-            'state' => match (true) {
-                $this['has_late'] => 'late',
-                $this['total_count'] > 0 && $this['paid_count'] === $this['total_count'] => 'completed',
-                default => 'on_track',
-            },
+            'state' => $this['state'],      // pending | processing | on_track | late | completed | cancelled
             'progress' => [
                 'paid_count' => $this['paid_count'],
                 'total_count' => $this['total_count'],

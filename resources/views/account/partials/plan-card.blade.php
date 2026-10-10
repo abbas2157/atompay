@@ -1,5 +1,24 @@
 {{-- One order's plan. Variables come from PaymentScheduleService::plan(). --}}
-@php $labels = ['paid' => 'Paid', 'late' => 'Late', 'due' => 'Due soon', 'upcoming' => 'Upcoming']; @endphp
+@php
+    $labels = ['paid' => 'Paid', 'late' => 'Late', 'due' => 'Due soon', 'upcoming' => 'Upcoming'];
+    [$pillTone, $pillText] = match ($state) {
+        'late'       => ['late', 'Payment overdue'],
+        'completed'  => ['ok', 'Completed'],
+        'on_track'   => ['ok', 'On track'],
+        'cancelled'  => ['muted', 'Cancelled'],
+        'pending'    => ['pending', $order->status === \App\Models\Enums\OrderStatus::Verification ? 'In verification' : 'Awaiting approval'],
+        default      => ['pending', $order->status->label()],   // processing: approved, schedule not set yet
+    };
+    // Orders without a schedule yet say what happens next instead of showing an empty table.
+    $note = match ($state) {
+        'pending'    => 'AtomShop is reviewing this order. Your instalment schedule appears here once it is approved and delivered.',
+        'processing' => $order->status === \App\Models\Enums\OrderStatus::Delivered
+            ? 'Delivered. Your instalment schedule will appear here shortly.'
+            : 'Approved and being prepared. Your instalment schedule starts once it is delivered.',
+        'cancelled'  => 'This order was cancelled.',
+        default      => null,
+    };
+@endphp
 <article class="card px-6 py-6 mb-4">
     <div class="flex justify-between items-start gap-4 flex-wrap">
         <div>
@@ -9,14 +28,20 @@
                 &middot; {{ $order->status->label() }}
             </p>
         </div>
-        @if ($has_late)
-            <x-status-pill state="late">Payment overdue</x-status-pill>
-        @elseif ($paid_count === $total_count && $total_count > 0)
-            <x-status-pill state="ok">Completed</x-status-pill>
-        @else
-            <x-status-pill state="ok">On track</x-status-pill>
-        @endif
+        <x-status-pill :state="$pillTone">{{ $pillText }}</x-status-pill>
     </div>
+
+    @if ($total_count === 0)
+        <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[13.5px]">
+            <div><span class="block text-muted text-[12px]">Price</span>@pkr($order->total_deal_price)</div>
+            <div><span class="block text-muted text-[12px]">Advance</span>@pkr($order->advance_price)</div>
+            <div><span class="block text-muted text-[12px]">On instalments</span>@pkr($order->financed_amount)</div>
+            <div><span class="block text-muted text-[12px]">Tenure</span>{{ $order->instalment_tenure ? $order->instalment_tenure.' months' : '—' }}</div>
+        </div>
+        @if ($note)
+            <p class="mt-4 rounded-xl bg-paper border border-line px-4 py-3 text-[13.5px] text-muted">{{ $note }}</p>
+        @endif
+    @else
 
     <div class="mt-4">
         <div class="h-1.5 rounded-md bg-line overflow-hidden" role="progressbar" aria-valuenow="{{ $progress }}" aria-valuemin="0" aria-valuemax="100" aria-label="Instalments paid">
@@ -44,4 +69,5 @@
             </tbody>
         </table>
     </div>
+    @endif
 </article>

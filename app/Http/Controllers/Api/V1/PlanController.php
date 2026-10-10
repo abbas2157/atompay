@@ -8,17 +8,15 @@ use App\Services\PaymentScheduleService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
-/** The customer's AtomShop instalment plans, read from AtomShop's orders. */
+/** The customer's AtomShop orders and their instalment plans, read from AtomShop's orders. */
 class PlanController extends Controller
 {
     public function __construct(private readonly PaymentScheduleService $schedule) {}
 
-    /** ?include=completed also lists fully repaid plans. */
+    /** Every order, whatever its status; the app groups them by `state`. */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $withCompleted = $request->query('include') === 'completed';
-
-        return PlanResource::collection($this->schedule->forUser($request->user(), $withCompleted));
+        return PlanResource::collection($this->schedule->forUser($request->user()));
     }
 
     /** One plan with its full schedule. 404 for anyone else's order. */
