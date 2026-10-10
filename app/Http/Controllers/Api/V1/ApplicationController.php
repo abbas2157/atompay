@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Section 3 of the KYC form: the income & financial profile behind a
- * purchase limit. Like the website, every submission is a new pending
- * assessment and never touches the limit currently in force.
+ * purchase limit. Like the website, a submission never touches the limit
+ * currently in force; it reuses the latest assessment while still pending.
  */
 class ApplicationController extends Controller
 {
@@ -40,6 +40,10 @@ class ApplicationController extends Controller
 
         if (! $user->kycProfile) {
             throw new BusinessRuleException('profile_required', 'Submit your identity details first, then tell us about your income.');
+        }
+
+        if ($this->credit->isUnchangedReview($user, $request->financialProfile())) {
+            throw new BusinessRuleException('nothing_changed', CreditAssessmentService::UNCHANGED_REVIEW);
         }
 
         $assessment = DB::transaction(fn () => $this->credit->submit(

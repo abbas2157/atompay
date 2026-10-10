@@ -65,6 +65,14 @@ class KycService
         return $profile;
     }
 
+    /** Whether submit() with these details would change the profile on file. */
+    public function wouldChange(User $user, array $data, array $files): bool
+    {
+        $profile = $user->kycProfile;
+
+        return ! $profile || array_filter($files) !== [] || (clone $profile)->fill($data)->isDirty();
+    }
+
     /** Section 2 - the field agent's findings. */
     public function recordAddressVerification(KycProfile $profile, User $staff, array $data, ?UploadedFile $signedForm): KycProfile
     {

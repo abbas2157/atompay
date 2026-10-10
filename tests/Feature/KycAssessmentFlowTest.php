@@ -159,6 +159,30 @@ class KycAssessmentFlowTest extends TestCase
             ->assertOk()->assertSee('PKR 50,000')->assertSee('6 months')->assertSee('Approved at reduced limit.');
     }
 
+    public function test_an_approved_customer_requests_a_limit_review_only_with_something_new(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+        $user = $this->customer();
+        $this->actingAs($user)->post(route('account.application.store'), $this->application());
+        $approved = CreditAssessment::where('user_id', $user->id)->firstOrFail();
+        $user->refresh()->kycProfile->forceFill(['verification_status' => VerificationStatus::Verified])->save();
+        $approved->forceFill(['status' => AssessmentStatus::Approved, 'approved_limit' => 50000, 'decided_at' => now()])->save();
+        $user->refresh(); // as the next request would see it
+
+        $this->actingAs($user)->get(route('account.application'))
+            ->assertOk()->assertSee('Request a limit review')->assertSee('PKR 50,000 limit stays active', false);
+
+        // Same details, no new documents: nothing for staff to review.
+        $same = collect($this->application())->except(['cnic_front', 'cnic_back', 'selfie'])->all();
+        $this->actingAs($user)->post(route('account.application.store'), $same)->assertSessionHasErrors('monthly_income');
+        $this->assertSame(1, CreditAssessment::where('user_id', $user->id)->count());
+
+        $this->actingAs($user)->post(route('account.application.store'), [...$same, 'monthly_income' => 300000])
+            ->assertRedirect(route('account.dashboard'))->assertSessionHas('status', fn ($s) => str_contains($s, 'limit stays active'));
+        $this->assertSame($approved->id, $user->fresh()->activeAssessment->id);
+        $this->assertTrue($user->fresh()->kycProfile->isVerified(), 'Income-only changes keep identity verified.');
+    }
+
     public function test_documents_are_private_to_owner_and_staff(): void
     {
         Storage::fake(config('atompay.kyc.disk'));

@@ -8,12 +8,18 @@
     $ratios = ['limit' => config('atompay.credit.limit_ratio'), 'instalment' => config('atompay.credit.instalment_ratio')];
     $doc    = fn (string $column, string $slug) => $profile->exists && $profile->{$column} ? route('documents.show', [$profile, $slug]) : null;
 
+    // `done` ticks a step that staff have already verified / approved, not just one visited.
+    $kycVerified = $profile->exists && $profile->isVerified();
+    $approved    = $active !== null;                        // a limit is in force
+    $reviewing   = $approved && $latest?->isPending();      // a limit review is already with staff
     $steps = [
-        ['title' => 'Personal details',   'hint' => 'As printed on your CNIC'],
-        ['title' => 'Identity documents', 'hint' => 'CNIC photos and a selfie'],
-        ['title' => 'Income profile',     'hint' => 'Work, income and outgoings'],
-        ['title' => 'Review & submit',    'hint' => 'Check everything once'],
+        ['title' => 'Personal details',   'hint' => 'As printed on your CNIC',     'done' => $kycVerified, 'doneLabel' => 'Verified'],
+        ['title' => 'Identity documents', 'hint' => 'CNIC photos and a selfie',    'done' => $kycVerified && $profile->hasDocuments(), 'doneLabel' => 'Verified'],
+        ['title' => 'Income profile',     'hint' => 'Work, income and outgoings',  'done' => $approved, 'doneLabel' => $reviewing ? 'Approved · review pending' : 'Approved'],
+        ['title' => 'Review & submit',    'hint' => 'Check everything once',       'done' => $kycVerified && $approved, 'doneLabel' => 'Limit approved'],
     ];
+    // Everything already on file: any step can be opened straight away.
+    $furthest = $profile->exists && $profile->isSubmitted() && $latest ? count($steps) - 1 : 0;
 
     // Which step owns each field - used to reopen the right step after a server-side error.
     $fieldStep = [
@@ -30,7 +36,7 @@
         'cnic'                 => \App\Support\Pakistan::formatCnic(old('cnic', $profile->cnic)),
         'mobile'               => \App\Support\Pakistan::formatMobile(old('mobile', $profile->mobile)),
         'date_of_birth'        => old('date_of_birth', $profile->date_of_birth?->format('Y-m-d')),
-        'city_id'              => old('city_id', $profile->city_id),
+        'city_id'              => (string) old('city_id', $profile->city_id),   // option keys are strings in the picker
         'residential_address'  => old('residential_address', $profile->residential_address),
         'employment_status'    => old('employment_status', $latest?->employment_status?->value),
         'employer_name'        => old('employer_name', $latest?->employer_name),
@@ -49,13 +55,13 @@
 <x-layouts.account title="AtomPay application" :wide="true">
     <div
         class="grid lg:grid-cols-[300px_1fr] gap-8 lg:gap-12 items-start"
-        x-data="applicationWizard(@js(['steps' => $steps, 'initial' => $initial, 'ratios' => $ratios, 'errorStep' => $errorStep, 'labels' => $labels]))"
+        x-data="applicationWizard(@js(['steps' => $steps, 'initial' => $initial, 'ratios' => $ratios, 'errorStep' => $errorStep, 'furthest' => $furthest, 'labels' => $labels]))"
     >
         {{-- ============================================================ sidebar --}}
         <aside class="lg:sticky lg:top-24">
             <span class="eyebrow">KYC &amp; purchase limit</span>
-            <h1 class="mt-2 text-[clamp(24px,3vw,30px)]">{{ $profile->exists ? 'Update your application' : 'Apply for your AtomPay limit' }}</h1>
-            <p class="text-muted text-[14px] mt-2">About five minutes. You can go back to any step before you submit.</p>
+            <h1 class="mt-2 text-[clamp(24px,3vw,30px)]">{{ $approved ? 'Request a limit review' : ($profile->exists ? 'Update your application' : 'Apply for your AtomPay limit') }}</h1>
+            <p class="text-muted text-[14px] mt-2">{{ $approved ? 'Earning more or spending less? Update your income details and our team will review your limit.' : 'About five minutes. You can go back to any step before you submit.' }}</p>
 
             {{-- progress bar (mobile) --}}
             <div class="lg:hidden mt-5">
@@ -76,14 +82,14 @@
                             <span class="absolute left-0 top-2.5 w-8 h-8 rounded-full grid place-items-center font-disp text-[12px] font-bold border-2 transition"
                                   :class="{
                                       'bg-nucleus border-nucleus text-white': i === current,
-                                      'bg-ok border-ok text-white': i < current,
-                                      'bg-white border-line text-muted': i > current,
+                                      'bg-ok border-ok text-white': i !== current && isTicked(i),
+                                      'bg-white border-line text-muted': i !== current && !isTicked(i),
                                   }">
-                                <span x-show="i < current" aria-hidden="true">&#10003;</span>
-                                <span x-show="i >= current" x-text="i + 1"></span>
+                                <span x-show="i !== current && isTicked(i)" aria-hidden="true">&#10003;</span>
+                                <span x-show="i === current || !isTicked(i)" x-text="i + 1"></span>
                             </span>
-                            <b class="block text-[14px]" :class="i === current ? 'text-ink' : (i < current ? 'text-ink' : 'text-muted')" x-text="step.title"></b>
-                            <span class="block text-[12px] text-muted mt-0.5" x-text="step.hint"></span>
+                            <b class="block text-[14px]" :class="i === current || isTicked(i) ? 'text-ink' : 'text-muted'" x-text="step.title"></b>
+                            <span class="block text-[12px] mt-0.5" :class="step.done ? 'text-ok font-semibold' : 'text-muted'" x-text="step.done ? '✓ ' + step.doneLabel : step.hint"></span>
                         </button>
                     </li>
                 </template>
@@ -104,6 +110,14 @@
         <form method="POST" action="{{ route('account.application.store') }}" enctype="multipart/form-data" novalidate
               @submit="if (!consent) { $event.preventDefault(); alert('Please confirm the declaration first.'); }">
             @csrf
+
+            @if ($approved && ! $errors->any())
+                <x-alert type="ok" class="mb-5">
+                    <b>Your @pkr($active->approved_limit) limit stays active</b> while we review &mdash; you can keep shopping with it.
+                    {{ $reviewing ? 'A review is already with our team; submitting again updates it.' : 'Change your income details to request a higher limit.' }}
+                    Changing your name, CNIC, date of birth, address or documents means we verify your identity again.
+                </x-alert>
+            @endif
 
             @if ($errors->any())
                 <x-alert type="error" class="mb-5">Some details need attention &mdash; we&rsquo;ve opened the step that has them.</x-alert>
@@ -214,7 +228,7 @@
                 <button type="button" class="btn btn-ghost" @click="back()" x-show="!isFirst" x-cloak>&larr; Back</button>
                 <span x-show="isFirst"></span>
                 <button type="button" class="btn btn-primary" @click="next()" x-show="!isLast">Continue &rarr;</button>
-                <button type="submit" class="btn btn-primary" x-show="isLast" x-cloak :disabled="!consent">Submit application</button>
+                <button type="submit" class="btn btn-primary" x-show="isLast" x-cloak :disabled="!consent">{{ $approved ? 'Request limit review' : 'Submit application' }}</button>
             </div>
         </form>
     </div>

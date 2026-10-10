@@ -139,6 +139,39 @@ class ApplicationApiTest extends ApiTestCase
             ->assertJsonPath('data.1.id', $approved->id);
     }
 
+    public function test_a_limit_review_with_nothing_changed_is_refused(): void
+    {
+        $user = $this->makeCustomer();
+        $this->makeProfile($user, VerificationStatus::Verified);
+        $this->makeDecidedAssessment($user);
+
+        // The exact figures makeDecidedAssessment() approved.
+        $this->withToken($this->tokenFor($user))->postJson('/api/v1/application', $this->income([
+            'employer_name' => 'Acme', 'existing_instalments' => 0, 'monthly_expenses' => 50000,
+        ]))
+            ->assertStatus(409)
+            ->assertJsonPath('code', 'nothing_changed');
+
+        $this->assertSame(1, CreditAssessment::where('user_id', $user->id)->count());
+    }
+
+    public function test_resubmitting_while_pending_updates_the_same_application(): void
+    {
+        $user = $this->makeCustomer();
+        $this->makeProfile($user);
+        $token = $this->tokenFor($user);
+
+        $first = $this->withToken($token)->postJson('/api/v1/application', $this->income())
+            ->assertCreated()->json('data.id');
+
+        $this->freshRequest()->withToken($token)->postJson('/api/v1/application', $this->income(['monthly_income' => 300000]))
+            ->assertCreated()
+            ->assertJsonPath('data.id', $first)
+            ->assertJsonPath('data.disposable_income', 200000);
+
+        $this->assertSame(1, CreditAssessment::where('user_id', $user->id)->count());
+    }
+
     public function test_income_estimate_is_computed_by_the_server(): void
     {
         $this->postJson('/api/v1/estimate', ['monthly_income' => 150000])

@@ -47,10 +47,10 @@ Alpine.data('incomeEstimate', (ratios, initialIncome = null) => ({
  * remains the source of truth. `state` mirrors the inputs for the review
  * step; `errorStep` (from the server) opens the step holding the first error.
  */
-Alpine.data('applicationWizard', ({ steps, initial, ratios, errorStep = null, labels = {} }) => ({
+Alpine.data('applicationWizard', ({ steps, initial, ratios, errorStep = null, furthest = 0, labels = {} }) => ({
     steps,
     current: errorStep ?? 0,
-    furthest: errorStep ?? 0,
+    furthest: Math.max(errorStep ?? 0, furthest),
     form: { ...initial },
     files: {},               // input name -> { name, url } for previews
     consent: false,
@@ -59,6 +59,8 @@ Alpine.data('applicationWizard', ({ steps, initial, ratios, errorStep = null, la
     get isFirst() { return this.current === 0; },
     get isLast()  { return this.current === this.steps.length - 1; },
     get progress() { return Math.round((this.current / (this.steps.length - 1)) * 100); },
+    /** Passed in this visit, or already verified / approved by staff. */
+    isTicked(i) { return i < this.current || this.steps[i].done; },
 
     /** Native validation for the fields inside the current step only. */
     validateStep() {
@@ -120,14 +122,17 @@ Alpine.data('combobox', ({ options, value = null, placeholder = 'Select…' }) =
         this.query = this.selectedLabel;
         this.$watch('value', () => { if (!this.open) this.query = this.selectedLabel; });
     },
-    get selectedLabel() { return this.options.find((o) => o.value === this.value)?.label ?? ''; },
+    /** A parent's x-model may hand in a number (e.g. a city id); options are strings. */
+    get key() { return this.value === null || this.value === undefined ? '' : String(this.value); },
+    isSelected(option) { return option.value === this.key; },
+    get selectedLabel() { return this.options.find((o) => this.isSelected(o))?.label ?? ''; },
     get filtered() {
         const q = this.query.trim().toLowerCase();
         if (!q || q === this.selectedLabel.toLowerCase()) return this.options;
         return this.options.filter((o) => o.label.toLowerCase().includes(q));
     },
 
-    show() { this.open = true; this.active = Math.max(0, this.filtered.findIndex((o) => o.value === this.value)); },
+    show() { this.open = true; this.active = Math.max(0, this.filtered.findIndex((o) => this.isSelected(o))); },
     onInput() { this.open = true; this.active = 0; if (this.query === '') this.value = ''; },
     choose(option) { this.value = option.value; this.query = option.label; this.open = false; this.$refs.input.blur(); },
     clear() { this.value = ''; this.query = ''; this.$refs.input.focus(); this.open = true; },

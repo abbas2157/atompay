@@ -7,6 +7,7 @@ use App\Models\Enums\AssessmentStatus;
 use App\Models\Enums\CreditHistory;
 use App\Models\User;
 use App\Support\Money;
+use BackedEnum;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -15,13 +16,15 @@ use Illuminate\Support\Facades\DB;
  *   approved limit  = limit_ratio      x monthly income
  *   max instalment  = min(instalment_ratio x income, disposable income)
  *   disposable      = income - existing instalments - monthly expenses
- *   in use          = unpaid AtomShop instalments (ObligationService)
+ *   in use          = unpaid AtomShop instalments + AtomPay orders not yet scheduled (ObligationService)
  *
  * submit() records a customer's profile with a provisional risk score and
  * limit; decide() is where staff confirm, adjust or reject it.
  */
 class CreditAssessmentService
 {
+    public const UNCHANGED_REVIEW = 'Nothing has changed since your limit was set. Update your income details to request a review.';
+
     public function __construct(
         private readonly InstalmentQuoteService $quotes,
         private readonly RiskScoringService $risk,
@@ -57,8 +60,10 @@ class CreditAssessmentService
     /* -------------------------------------------------------------- writes */
 
     /**
-     * Section 3 submitted by the customer. Always a new row: a pending
-     * re-assessment must never overwrite the limit currently in force.
+     * Section 3 submitted by the customer. A decided assessment is never
+     * touched (it may hold the limit in force), so a re-assessment is a new
+     * row; but while the latest one is still pending, resubmitting updates
+     * it, so staff never see the same customer queued twice.
      *
      * @param array<string, mixed> $profile validated financial-profile fields
      */
@@ -71,10 +76,16 @@ class CreditAssessmentService
                 (int) ($profile['monthly_expenses'] ?? 0),
             );
 
-            $assessment = new CreditAssessment([
+            $pending = CreditAssessment::query()
+                ->where('user_id', $user->id)
+                ->where('status', AssessmentStatus::Pending)
+                ->latest('id')
+                ->lockForUpdate()
+                ->first();
+
+            $assessment = ($pending ?? new CreditAssessment(['user_id' => $user->id]))->fill([
                 ...$profile, ...$limit,
-                'user_id' => $user->id,
-                'status'  => AssessmentStatus::Pending,
+                'status' => AssessmentStatus::Pending,
             ]);
 
             // Provisional Section 4; staff's last credit-history view carries over.
@@ -112,6 +123,24 @@ class CreditAssessmentService
     }
 
     /* --------------------------------------------------------------- reads */
+
+    /**
+     * A customer with a limit in force asking for a review with exactly the
+     * figures already on file - nothing for staff to reassess.
+     *
+     * @param array<string, mixed> $profile validated financial-profile fields
+     */
+    public function isUnchangedReview(User $user, array $profile): bool
+    {
+        $latest = $user->creditAssessment;
+        if (! $user->activeAssessment || ! $latest) {
+            return false;
+        }
+
+        $value = fn ($v) => $v instanceof BackedEnum ? $v->value : $v;
+
+        return collect($profile)->every(fn ($v, string $field) => (string) $value($latest->{$field}) === (string) $value($v));
+    }
 
     /** Figures for the limit card, whether or not a decision exists yet. */
     public function summary(User $user): array

@@ -53,6 +53,7 @@ Every error is JSON, even if you forget `Accept`.
 | `code` | Returned by | Meaning / app action |
 |---|---|---|
 | `profile_required` | `POST /application` | No identity profile has been submitted yet. Send the customer to the profile form first. |
+| `nothing_changed` | `POST /application` | A limit is already in force and the figures sent are the ones on file. Show `message`; nothing was submitted. |
 | `outstanding_balance` | `POST /me/delete` | Unpaid instalments, or an order waiting for approval. Show `message`. The account is not deleted. |
 
 ## Rate limits

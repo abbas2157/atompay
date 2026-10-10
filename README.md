@@ -57,7 +57,7 @@ The five-section form maps onto two AtomPay-owned tables and three roles:
 
 **Process:** KYC → Address Verification → Income Assessment → Risk Assessment → Purchase Limit → AtomShop Purchase. `ProcessTracker` derives the stage the customer is at purely from those two rows and the dashboard renders it as `<x-process-steps>`.
 
-- Only an assessment with status `approved` or `conditional` is a spendable limit (`User::activeAssessment`). A new submission is always a new pending row and never overwrites the limit in force.
+- Only an assessment with status `approved` or `conditional` is a spendable limit (`User::activeAssessment`). A submission never overwrites the limit in force: it opens a new pending row, or updates the latest one if that is still pending (so staff never see a customer queued twice).
 - KYC documents are stored on the private `local` disk under `kyc/{user_id}/` and served only through `/documents/{profile}/{doc}` to the owner or staff.
 - Staff = AtomShop users with a role in `config('atompay.staff_roles')`; they sign in at the same `/login` and land on `/staff/assessments`.
 - Risk score starts at 100 and loses points per signal (late AtomShop instalments, defaults, obligations/income ratio, disposable income below the 10% cap, unverified KYC, staff credit-history view); every penalty and band is in `config('atompay.risk')`.

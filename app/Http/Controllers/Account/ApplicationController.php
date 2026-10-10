@@ -13,6 +13,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The customer-facing AtomPay application: Section 1 (identity) and
@@ -32,6 +33,8 @@ class ApplicationController extends Controller
         return view('account.application', [
             'profile'    => $this->kyc->profileFor($user),
             'latest'     => $user->creditAssessment,
+            // The limit in force; when set, the page is a request for a limit review.
+            'active'     => $user->activeAssessment,
             'cities'     => City::query()->where('status', 'active')->orderBy('title')->get(['id', 'title']),
             'employment' => EmploymentStatus::options(),
             'sources'    => IncomeSource::options(),
@@ -44,6 +47,11 @@ class ApplicationController extends Controller
     {
         $user = $request->user();
 
+        if (! $this->kyc->wouldChange($user, $request->identity(), $request->documents())
+            && $this->credit->isUnchangedReview($user, $request->financialProfile())) {
+            throw ValidationException::withMessages(['monthly_income' => CreditAssessmentService::UNCHANGED_REVIEW]);
+        }
+
         DB::transaction(function () use ($request, $user) {
             $this->kyc->submit($user, $request->identity(), $request->documents());
             $this->credit->submit($user->fresh(['kycProfile', 'creditAssessment']), $request->financialProfile());
@@ -51,7 +59,8 @@ class ApplicationController extends Controller
 
         $request->session()->forget('atompay.estimate');
 
-        return redirect()->route('account.dashboard')
-            ->with('status', 'Application received. Our team will verify your address and confirm your limit.');
+        return redirect()->route('account.dashboard')->with('status', $user->activeAssessment
+            ? 'Limit review requested. Your current limit stays active until our team decides.'
+            : 'Application received. Our team will verify your address and confirm your limit.');
     }
 }

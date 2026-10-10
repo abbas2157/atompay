@@ -35,7 +35,7 @@
             @error($name) aria-invalid="true" aria-describedby="{{ $name }}-error" @enderror
         >
         <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            <button type="button" class="w-7 h-7 rounded-full grid place-items-center text-muted hover:text-ink hover:bg-line2" x-show="value !== ''" x-cloak @click="clear()" aria-label="Clear" tabindex="-1">
+            <button type="button" class="w-7 h-7 rounded-full grid place-items-center text-muted hover:text-ink hover:bg-line2" x-show="key !== ''" x-cloak @click="clear()" aria-label="Clear" tabindex="-1">
                 <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </button>
             <button type="button" class="w-7 h-7 rounded-full grid place-items-center text-muted" @click="open ? close() : ($refs.input.focus())" aria-label="Toggle options" tabindex="-1">
@@ -49,12 +49,12 @@
             class="absolute z-40 left-0 right-0 mt-1.5 max-h-60 overflow-y-auto rounded-xl border border-line bg-white shadow-[0_12px_32px_rgba(20,21,26,.12)] py-1"
         >
             <template x-for="(option, i) in filtered" :key="option.value">
-                <li role="option" :aria-selected="option.value === value"
+                <li role="option" :aria-selected="isSelected(option)"
                     class="px-3.5 py-2.5 text-[14.5px] cursor-pointer flex items-center justify-between gap-3"
-                    :class="{ 'bg-paper': i === active, 'font-semibold': option.value === value }"
+                    :class="{ 'bg-paper': i === active, 'font-semibold': isSelected(option) }"
                     @mouseenter="active = i" @mousedown.prevent="choose(option)">
                     <span x-text="option.label"></span>
-                    <span x-show="option.value === value" class="text-ok" aria-hidden="true">&#10003;</span>
+                    <span x-show="isSelected(option)" class="text-ok" aria-hidden="true">&#10003;</span>
                 </li>
             </template>
             <li x-show="filtered.length === 0" class="px-3.5 py-2.5 text-[13.5px] text-muted">No matches</li>
