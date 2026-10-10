@@ -13,7 +13,7 @@ class InstalmentResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'order_id' => $this->order_id,
+            'order_id' => $this->shop_order_id,                      // the order, even when AtomShop keeps the row on a mirror
             'label' => $this->month,                               // AtomShop's own label, e.g. "1st Instalment"
             'due_date' => $this->installment_date?->toDateString(),
             'amount' => $this->installment_price,

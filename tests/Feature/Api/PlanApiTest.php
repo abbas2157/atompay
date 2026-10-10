@@ -74,6 +74,50 @@ class PlanApiTest extends ApiTestCase
             ->assertJsonPath('data.plans.has_late', false);
     }
 
+    public function test_an_atompay_order_shows_the_schedule_atomshop_keeps_on_its_mirror(): void
+    {
+        $user = $this->makeCustomer();
+        $orderId = $this->makeAtomPayOrder($user, [
+            [now()->subMonth(), 2666, true],
+            [now()->addDays(4), 2666, false],
+            [now()->addMonths(2), 2668, false],
+        ]);
+        $token = $this->tokenFor($user);
+
+        $this->withToken($token)->getJson('/api/v1/plans')
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.order.id', $orderId)
+            ->assertJsonPath('data.0.progress.paid_count', 1)
+            ->assertJsonPath('data.0.progress.total_count', 3)
+            ->assertJsonPath('data.0.progress.remaining_amount', 5334)
+            ->assertJsonPath('data.0.next_due.order_id', $orderId);
+
+        $this->freshRequest()->withToken($token)->getJson("/api/v1/plans/{$orderId}")
+            ->assertOk()
+            ->assertJsonCount(3, 'data.instalments')
+            ->assertJsonPath('data.instalments.1.state', 'due')
+            ->assertJsonPath('data.instalments.2.order_id', $orderId);
+
+        $this->freshRequest()->withToken($token)->getJson('/api/v1/dashboard')
+            ->assertJsonPath('data.next_due.amount', 2666)
+            ->assertJsonPath('data.next_due.order_id', $orderId)
+            ->assertJsonPath('data.next_due.order_reference', 'AS-'.str_pad((string) $orderId, 5, '0', STR_PAD_LEFT));
+    }
+
+    public function test_atompay_orders_use_the_limit_like_atomshop_admin_counts_them(): void
+    {
+        $user = $this->makeCustomer();
+        $this->makeDecidedAssessment($user, 'approved', 30000);
+        $this->makeOrder($user, [[now()->addMonth(), 1000, false]]);                       // Normal order
+        $this->makeAtomPayOrder($user, [[now()->subMonth(), 2666, true], [now()->addMonth(), 2666, false]]);
+        $this->makeAtomPayOrder($user, [], 'Delivered');                                     // approved, not yet scheduled: 10000 - 2000
+
+        $this->withToken($this->tokenFor($user))->getJson('/api/v1/dashboard')
+            ->assertJsonPath('data.limit.approved', 30000)
+            ->assertJsonPath('data.limit.used', 1000 + 2666 + 8000)
+            ->assertJsonPath('data.limit.available', 30000 - 11666);
+    }
+
     public function test_calculator_config_and_quote_use_the_checkout_math(): void
     {
         $quotes = app(InstalmentQuoteService::class);

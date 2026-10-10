@@ -9,10 +9,15 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Collection;
 
 class Order extends Model
 {
     use BelongsToAtomShop;
+
+    /** `type` of an order financed by AtomPay. */
+    public const TYPE_ATOMPAY = 'atompay';
 
     protected function casts(): array
     {
@@ -51,12 +56,35 @@ class Order extends Model
             ->orderBy('installment_date');
     }
 
+    /** An AtomPay order's schedule, which AtomShop keeps on its custom_orders mirror. */
+    public function mirrorInstalments(): HasManyThrough
+    {
+        return $this->hasManyThrough(OrderInstalment::class, CustomOrder::class, 'source_order_id', 'order_id')
+            ->where('custom_orders.type', CustomOrder::TYPE_ATOMPAY)
+            ->where('order_instalments.order_type', OrderInstalment::ORDER_CUSTOM)
+            ->orderBy('installment_date');
+    }
+
     /* ---------------------------------------------------------- attributes */
 
     /** Amount financed after the down payment, i.e. what instalments repay. */
     protected function financedAmount(): Attribute
     {
         return Attribute::get(fn () => max(0, $this->total_deal_price - $this->advance_price));
+    }
+
+    /**
+     * Every row of the repayment schedule, wherever AtomShop keeps it.
+     * Eager-load both `instalments` and `mirrorInstalments` when listing.
+     *
+     * @return Collection<int, OrderInstalment>
+     */
+    protected function schedule(): Attribute
+    {
+        return Attribute::get(fn () => $this->instalments
+            ->concat($this->mirrorInstalments)
+            ->sortBy(fn (OrderInstalment $i) => $i->installment_date?->timestamp)
+            ->values());
     }
 
     /** Public reference shown to the customer (AtomShop's uuid is internal). */

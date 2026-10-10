@@ -28,7 +28,7 @@ class PaymentScheduleService
                 fn ($q) => $q->whereIn('status', [...OrderStatus::active(), OrderStatus::Completed]),
                 fn ($q) => $q->active(),
             )
-            ->with(['cart.product', 'instalments'])
+            ->with(['cart.product', 'instalments', 'mirrorInstalments'])
             ->latest('id')
             ->get();
 
@@ -40,28 +40,32 @@ class PaymentScheduleService
     {
         $order = Order::query()
             ->where('user_id', $user->id)
-            ->with(['cart.product', 'instalments'])
+            ->with(['cart.product', 'instalments', 'mirrorInstalments'])
             ->find($orderId);
 
         return $order ? $this->plan($order) : null;
     }
 
-    /** Earliest unpaid monthly instalment across every order, or null. */
+    /** Earliest unpaid monthly instalment across every order, with its order loaded; or null. */
     public function nextDue(User $user): ?OrderInstalment
     {
-        return OrderInstalment::query()
+        $next = OrderInstalment::query()
             ->where('user_id', $user->id)
-            ->normalOrders()
+            ->shopOrders()
             ->monthly()
             ->unpaid()
-            ->with('order.cart.product')
             ->orderBy('installment_date')
             ->first();
+
+        // A mirrored row's order_id is the custom_orders mirror, not the order.
+        $next?->setRelation('order', Order::query()->with('cart.product')->find($next->shop_order_id));
+
+        return $next;
     }
 
     private function plan(Order $order): array
     {
-        $monthly = $order->instalments->where('type', OrderInstalment::TYPE_INSTALMENT)->values();
+        $monthly = $order->schedule->where('type', OrderInstalment::TYPE_INSTALMENT)->values();
         $paid    = $monthly->filter->isPaid();
 
         $paidAmount  = (int) $paid->sum('installment_price');

@@ -53,7 +53,8 @@ class AccountDeletionService
         $owing = $orders->whereIn('status', OrderStatus::active())
             ->where(fn (Builder $q) => $q
                 ->whereHas('instalments', fn (Builder $i) => $i->unpaid()->where('order_instalments.user_id', $user->id))
-                ->orWhereDoesntHave('instalments'))
+                ->orWhereHas('mirrorInstalments', fn (Builder $i) => $i->unpaid()->where('order_instalments.user_id', $user->id))
+                ->orWhere(fn (Builder $none) => $none->doesntHave('instalments')->doesntHave('mirrorInstalments')))
             ->exists();
 
         if ($owing) {

@@ -87,7 +87,7 @@ class RiskScoringService
     public function paymentHistory(User $user): PaymentHistory
     {
         $rows = OrderInstalment::query()
-            ->where('user_id', $user->id)->normalOrders()->monthly()
+            ->where('user_id', $user->id)->shopOrders()->monthly()
             ->get(['status', 'installment_date', 'installment_paid_date']);
 
         if ($rows->isEmpty()) {
@@ -105,7 +105,7 @@ class RiskScoringService
     private function lateInstalmentCount(User $user): int
     {
         return OrderInstalment::query()
-            ->where('user_id', $user->id)->normalOrders()->monthly()
+            ->where('user_id', $user->id)->shopOrders()->monthly()
             ->get(['status', 'installment_date', 'installment_paid_date'])
             ->filter(fn ($r) => $this->wasLate($r))
             ->count();

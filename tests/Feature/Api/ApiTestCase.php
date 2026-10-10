@@ -117,4 +117,38 @@ abstract class ApiTestCase extends TestCase
 
         return $orderId;
     }
+
+    /**
+     * An AtomPay order as AtomShop writes it: the orders row, plus a
+     * custom_orders mirror that holds the schedule as order_type = Custom
+     * rows - so the rows' order_id is the mirror's id, not the order's.
+     *
+     * @param list<array{0: Carbon|string, 1: int, 2?: bool}> $instalments [due date, amount, paid?]
+     */
+    protected function makeAtomPayOrder(User $user, array $instalments, string $status = 'Instalments'): int
+    {
+        $orderId = $this->makeOrder($user, [], $status);
+        DB::table('orders')->where('id', $orderId)->update(['type' => 'atompay', 'total_deal_price' => 10000, 'advance_price' => 2000]);
+
+        $mirrorId = DB::table('custom_orders')->insertGetId([
+            'uuid' => (string) Str::uuid(), 'user_id' => $user->id, 'product_id' => 0,
+            'source_order_id' => $orderId, 'total_deal_price' => 10000, 'advance_price' => 2000,
+            'tenure' => count($instalments), 'type' => 'atompay', 'status' => $status,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $this->assertNotSame($orderId, $mirrorId, 'The mirror must not share the order id, or a mix-up would pass unnoticed.');
+
+        foreach ($instalments as $n => [$due, $amount, $paid]) {
+            DB::table('order_instalments')->insert([
+                'user_id' => $user->id, 'order_id' => $mirrorId, 'month' => 'Instalment '.($n + 1),
+                'installment_price' => $amount, 'installment_date' => Carbon::parse($due)->toDateString(),
+                'installment_paid_price' => $paid ? $amount : null,
+                'installment_paid_date' => $paid ? Carbon::parse($due)->toDateString() : null,
+                'type' => 'Instalment', 'status' => $paid ? 'Paid' : 'Unpaid', 'order_type' => 'Custom',
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        return $orderId;
+    }
 }
