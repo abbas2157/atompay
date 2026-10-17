@@ -54,6 +54,11 @@ return [
         'measurement_id' => env('GOOGLE_ANALYTICS_ID'),
     ],
 
+    // Search Console's "HTML tag" ownership check: the content="..." value only.
+    'google_search_console' => [
+        'verification' => env('GOOGLE_SITE_VERIFICATION'),
+    ],
+
     /*
     | WhatsApp Cloud API (Meta) - AtomShop's business number, used by AtomPay
     | ONLY for password-reset codes. Same account, number and approved

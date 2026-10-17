@@ -17,13 +17,16 @@
     $siteName  = config('app.name');
     $fullTitle = $title === $siteName ? $title : "{$title} — {$siteName}";
     $canonical ??= url()->current();
-    $image     ??= asset('images/og-default.png');
+    $image     ??= asset('images/og-default.jpg');
 @endphp
 <title>{{ $fullTitle }}</title>
 <meta name="description" content="{{ $description }}">
 <link rel="canonical" href="{{ $canonical }}">
 <meta name="robots" content="{{ $noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large' }}">
 <meta name="geo.region" content="PK">
+@if ($verification = config('services.google_search_console.verification'))
+<meta name="google-site-verification" content="{{ $verification }}">
+@endif
 
 <meta property="og:site_name" content="{{ $siteName }}">
 <meta property="og:type" content="{{ $type }}">
@@ -31,6 +34,11 @@
 <meta property="og:description" content="{{ $description }}">
 <meta property="og:url" content="{{ $canonical }}">
 <meta property="og:image" content="{{ $image }}">
+<meta property="og:image:alt" content="{{ $siteName }} — buy on AtomShop.pk, pay in instalments">
+@if ($image === asset('images/og-default.jpg'))
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+@endif
 <meta property="og:locale" content="en_PK">
 
 <meta name="twitter:card" content="summary_large_image">

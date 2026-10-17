@@ -16,7 +16,7 @@
     <section class="py-[60px] sm:py-[84px]">
         <div class="wrap">
             <x-section-head eyebrow="Common questions" title="Before you check out with AtomPay." />
-            <x-faq-list :faqs="$faqs" />
+            <x-faq-list :faqs="$faqs" searchable />
             <p class="mt-10 text-muted text-[15px]">
                 Still unsure? <a href="{{ route('home') }}#calculator" class="underline">Estimate a plan</a> or
                 <a href="{{ route('home') }}#assess" class="underline">check your limit</a>.

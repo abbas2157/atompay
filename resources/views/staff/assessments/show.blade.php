@@ -52,7 +52,7 @@
                     <form method="POST" action="{{ route('staff.assessments.address', $assessment) }}" enctype="multipart/form-data" class="grid sm:grid-cols-2 gap-4">
                         @csrf
                         <x-select name="address_verified" label="Physical address verification" :options="['1' => 'Address found and confirmed', '0' => 'Address not found / mismatch']" :value="(int) $profile->address_verified" required />
-                        <x-select name="face_verified" label="CNIC &amp; face verification" :options="['1' => 'Face matches CNIC', '0' => 'Could not confirm']" :value="(int) $profile->face_verified" required />
+                        <x-select name="face_verified" label="CNIC & face verification" :options="['1' => 'Face matches CNIC', '0' => 'Could not confirm']" :value="(int) $profile->face_verified" required />
                         <x-input name="verified_at" label="Verification date" type="date" :value="($profile->verified_at ?? today())->format('Y-m-d')" max="{{ today()->format('Y-m-d') }}" required />
                         <x-select name="verification_status" label="Verification status" :options="$options['verification']" :value="$profile->verification_status->value" required />
                         <x-file-input name="verification_form" label="Signed verification form" :current="$doc('verification_form_path', 'form')" accept="image/jpeg,image/png,image/webp,application/pdf" class="sm:col-span-2" />
@@ -73,7 +73,7 @@
             </x-form-section>
 
             {{-- 3. Income & financial profile (read-only) --}}
-            <x-form-section number="3" title="Income &amp; financial profile">
+            <x-form-section number="3" title="Income & financial profile">
                 <dl class="grid sm:grid-cols-2 gap-x-6 text-[14px]">
                     <x-side-row label="Employment / business">{{ $assessment->employment_status->label() }}</x-side-row>
                     <x-side-row label="Employer / business name">{{ $assessment->employer_name ?? '—' }}</x-side-row>

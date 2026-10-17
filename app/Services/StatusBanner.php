@@ -26,7 +26,7 @@ class StatusBanner
         return match (true) {
             $profile === null => [
                 'tone' => 'pending', 'title' => 'Start your AtomPay application',
-                'text' => 'Verify your identity and tell us about your income - it takes about five minutes.',
+                'text' => 'Verify your identity and tell us about your income — it takes about five minutes.',
                 'cta' => 'Apply now', 'action' => 'apply',
             ],
             $latest?->status === AssessmentStatus::Rejected => [

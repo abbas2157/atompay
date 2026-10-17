@@ -24,7 +24,15 @@
         <div>
             <h3 class="text-[17px]">{{ $product?->title ?? 'AtomShop order' }}</h3>
             <p class="font-mono text-[11.5px] text-muted mt-1">
-                AtomShop order #{{ $order->reference }} &middot; Ordered {{ $order->created_at?->format('d M Y') }}
+                AtomShop order #{{ $order->reference }}
+                <button type="button" x-data="copyButton(@js((string) $order->reference))" @click="copy" x-cloak
+                        class="inline-flex items-center gap-1 align-middle ml-0.5 px-1.5 py-0.5 rounded-md text-muted hover:text-ink hover:bg-line2"
+                        :aria-label="copied ? 'Order number copied' : 'Copy order number'">
+                    <svg x-show="!copied" viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>
+                    <svg x-show="copied" viewBox="0 0 24 24" class="w-3.5 h-3.5 text-ok" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
+                    <span x-text="copied ? 'Copied' : 'Copy'" aria-hidden="true"></span>
+                </button>
+                &middot; Ordered {{ $order->created_at?->format('d M Y') }}
                 &middot; {{ $order->status->label() }}
             </p>
         </div>

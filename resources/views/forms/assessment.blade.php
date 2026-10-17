@@ -21,7 +21,7 @@
                 id="monthly_income" name="monthly_income" type="number" inputmode="numeric"
                 min="1000" step="1000" placeholder="e.g. 150000" required
                 class="input" x-model.number="income"
-                @error('monthly_income') aria-invalid="true" @enderror
+                @error('monthly_income') aria-invalid="true" aria-describedby="monthly_income-error" @enderror
             >
         </div>
         <button type="submit" class="btn btn-primary" :disabled="!valid">
@@ -29,7 +29,7 @@
         </button>
     </form>
     @error('monthly_income')
-        <p class="text-coral text-[13px] mt-2">{{ $message }}</p>
+        <p id="monthly_income-error" class="text-coral text-[13px] mt-2">{{ $message }}</p>
     @enderror
 
     <div class="mt-5 p-5 rounded-[14px] bg-paper border border-line" x-show="valid" x-cloak>

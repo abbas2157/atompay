@@ -30,7 +30,7 @@ class PakistanMobile implements ValidationRule
         // Landline area codes (021 Karachi, 042 Lahore, 051 Islamabad ...) all
         // start 0 followed by something other than 3.
         if (preg_match('/^0[1245789]/', $digits)) {
-            $fail('That looks like a landline. Enter a mobile number so we can text you about payments.');
+            $fail('That looks like a landline. Enter a mobile number so we can reach you about payments.');
 
             return;
         }

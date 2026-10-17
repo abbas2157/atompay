@@ -37,7 +37,7 @@
                 </form>
 
                 <p class="text-[14px] text-muted mt-6 text-center">
-                    Wrong address? <a href="{{ route('password.request') }}" class="underline text-ink">Start again</a>
+                    Wrong {{ $reset->channel === 'whatsapp' ? 'number' : 'email' }}? <a href="{{ route('password.request') }}" class="underline text-ink">Start again</a>
                 </p>
             </div>
         </div>

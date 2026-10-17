@@ -9,7 +9,7 @@
     <p style="margin:0 0 12px;">You can now sign in to AtomPay and AtomShop.pk with the same email or mobile number and password.</p>
     <p style="margin:0 0 8px;">To shop in instalments, get your purchase limit in three steps:</p>
     <ol style="margin:0 0 4px;padding-left:20px;">
-        <li style="margin-bottom:6px;">Verify your identity - CNIC photos and a selfie.</li>
+        <li style="margin-bottom:6px;">Verify your identity &mdash; CNIC photos and a selfie.</li>
         <li style="margin-bottom:6px;">Tell us your monthly income and expenses.</li>
         <li>Our team verifies your address once and confirms your limit.</li>
     </ol>

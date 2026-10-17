@@ -132,7 +132,7 @@ class SignupTest extends ApiTestCase
         $this->postJson('/api/v1/auth/register', $this->details('+923991112233'))   // same number, other format
             ->assertJsonPath('errors.login.0', 'An account with this mobile number already exists. Sign in or reset your password.');
         $this->postJson('/api/v1/auth/register', $this->details('021 1234567'))
-            ->assertJsonPath('errors.login.0', 'That looks like a landline. Enter a mobile number so we can text you about payments.');
+            ->assertJsonPath('errors.login.0', 'That looks like a landline. Enter a mobile number so we can reach you about payments.');
         $this->postJson('/api/v1/auth/register', $this->details('ayesha'))
             ->assertJsonPath('errors.login.0', 'Enter your email address or mobile number, e.g. 0300 1234567.');
         $this->postJson('/api/v1/auth/register', $this->details('x@no-email.atompay.shop'))

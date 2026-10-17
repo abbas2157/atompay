@@ -224,7 +224,7 @@ class KycAssessmentFlowTest extends TestCase
 
         $this->actingAs($this->customer())
             ->post(route('account.application.store'), $this->application(['mobile' => '042 35678901']))
-            ->assertSessionHasErrors(['mobile' => 'That looks like a landline. Enter a mobile number so we can text you about payments.']);
+            ->assertSessionHasErrors(['mobile' => 'That looks like a landline. Enter a mobile number so we can reach you about payments.']);
     }
 
     public function test_a_cnic_with_an_impossible_province_code_is_refused(): void

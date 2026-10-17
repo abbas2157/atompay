@@ -29,6 +29,7 @@
                 </div>
             </div>
             <x-mobile-menu :links="$links" />
+            <div class="absolute inset-x-0 -bottom-px h-[3px] spectrum origin-left" style="transform: scaleX(0)" data-scroll-progress aria-hidden="true"></div>
         </header>
     </x-slot:header>
 
@@ -38,16 +39,16 @@
         <footer class="pt-12 pb-10 border-t border-line mt-5">
             <div class="wrap flex justify-between items-center gap-5 flex-wrap">
                 <x-brand-mark id="foot" />
-                <nav class="flex gap-6 font-mono text-[11.5px] tracking-[.05em]" aria-label="Footer">
+                <nav class="flex flex-wrap gap-x-6 gap-y-3 font-mono text-[11.5px] tracking-[.05em] whitespace-nowrap" aria-label="Footer">
                     <a href="{{ route('home') }}#relation" class="text-muted hover:text-ink no-underline">What is AtomPay</a>
                     <a href="{{ route('home') }}#how" class="text-muted hover:text-ink no-underline">How it works</a>
                     <a href="{{ route('faq') }}" class="text-muted hover:text-ink no-underline">FAQ</a>
                     <a href="{{ route('privacy') }}" class="text-muted hover:text-ink no-underline">Privacy</a>
-                    <a href="{{ $shopUrl }}" target="_blank" rel="noopener" class="text-muted hover:text-ink no-underline">AtomShop.pk</a>
+                    <a href="{{ $shopLink }}" target="_blank" rel="noopener" class="text-muted hover:text-ink no-underline">AtomShop.pk</a>
                 </nav>
             </div>
             <div class="spectrum h-1 rounded mx-auto mt-8 max-w-[1140px]"></div>
-            <p class="font-mono text-[11px] text-muted text-center mt-4">&copy; {{ date('Y') }} {{ config('app.name') }} &mdash; instalment payments for AtomShop.pk purchases, Pakistan.</p>
+            <p class="font-mono text-[11px] text-muted text-center mt-4 px-5">&copy; {{ date('Y') }} {{ config('app.name') }} &mdash; instalment payments for AtomShop.pk purchases, Pakistan.</p>
         </footer>
     </x-slot:footer>
 </x-layouts.base>

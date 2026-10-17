@@ -13,7 +13,7 @@
                 AtomPay is the instalment payment option built into AtomShop.pk checkout. Pick any eligible product on AtomShop, choose AtomPay at checkout, and spread the cost over a few months instead of paying it all at once.
             </p>
             <div class="flex flex-wrap gap-3.5 mt-8">
-                <a class="btn btn-primary" href="{{ $shopUrl }}" target="_blank" rel="noopener">Browse AtomShop.pk <span aria-hidden="true">&rarr;</span></a>
+                <a class="btn btn-primary" href="{{ $shopLink }}" target="_blank" rel="noopener">Browse AtomShop.pk <span aria-hidden="true">&rarr;</span></a>
                 <a class="btn btn-ghost" href="#how">See how it works</a>
             </div>
         </div>

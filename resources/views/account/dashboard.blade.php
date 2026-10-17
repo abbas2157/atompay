@@ -40,7 +40,7 @@
         @empty
             <div class="card p-7 text-center">
                 <p class="text-muted text-[15px]">No orders yet. Choose AtomPay at checkout on AtomShop to start one.</p>
-                <a class="btn btn-primary mt-4" href="{{ $shopUrl }}" target="_blank" rel="noopener">Browse AtomShop.pk <span aria-hidden="true">&rarr;</span></a>
+                <a class="btn btn-primary mt-4" href="{{ $shopLink }}" target="_blank" rel="noopener">Browse AtomShop.pk <span aria-hidden="true">&rarr;</span></a>
             </div>
         @endforelse
     </section>

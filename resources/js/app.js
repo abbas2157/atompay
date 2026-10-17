@@ -219,5 +219,122 @@ Alpine.directive('pk-format', (el, { expression }) => {
     if (el.value) apply();
 });
 
+/**
+ * Copy a value to the clipboard: `x-data="copyButton('AP-1234')"`.
+ * `copied` flips for two seconds so the button can say so.
+ */
+Alpine.data('copyButton', (text) => ({
+    copied: false,
+    async copy() {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch {
+            // Older Safari, or a non-secure origin: fall back to a hidden textarea.
+            const ta = Object.assign(document.createElement('textarea'), { value: text });
+            ta.setAttribute('readonly', '');
+            ta.style.cssText = 'position:fixed;opacity:0';
+            document.body.append(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+        }
+        this.copied = true;
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => (this.copied = false), 2000);
+    },
+}));
+
+/**
+ * Analytics cookie banner. Google Analytics starts with consent denied
+ * (see components/analytics); accepting grants it for this visit and later
+ * ones. The choice lives in localStorage, so it is per browser.
+ */
+const CONSENT_KEY = 'atompay.analytics-consent';
+Alpine.data('cookieBanner', () => ({
+    open: false,
+    init() {
+        try { this.open = !localStorage.getItem(CONSENT_KEY); } catch { this.open = false; }
+    },
+    choose(granted) {
+        try { localStorage.setItem(CONSENT_KEY, granted ? 'granted' : 'denied'); } catch { /* private mode */ }
+        if (granted && typeof window.gtag === 'function') {
+            window.gtag('consent', 'update', { analytics_storage: 'granted' });
+        }
+        this.open = false;
+    },
+}));
+
+/**
+ * FAQ filter. Each <details> carries its own text in `data-search`; matches
+ * open so the answer is visible, and clearing the box restores the page.
+ */
+Alpine.data('faqSearch', () => ({
+    query: '',
+    matches: null,
+    filter() {
+        const q = this.query.trim().toLowerCase();
+        const items = [...this.$root.querySelectorAll('[data-search]')];
+        let shown = 0;
+        items.forEach((el, i) => {
+            const hit = !q || el.dataset.search.includes(q);
+            el.hidden = !hit;
+            el.open = q ? hit : i === 0;
+            if (hit) shown++;
+        });
+        this.matches = q ? shown : null;
+    },
+}));
+
+/**
+ * Busy state for every form: once a submit goes through, its button shows a
+ * spinner and stops accepting clicks, so a slow connection cannot send the
+ * same application or code twice. Disabled on the next tick - disabling it
+ * during the event would drop the button from the submitted data.
+ */
+document.addEventListener('submit', (event) => {
+    if (event.defaultPrevented) return;
+    const button = event.submitter ?? event.target.querySelector('[type=submit]');
+    if (!button) return;
+    setTimeout(() => {
+        button.setAttribute('aria-busy', 'true');
+        button.disabled = true;
+    });
+});
+// Back/forward cache restores the page as it was left - busy. Undo that.
+window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    document.querySelectorAll('[aria-busy="true"]').forEach((b) => {
+        b.removeAttribute('aria-busy');
+        b.disabled = false;
+    });
+});
+
+/**
+ * Scroll progress bar ([data-scroll-progress]) and back-to-top button
+ * ([data-back-to-top]). One passive listener, batched into an animation frame.
+ */
+const progressBar = document.querySelector('[data-scroll-progress]');
+const backToTop = document.querySelector('[data-back-to-top]');
+if (progressBar || backToTop) {
+    let queued = false;
+    const update = () => {
+        queued = false;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const y = window.scrollY;
+        if (progressBar) progressBar.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`;
+        if (backToTop) backToTop.dataset.visible = y > 600 ? 'true' : 'false';
+    };
+    window.addEventListener('scroll', () => {
+        if (!queued) { queued = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    update();
+
+    backToTop?.addEventListener('click', () => {
+        window.scrollTo({ top: 0 });   // smooth via `scroll-behavior` unless reduced motion
+        document.getElementById('main')?.focus({ preventScroll: true });
+    });
+}
+
 window.Alpine = Alpine;
 Alpine.start();

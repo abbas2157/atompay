@@ -80,7 +80,7 @@ class InstalmentQuoteService
 
         if ($advance < $bounds['min'] || $advance > $bounds['max']) {
             throw new InvalidArgumentException(sprintf(
-                'Down payment must be between Rs. %s and Rs. %s.',
+                'Down payment must be between PKR %s and PKR %s.',
                 number_format($bounds['min']),
                 number_format($bounds['max']),
             ));

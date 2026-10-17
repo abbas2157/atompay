@@ -7,6 +7,8 @@
       hosts to the policy only when an id is configured.
     - Google signals / ad personalisation are off: this is a finance site
       holding CNICs, and nothing here needs cross-device ad profiling.
+    - Consent mode: analytics cookies stay off until the cookie banner is
+      accepted; until then Google receives cookieless pings only.
     - Outside production every hit is flagged debug_mode, so local testing
       shows up in GA's DebugView and can be told apart from real visitors.
 --}}
@@ -24,6 +26,11 @@
     <script @if ($nonce) nonce="{{ $nonce }}" @endif>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
+        {{-- No analytics cookies until the visitor accepts the banner (layouts.base). --}}
+        gtag('consent', 'default', {
+            analytics_storage: (function () { try { return localStorage.getItem('atompay.analytics-consent'); } catch (e) {} })() === 'granted' ? 'granted' : 'denied',
+            ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied'
+        });
         gtag('js', new Date());
         gtag('config', @json($measurementId), @json($options));
     </script>

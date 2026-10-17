@@ -37,6 +37,10 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('pkr', fn (string $expression) => '<?php echo \\'.Money::class."::format({$expression}); ?>");
 
         View::share('shopUrl', config('atompay.shop_url'));
+        // Outbound links carry UTM tags so AtomShop's analytics credits AtomPay for the visit.
+        View::share('shopLink', rtrim(config('atompay.shop_url'), '/').'/?'.http_build_query([
+            'utm_source' => 'atompay', 'utm_medium' => 'referral', 'utm_campaign' => 'atompay_site',
+        ]));
 
         // Mobile-app tokens live in AtomPay's own table, never AtomShop's.
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);

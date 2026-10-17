@@ -44,9 +44,9 @@
                 <div id="{{ $k = 'who' }}" class="scroll-mt-24">
                     <h3>{{ $sections[$k] }}</h3>
                     <p>{{ config('app.name') }} is the instalment payment option for purchases made on
-                        <a href="{{ $shopUrl }}" target="_blank" rel="noopener" class="underline">AtomShop.pk</a> in Pakistan.
+                        <a href="{{ $shopLink }}" target="_blank" rel="noopener" class="underline">AtomShop.pk</a> in Pakistan.
                         It is run by AtomShop, and your {{ config('app.name') }} account is your AtomShop account.
-                        In this policy, "we" and "us" means {{ config('app.name') }} and AtomShop.</p>
+                        In this policy, "we" and "us" mean {{ config('app.name') }} and AtomShop.</p>
                 </div>
 
                 <div id="{{ $k = 'collect' }}" class="scroll-mt-24">
@@ -140,7 +140,7 @@
                             @endforeach
                         </ul>
                     @else
-                        <p>Through customer support on <a href="{{ $shopUrl }}" target="_blank" rel="noopener" class="underline">AtomShop.pk</a>.</p>
+                        <p>Through customer support on <a href="{{ $shopLink }}" target="_blank" rel="noopener" class="underline">AtomShop.pk</a>.</p>
                     @endif
                 </div>
             </div>

@@ -15,7 +15,7 @@
     $steps = [
         ['title' => 'Personal details',   'hint' => 'As printed on your CNIC',     'done' => $kycVerified, 'doneLabel' => 'Verified'],
         ['title' => 'Identity documents', 'hint' => 'CNIC photos and a selfie',    'done' => $kycVerified && $profile->hasDocuments(), 'doneLabel' => 'Verified'],
-        ['title' => 'Income profile',     'hint' => 'Work, income and outgoings',  'done' => $approved, 'doneLabel' => $reviewing ? 'Approved · review pending' : 'Approved'],
+        ['title' => 'Income & financial profile','hint' => 'Work, income and outgoings',  'done' => $approved, 'doneLabel' => $reviewing ? 'Approved · review pending' : 'Approved'],
         ['title' => 'Review & submit',    'hint' => 'Check everything once',       'done' => $kycVerified && $approved, 'doneLabel' => 'Limit approved'],
     ];
     // Everything already on file: any step can be opened straight away.
@@ -99,9 +99,9 @@
             <div class="hidden lg:block mt-7 rounded-2xl bg-white border border-line p-5">
                 <span class="eyebrow">After you submit</span>
                 <ol class="mt-3 space-y-2.5 text-[13px] list-none p-0 m-0">
-                    <li class="flex gap-2.5"><span class="font-mono text-[10.5px] text-muted mt-0.5">02</span><span><b>Address verification</b><span class="block text-muted text-[12px]">One visit to your address, signature on the form.</span></span></li>
-                    <li class="flex gap-2.5"><span class="font-mono text-[10.5px] text-muted mt-0.5">04</span><span><b>Risk assessment</b><span class="block text-muted text-[12px]">Payment record and profile reviewed by AtomPay.</span></span></li>
-                    <li class="flex gap-2.5"><span class="font-mono text-[10.5px] text-muted mt-0.5">05</span><span><b>Limit decision</b><span class="block text-muted text-[12px]">Approved limit, instalment cap and tenure.</span></span></li>
+                    <li class="flex gap-2.5"><span class="font-mono text-[10.5px] text-muted mt-0.5">01</span><span><b>Address verification</b><span class="block text-muted text-[12px]">One visit to your address, signature on the form.</span></span></li>
+                    <li class="flex gap-2.5"><span class="font-mono text-[10.5px] text-muted mt-0.5">02</span><span><b>Risk assessment</b><span class="block text-muted text-[12px]">Payment record and profile reviewed by AtomPay.</span></span></li>
+                    <li class="flex gap-2.5"><span class="font-mono text-[10.5px] text-muted mt-0.5">03</span><span><b>Limit decision</b><span class="block text-muted text-[12px]">Approved limit, instalment cap and tenure.</span></span></li>
                 </ol>
             </div>
         </aside>
@@ -125,7 +125,7 @@
 
             {{-- ---------------------------------------------- 1. personal --}}
             <section data-step="0" x-show="current === 0" x-cloak class="card p-6 sm:p-8">
-                @include('account.application.step-head', ['n' => 1, 'title' => 'Personal details', 'intro' => 'Enter these exactly as they appear on your CNIC - the visit team checks them against the card.'])
+                @include('account.application.step-head', ['n' => 1, 'title' => 'Personal details', 'intro' => 'Enter these exactly as they appear on your CNIC &mdash; the visit team checks them against the card.'])
                 <div class="grid sm:grid-cols-2 gap-4">
                     <x-input name="full_name" label="Full name" autocomplete="name" required class="sm:col-span-2" x-model="form.full_name" />
                     {{-- x-pk-format inserts the dashes and the 03 prefix while typing; the
@@ -162,7 +162,7 @@
 
             {{-- ------------------------------------------------ 3. income --}}
             <section data-step="2" x-show="current === 2" x-cloak class="card p-6 sm:p-8">
-                @include('account.application.step-head', ['n' => 3, 'title' => 'Income & financial profile', 'intro' => 'Honest figures get you the right limit - they are checked during verification.'])
+                @include('account.application.step-head', ['n' => 3, 'title' => 'Income & financial profile', 'intro' => 'Honest figures get you the right limit &mdash; they are checked during verification.'])
                 <div class="grid sm:grid-cols-2 gap-4">
                     <x-select name="employment_status" label="Employment / business status" :options="$employment" required x-model="form.employment_status" />
                     <x-select name="income_source" label="Income source" :options="$sources" required x-model="form.income_source" />
@@ -198,7 +198,7 @@
 
             {{-- ------------------------------------------------ 4. review --}}
             <section data-step="3" x-show="current === 3" x-cloak class="card p-6 sm:p-8">
-                @include('account.application.step-head', ['n' => 4, 'title' => 'Review & submit', 'intro' => 'Check everything once - you can jump back to any step to change it.'])
+                @include('account.application.step-head', ['n' => 4, 'title' => 'Review & submit', 'intro' => 'Check everything once &mdash; you can jump back to any step to change it.'])
 
                 <div class="space-y-4">
                     @include('account.application.review-block', ['title' => 'Personal details', 'step' => 0, 'rows' => [
