@@ -9,7 +9,9 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Web\EmailAlertsController;
 use App\Http\Controllers\Staff\AssessmentController as StaffAssessmentController;
 use App\Http\Controllers\Web\AssessmentController;
+use App\Http\Controllers\Web\AskAtomController;
 use App\Http\Controllers\Web\HomeController;
+use App\Http\Controllers\Web\ProductController;
 use App\Http\Controllers\Web\QuoteController;
 use App\Http\Controllers\Web\RobotsController;
 use App\Http\Controllers\Web\SitemapController;
@@ -22,6 +24,9 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/faq', [HomeController::class, 'faq'])->name('faq');
+// What admin has marked AtomPay-eligible on AtomShop. AtomPay sells nothing:
+// every card links to the product's own page on the storefront.
+Route::get('/products', [ProductController::class, 'index'])->name('products');
 Route::get('/privacy', [HomeController::class, 'privacy'])->name('privacy');
 Route::permanentRedirect('/privacy-policy', '/privacy');   // the mobile app's built-in fallback link
 // The store listings' "delete account" link: works without the app.
@@ -37,6 +42,9 @@ Route::get('/robots.txt', RobotsController::class)->name('robots');
 */
 Route::post('/quote', QuoteController::class)->name('quote')->middleware('throttle:quote');
 Route::post('/assess', [AssessmentController::class, 'store'])->name('assess')->middleware('throttle:assess');
+// Ask Atom: built-in answers, no model and no key, so nothing a visitor
+// types ever leaves the server. Throttled and length-capped all the same.
+Route::post('/ask-atom', AskAtomController::class)->name('ask-atom')->middleware('throttle:ask_atom');
 
 /*
 |--------------------------------------------------------------------------
@@ -77,7 +85,16 @@ Route::post('/email/alerts/{user}/on', [EmailAlertsController::class, 'on'])
 */
 Route::middleware(['auth', 'customer'])->prefix('my')->name('account.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    // The v2 design splits the one dashboard into the three things a customer
+    // comes here for. They read the same models; nothing is duplicated.
+    Route::get('/applications', [DashboardController::class, 'applications'])->name('applications');
+    Route::get('/verification', [DashboardController::class, 'verification'])->name('verification');
+    Route::get('/orders', [DashboardController::class, 'orders'])->name('orders');
     Route::get('/application', [ApplicationController::class, 'create'])->name('application');
+    // Areas for one city, for the application form's dependent area picker.
+    // There are 2,300+ areas, so they are fetched per city rather than shipped
+    // with the page; the form still submits without this (area is optional).
+    Route::get('/areas/{city}', [ApplicationController::class, 'areas'])->name('areas');
     Route::post('/application', [ApplicationController::class, 'store'])->middleware('throttle:application')->name('application.store');
     Route::get('/delete', [DeleteAccountController::class, 'show'])->name('delete');
     Route::post('/delete', [DeleteAccountController::class, 'destroy'])->middleware('throttle:account_delete')->name('delete.perform');

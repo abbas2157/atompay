@@ -99,9 +99,9 @@
             <div class="hidden lg:block mt-7 rounded-2xl bg-white border border-line p-5">
                 <span class="eyebrow">After you submit</span>
                 <ol class="mt-3 space-y-2.5 text-[13px] list-none p-0 m-0">
-                    <li class="flex gap-2.5"><span class="font-mono text-[10.5px] text-muted mt-0.5">01</span><span><b>Address verification</b><span class="block text-muted text-[12px]">One visit to your address, signature on the form.</span></span></li>
-                    <li class="flex gap-2.5"><span class="font-mono text-[10.5px] text-muted mt-0.5">02</span><span><b>Risk assessment</b><span class="block text-muted text-[12px]">Payment record and profile reviewed by AtomPay.</span></span></li>
-                    <li class="flex gap-2.5"><span class="font-mono text-[10.5px] text-muted mt-0.5">03</span><span><b>Limit decision</b><span class="block text-muted text-[12px]">Approved limit, instalment cap and tenure.</span></span></li>
+                    <li class="flex gap-2.5"><span><b>Address verification</b><span class="block text-muted text-[12px]">One visit to your address, signature on the form.</span></span></li>
+                    <li class="flex gap-2.5"><span><b>Risk assessment</b><span class="block text-muted text-[12px]">Payment record and profile reviewed by AtomPay.</span></span></li>
+                    <li class="flex gap-2.5"><span><b>Limit decision</b><span class="block text-muted text-[12px]">Approved limit, installment cap and tenure.</span></span></li>
                 </ol>
             </div>
         </aside>
@@ -156,7 +156,7 @@
                 </div>
                 <div class="mt-5 rounded-xl bg-paper border border-line px-4 py-3 text-[13px] text-muted flex gap-3">
                     <svg viewBox="0 0 24 24" class="w-5 h-5 shrink-0 text-violet" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6c0 4-3 6-7 8-4-2-7-4-7-8V7z"/><path d="M9 12l2 2 4-4"/></svg>
-                    Your documents are used only to verify your identity for AtomPay and are never shown on AtomShop.
+                    Your documents are used only to verify your identity for AtomPay and are never shown on Atomshop.
                 </div>
             </section>
 
@@ -170,7 +170,7 @@
                         <x-input name="employer_name" label="Employer / business name" x-model="form.employer_name" x-bind:required="hasEmployer" />
                     </div>
                     <x-input name="monthly_income" label="Monthly income (PKR)" type="number" inputmode="numeric" min="1000" step="1000" placeholder="e.g. 150000" required x-model.number="form.monthly_income" />
-                    <x-input name="existing_instalments" label="Existing monthly instalments (PKR)" type="number" inputmode="numeric" min="0" step="500" placeholder="0" x-model.number="form.existing_instalments" />
+                    <x-input name="existing_instalments" label="Existing monthly installments (PKR)" type="number" inputmode="numeric" min="0" step="500" placeholder="0" x-model.number="form.existing_instalments" />
                     <x-input name="monthly_expenses" label="Monthly household expenses (PKR)" type="number" inputmode="numeric" min="0" step="1000" placeholder="0" x-model.number="form.monthly_expenses" />
                     <div>
                         <span class="field-label text-muted">Disposable income</span>
@@ -187,7 +187,7 @@
                             <span class="text-white/70 text-[12px]">{{ (int) ($ratios['limit'] * 100) }}% of monthly income</span>
                         </div>
                         <div>
-                            <span class="eyebrow text-white/70">Max instalment / month</span>
+                            <span class="eyebrow text-white/70">Max installment / month</span>
                             <div class="font-disp font-extrabold text-[28px] tracking-tight mt-1" x-text="fmt(maxInstalment)"></div>
                             <span class="text-white/70 text-[12px]">{{ (int) ($ratios['instalment'] * 100) }}% of income, within disposable</span>
                         </div>
@@ -212,7 +212,7 @@
                     ]])
                     @include('account.application.review-block', ['title' => 'Income & financial profile', 'step' => 2, 'rows' => [
                         'Employment' => "label('employment_status')", 'Employer / business' => 'form.employer_name || "—"', 'Income source' => "label('income_source')",
-                        'Monthly income' => 'fmt(form.monthly_income || 0)', 'Existing instalments' => 'fmt(form.existing_instalments || 0)',
+                        'Monthly income' => 'fmt(form.monthly_income || 0)', 'Existing installments' => 'fmt(form.existing_instalments || 0)',
                         'Monthly expenses' => 'fmt(form.monthly_expenses || 0)', 'Disposable income' => 'fmt(disposable)',
                     ]])
                 </div>

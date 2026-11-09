@@ -56,16 +56,30 @@ class PlanApiTest extends ApiTestCase
             ->assertJsonPath('data.plans.has_late', false);
     }
 
+    /**
+     * A pending order is listed with what happens next, in whichever design is
+     * live. v1 lists orders on the dashboard; v2 splits them onto /my/orders
+     * and keeps the dashboard as an overview, so the page differs but the
+     * behaviour must not.
+     */
     public function test_the_web_dashboard_lists_a_pending_order_with_what_happens_next(): void
     {
         $user = $this->makeCustomer();
         $orderId = $this->makeOrder($user, [], 'Pending');
+        $reference = 'AS-'.str_pad((string) $orderId, 5, '0', STR_PAD_LEFT);
 
-        $this->actingAs($user)->get(route('account.dashboard'))
-            ->assertOk()
-            ->assertSee('AS-'.str_pad((string) $orderId, 5, '0', STR_PAD_LEFT))
-            ->assertSee('Awaiting approval')
-            ->assertSee('AtomShop is reviewing this order.');
+        foreach ([
+            'v1' => [route('account.dashboard'), 'Atomshop is reviewing this order.'],
+            'v2' => [route('account.orders'), 'Atomshop is reviewing this order.'],
+        ] as $design => [$url, $note]) {
+            config(['design.default' => $design, 'design.active' => $design]);
+
+            $this->actingAs($user)->get($url)
+                ->assertOk()
+                ->assertSee($reference)
+                ->assertSee('Awaiting approval')
+                ->assertSee($note);
+        }
     }
 
     public function test_a_plan_shows_its_schedule_only_to_its_owner(): void

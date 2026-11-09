@@ -68,6 +68,27 @@ The five-section form maps onto two AtomPay-owned tables and three roles:
   `markup = per_month% × months × (price − advance)`, down payment 20–60% of price. Implemented once in `InstalmentQuoteService`; the Alpine calculator mirrors it client-side and `POST /quote` exposes it server-side. `tests/Unit/InstalmentQuoteServiceTest` pins the numbers.
 - **Credit limit** = 30% of monthly income; **max instalment** = min(10% of income, disposable income) (`CreditAssessmentService::provisionalLimit`). The client only ever submits its profile; limits are computed server-side and stay *pending* until staff decide.
 
+## Two designs: v1 and v2
+
+The site carries two front-ends at once, the way AtomShop does (`atomshop/.claude/WEBSITE-V2-PLAN.md`):
+
+| | |
+|---|---|
+| **v1** | The original design. Tailwind 4 + Vite, self-hosted fonts, views at their usual paths (`resources/views/home`, `account`, `auth`, …). |
+| **v2** | Atomshop.pk storefront v2's design system, so AtomPay and the shop look like one company. Views in `resources/views/v2/`, static assets in `public/web/v2/` (no Vite). |
+
+Switch with `.env` `ATOMPAY_DESIGN=v1|v2`. **v2 has been the live design since 9 November 2026**; `?design=v1` previews the old one. **URLs never change** — there is no `/v2/` anywhere.
+
+- Controllers render through `atompay_view('home.index')` (`app/Support/design.php`, autoloaded via composer `files`), which returns `v2.home.index` when v2 is on **and** that view exists, and otherwise the v1 view at its original path. Nothing was moved to add v2, so pages migrate one at a time and an unmigrated page keeps working untouched. Flipping the switch can never blank a page.
+- `App\Http\Middleware\SetDesign` resolves the design and puts it in `config('design.active')`. `?design=v2` sticks for the session — staff anywhere, anyone outside production — and a previewed response is sent `X-Robots-Tag: noindex`, so a crawler never sees the design that is not live.
+- `public/web/v2/css/site.css` is a **verbatim copy** of `atomshop/public/web/v2/css/site.css`; re-sync it with a file copy. Everything AtomPay adds is in `atompay.css` beside it (the `.apay` plan box, the "available to spend" tile, the ecosystem cards, and the account-page kit). `js/site.js` is AtomPay's own — the shop's also carries its mega menus, search and Ask Atom.
+- v2 takes Plus Jakarta Sans from Google Fonts, so `config/security.php` adds those two hosts to the CSP **only on a v2 response**; v1 keeps the tighter self-hosted policy. Self-hosting the font would remove both.
+- Money prints `Rs.` in v2 (`@rs`) and `PKR` in v1 (`@pkr`) — one formatter, two prefixes, following AtomShop's `DESIGN.md` §1.7. Copy in v2 uses British spelling but "installment", like the shop.
+
+**Migrated:** everything a visitor can reach. The landing page, `/products`, FAQ, privacy, delete-account, all six auth screens, the error pages and every email, plus the signed-in pages — `/my/applications`, `/my/verification`, `/my/orders`. The v1 design puts all three on one dashboard on purpose, so in v1 those URLs redirect to `/my`. Everything else (FAQ, privacy, auth, the application form, staff review) still renders its v1 view in both designs.
+
+> **The v2 landing page quotes AtomPay's real plan — 3 months, no advance, 0% markup — and the v1 page does not.** The v1 calculator prices AtomShop *seller* financing (3–12 months, 20–60% advance, 4%/month), which is a different product. See [docs/atompay-plan-rule.md](docs/atompay-plan-rule.md); `POST /quote` and the mobile `plan` endpoint have the same problem and are still to be decided.
+
 ## Layout
 
 ```

@@ -1,5 +1,5 @@
 @php
-    $description = 'AtomPay is the instalment payment option at AtomShop.pk checkout. Estimate a monthly plan, check your approved limit, and split any eligible purchase into easy monthly payments.';
+    $description = 'AtomPay is the installment payment option at Atomshop.pk checkout. Estimate a monthly plan, check your approved limit, and split any eligible purchase into easy monthly payments.';
 
     // Structured data: who we are, the 4-step process, and the FAQ.
     $schema = [
@@ -10,12 +10,12 @@
             'url'      => route('home'),
             'logo'     => asset('favicon.svg'),
             'address'  => ['@type' => 'PostalAddress', 'addressCountry' => 'PK'],
-            'parentOrganization' => ['@type' => 'Organization', 'name' => 'AtomShop', 'url' => $shopUrl],
+            'parentOrganization' => ['@type' => 'Organization', 'name' => 'Atomshop', 'url' => $shopUrl],
         ],
         [
             '@context' => 'https://schema.org',
             '@type'    => 'HowTo',
-            'name'     => 'How to buy on AtomShop with AtomPay instalments',
+            'name'     => 'How to buy on Atomshop with AtomPay installments',
             'step'     => collect($steps)->map(fn ($s, $i) => [
                 '@type' => 'HowToStep', 'position' => $i + 1, 'name' => $s['title'], 'text' => $s['text'],
             ])->values()->all(),
@@ -31,7 +31,7 @@
     ];
 @endphp
 <x-layouts.app
-    title="Buy on AtomShop.pk, pay in easy monthly instalments"
+    title="Buy on Atomshop.pk, pay in easy monthly installments"
     :description="$description"
     :schema="$schema"
     :canonical="route('home')"

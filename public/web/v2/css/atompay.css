@@ -1,0 +1,564 @@
+/* AtomPay's layer on top of Atomshop.pk storefront v2's site.css.
+   site.css is a verbatim copy of atomshop/public/web/v2/css/site.css and must
+   stay that way so the two can be re-synced with a file copy - everything
+   AtomPay adds goes here, loaded after it.
+
+   Two things live in this file:
+
+   1. AtomPay's own accent. The logo is a charcoal A, a coral P and an amber
+      step, and the shop's /apps page already paints AtomPay's limit card
+      linear-gradient(135deg,#FAA53A,#F05465). So coral and amber fill
+      graphics, while coral-family TEXT uses v2's accessible --rose #B0283F
+      (raw coral fails contrast on white).
+
+   2. The account-page kit. In the shop these classes sit in a @push('head')
+      block inside website/v2/account/layout.blade.php, which breaks its own
+      DESIGN.md rule 3 (reusable classes belong in the portal stylesheet).
+      AtomPay keeps them here instead, so more than one page can use them. */
+
+:root{
+  --apay-coral:#F05465;
+  --apay-amber:#FAA53A;
+  --apay-charcoal:#1F2430;
+  --apay-wash:#FFF6EE;
+  --apay-line:#F6DFD2;
+  --apay-grad:linear-gradient(135deg,#FAA53A,#F05465);
+
+  /* v2's own --muted is #69738C, which measures 4.42:1 on --surface - just
+     under AA's 4.5 for normal text, and most of this site's muted text is
+     13px inside a .section.alt. Two steps darker clears it (4.68 on surface,
+     5.02 on white) without shifting the hue. */
+  --muted:#656F88;
+}
+
+/* ====================================================================
+   Base reset  --  the two lines site.css does not carry
+   ====================================================================
+   The shop's own v2 views set every margin inline, element by element, so
+   site.css never needed a base reset and does not have one. The approved
+   artifact did have one, and this implementation uses its class-based
+   approach (.h2, .body, .p-title), so both lines have to come back:
+
+     h1..h4, p   browser default margin is 1em top and bottom. Inside
+                 .p-card .p-body - a flex column with gap:6px - that turned a
+                 6px gap into 16 + 6 + 16, which is the extra space between a
+                 product's brand, title and price.
+     ul, ol      site.css clears markers only on .ticks and a few SEO lists,
+                 so a plain <ol> rendered "1. 2. 3. 4." in the margin beside
+                 the How it works cards.
+
+   Both came from CSS rather than markup, which is why searching the HTML for
+   them never found anything. .prose p and .prose ul are more specific and keep
+   their own spacing and bullets. */
+h1,h2,h3,h4,p{margin:0}
+ul,ol{margin:0;padding:0;list-style:none}
+
+/* ---------------------------------------------------------- accent bits */
+.eyebrow.ap{color:var(--rose)}
+.stat-n.ap{color:var(--rose)}
+.bar.apay>span{background:var(--apay-grad)}
+.p-card.apay:hover{border-color:var(--apay-coral)}
+
+/* The AtomPay plan box. Same construction as the shop's product-page .apay,
+   in AtomPay's own colours, with the amber-to-coral rail along the top. */
+.apay{position:relative;overflow:hidden;border:1px solid var(--apay-line);border-radius:24px;padding:22px;
+  background:linear-gradient(160deg,var(--apay-wash),#fff 62%)}
+.apay::before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--apay-grad)}
+.apay-top{display:flex;gap:12px;align-items:center}
+.apay-top img{flex:none;border-radius:12px}
+.apay-top b{display:block;font-size:16px;font-weight:800;color:var(--ink)}
+.apay-top small{display:block;font-size:12.5px;font-weight:600;color:var(--muted)}
+.apay-amt{margin-top:16px;font-weight:800;font-size:clamp(30px,4.2vw,40px);letter-spacing:-1.4px;color:var(--rose)}
+.apay-amt span{font-size:15px;font-weight:700;color:var(--muted);letter-spacing:0}
+.apay .ln{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--apay-line);font-size:14px;color:var(--body)}
+.apay .ln b{color:var(--ink);font-weight:700}
+.apay-terms{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0;padding:0;list-style:none}
+.apay-terms li{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--apay-line);border-radius:999px;
+  background:#fff;font-size:12.5px;font-weight:700;color:var(--rose)}
+.apay-terms li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--apay-coral)}
+.apay-extra{margin-top:12px;padding-top:8px;border-top:1px dashed var(--apay-line)}
+.apay-extra div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:13.5px;color:var(--body)}
+.apay-extra b{color:var(--ink);font-weight:700}
+.apay-extra .tag{margin-right:6px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--rose)}
+
+/* "Available to spend", as the AtomPay app shows it. Navy on the gradient:
+   white would fail contrast on the amber end. */
+.spend{background:var(--apay-grad);border-radius:20px;padding:20px;color:var(--ink)}
+/* Full --ink, not a translucent navy: the card is an amber-to-coral gradient
+   and over the coral end rgba(20,33,61,.72) measures 3.31:1 - under AA. Solid
+   ink is 4.69 on coral and 7.99 on amber, so it passes across the whole sweep.
+   The uppercase tracking already separates the label from the figure. */
+.spend .lbl{font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink)}
+.spend .amt{margin-top:4px;font-weight:800;font-size:clamp(30px,4.4vw,40px);letter-spacing:-1.5px}
+.spend .row{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between;margin-top:12px;font-size:13px;font-weight:700;color:var(--ink)}
+.spend .bar{margin-top:10px;background:rgba(20,33,61,.16)}
+.spend .bar>span{background:var(--ink)}
+
+/* A rule restated in AtomPay's voice, beside the mark. */
+.apay-rule{display:flex;gap:12px;align-items:flex-start;padding:16px 18px;border:1px solid var(--apay-line);border-radius:16px;
+  background:linear-gradient(160deg,var(--apay-wash),#fff 62%)}
+.apay-rule img{width:34px;height:34px;flex:none;border-radius:9px}
+.apay-rule b{display:block;font-size:14.5px;font-weight:800}
+.apay-rule p{margin:3px 0 0;font-size:13.5px;line-height:1.55;color:var(--body)}
+
+/* ------------------------------------------------------------ ecosystem */
+.eco{display:grid;gap:14px}
+@media (min-width:760px){.eco{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1080px){.eco{grid-template-columns:repeat(4,1fr)}}
+.eco-card{position:relative;display:flex;flex-direction:column;gap:10px;min-width:0;padding:20px;
+  background:#fff;border:1px solid var(--line);border-radius:20px}
+.eco-card.here{border-color:var(--apay-coral);box-shadow:0 14px 34px rgba(240,84,101,.14)}
+.eco-card.here::before{content:"";position:absolute;inset:0 0 auto;height:4px;border-radius:20px 20px 0 0;background:var(--apay-grad)}
+.eco-mark{display:grid;place-items:center;width:52px;height:52px;flex:none;padding:7px;border-radius:14px;background:var(--surface)}
+.eco-card.here .eco-mark{background:#fff;border:1px solid var(--apay-line)}
+.eco-mark img{width:100%;height:100%;object-fit:contain}
+.eco-card .role{font-size:11px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--muted)}
+.eco-card h3{margin:0;font-size:18px;font-weight:800;letter-spacing:-.3px}
+.eco-card p{margin:0;font-size:14px;line-height:1.55;color:var(--body)}
+.eco-card .foot{margin-top:auto;padding-top:10px;font-size:13px;font-weight:700;color:var(--primary)}
+.eco-card.here .foot{color:var(--rose)}
+
+.flow{display:grid;margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+@media (min-width:860px){.flow{grid-template-columns:repeat(4,1fr)}}
+.flow-step{display:flex;flex-direction:column;gap:8px;min-width:0;padding:20px;border-bottom:1px solid var(--line)}
+.flow-step:last-child{border-bottom:0}
+@media (min-width:860px){
+  .flow-step{border-bottom:0;border-right:1px solid var(--line)}
+  .flow-step:last-child{border-right:0}
+}
+.flow-who{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+.flow-who img{width:20px;height:20px;flex:none;object-fit:contain}
+.flow-step h4{margin:0;font-size:15.5px;font-weight:800;letter-spacing:-.2px}
+.flow-step p{margin:0;font-size:13.5px;line-height:1.55;color:var(--body)}
+
+/* ====================================================================
+   Account-page kit
+   ==================================================================== */
+
+.acct-side{position:sticky;top:96px}
+.acct-side a,.acct-side button{display:flex;gap:10px;align-items:center;width:100%;min-height:44px;padding:12px 14px;border:0;border-radius:12px;
+  background:none;color:var(--ink);font-size:15px;font-weight:600;text-align:left;cursor:pointer}
+.acct-side a:hover,.acct-side button:hover{background:var(--surface)}
+.acct-side a.on,.acct-side button.on{background:var(--primary-soft);color:var(--primary)}
+.acct-side svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.acct-user{display:flex;gap:12px;align-items:center;padding:10px 12px 16px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+.acct-user b{display:block;font-size:15px}
+.acct-user small{display:block;font-size:12px;font-weight:600;color:var(--muted)}
+.avatar{display:flex;align-items:center;justify-content:center;width:46px;height:46px;flex:none;border-radius:50%;
+  background:var(--primary-soft);color:var(--primary);font-size:14px;font-weight:800}
+.side-sep{height:1px;margin:6px 8px;background:var(--line)}
+.acct-main{display:flex;flex-direction:column;gap:20px}
+@media (max-width:860px){.acct-side{position:static;max-width:none;flex-basis:100%}}
+
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.card-head p{margin:4px 0 0}
+
+.bar{height:8px;background:#EEF1F6;border-radius:99px;overflow:hidden}
+.bar>span{display:block;height:100%;background:var(--primary);border-radius:99px}
+.bar.green>span{background:var(--green)}
+.bar-l{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px;font-size:13px;font-weight:700;color:var(--body)}
+
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:16px;margin:0}
+.kv dt{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.kv dd{margin:4px 0 0;font-size:15px;font-weight:700;color:var(--ink)}
+.kv dd .sub{display:block;margin-top:2px;font-size:12px;font-weight:600;color:var(--muted)}
+
+.note{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:14px;
+  background:var(--amber-soft);color:var(--amber-ink);font-size:14px;font-weight:600;line-height:1.5}
+.note.blue{background:var(--primary-soft);color:var(--primary-dark)}
+.note.green{background:var(--green-soft);color:var(--green)}
+.note.rose{background:var(--rose-soft);color:var(--rose)}
+.note svg{width:20px;height:20px;flex:none;margin-top:1px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.note b{display:block;margin-bottom:2px;font-weight:800}
+.note .nbody{min-width:0}
+
+.stat-card{display:flex;gap:14px;align-items:center}
+.stat-card .stat-n{font-size:26px;letter-spacing:-.6px;color:var(--ink)}
+.money{font-weight:800;color:var(--ink);white-space:nowrap}
+
+table.t td{vertical-align:middle}
+table.t .sub{display:block;margin-top:2px;font-size:12px;font-weight:600;color:var(--muted)}
+table.t tfoot td{background:var(--surface);font-weight:800;color:var(--ink)}
+
+.tabbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.tabbar .pill{min-height:44px}
+.pill .n{font-size:12px;font-weight:800;opacity:.72}
+
+/* The process tracker: KYC -> address -> income -> risk -> limit -> purchase,
+   and the Atomshop order statuses. State classes match ProcessTracker's:
+   done | now (current) | stop (blocked) | nothing (upcoming). */
+.track{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(104px,100%),1fr));gap:10px;margin:20px 0 22px;padding:0;list-style:none}
+.track li{position:relative;padding-top:34px;font-size:13px;font-weight:700;color:var(--muted)}
+.track li::before{content:"";position:absolute;left:0;top:6px;width:20px;height:20px;box-sizing:border-box;border:2px solid #C9D2E3;border-radius:50%;background:#fff}
+.track li::after{content:"";position:absolute;left:26px;right:4px;top:15px;height:2px;background:#E3E8F1}
+.track li:last-child::after{display:none}
+.track li.done{color:var(--ink)}
+.track li.done::before{border-color:var(--green);background:var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/11px no-repeat}
+.track li.done::after{background:var(--green)}
+.track li.now{color:var(--primary)}
+.track li.now::before{border:6px solid var(--primary)}
+.track li.stop{color:var(--rose)}
+.track li.stop::before{border-color:var(--rose);background:var(--rose-soft)}
+.track small{display:block;margin-top:2px;font-size:12px;font-weight:600;color:var(--muted)}
+
+/* One order, expandable. */
+details.order{background:#fff;border:1px solid var(--line);border-radius:22px;overflow:hidden}
+details.order+details.order{margin-top:12px}
+details.order[open]{border-color:var(--primary);box-shadow:0 14px 30px rgba(39,71,199,.08)}
+details.order summary{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:center;padding:18px 20px;list-style:none;cursor:pointer}
+details.order summary::-webkit-details-marker{display:none}
+details.order summary:hover{background:var(--surface)}
+details.order summary:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.o-main{display:flex;gap:14px;align-items:center;flex:1 1 260px;min-width:0}
+.o-meta{font-size:12px;font-weight:700;color:var(--muted)}
+.o-title{font-weight:800;line-height:1.3}
+.o-amt{flex:0 1 170px}
+.o-amt b{display:block;font-size:17px;font-weight:800;color:var(--ink)}
+.o-amt span{font-size:13px;font-weight:600;color:var(--muted)}
+.chev{display:flex;align-items:center;justify-content:center;width:36px;height:36px;flex:none;border-radius:50%;background:var(--surface);transition:transform .2s}
+.chev svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+details[open]>summary .chev{transform:rotate(180deg);background:var(--primary);color:#fff}
+.o-body{padding:6px 20px 22px;border-top:1px solid var(--line)}
+.thumb{display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex:none;border-radius:14px;background:var(--surface);color:#AEB8CB}
+.thumb img{width:80%;height:80%;object-fit:contain}
+.thumb svg{width:60%;height:60%;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+
+/* KYC documents. A filled box is green and offers View / Replace; an empty one
+   is the dashed uploader. The file input stays in the DOM for the label. */
+.docs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:14px}
+.doc{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:150px;padding:18px;
+  border:1.5px dashed #C9D2E3;border-radius:14px;background:#F8FAFE;text-align:center;font-size:14px;font-weight:700}
+.doc small{font-size:12px;font-weight:500;color:var(--muted)}
+.doc input[type=file]{position:absolute;width:1px;height:1px;opacity:0}
+.doc:focus-within{outline:2px solid var(--primary);outline-offset:2px}
+.doc.filled{border-style:solid;border-color:var(--green);background:var(--green-soft)}
+.doc .pic{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;background:#fff;color:var(--muted)}
+.doc.filled .pic{color:var(--green)}
+.doc .pic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.doc .acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+
+@media (max-width:640px){
+  details.order summary{padding:16px}
+  .o-body{padding:6px 16px 20px}
+}
+
+/* ====================================================================
+   Auth pages: form left, "one account" panel right (v2.layout.auth)
+   ==================================================================== */
+.auth-form{flex:1 1 400px;min-width:0;padding:32px 28px;background:#fff}
+.auth-aside{flex:1 1 340px;min-width:0;padding:32px 28px;background:var(--ink);color:#B9C2D6;display:flex;flex-direction:column}
+.auth-ticks{display:grid;gap:10px;margin:20px 0 0;padding:0;list-style:none}
+.auth-ticks li{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;font-weight:600;line-height:1.45;color:#fff}
+.auth-ticks li::before{content:"";flex:none;width:20px;height:20px;margin-top:2px;border-radius:50%;
+  background:rgba(255,255,255,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FAA53A' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/11px no-repeat}
+.auth-rule{margin-top:auto;padding-top:22px}
+.auth-rule span{display:block;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.auth-rule b{display:block;margin-top:6px;padding:12px 14px;border-radius:12px;background:var(--apay-grad);color:var(--ink);font-size:14px;font-weight:800}
+@media (max-width:860px){
+  .auth-aside{order:2}
+  .auth-form{padding:24px 20px}
+  .auth-aside{padding:24px 20px}
+}
+
+/* A one-time code, typed once. Wide tracking so six digits read as six. */
+.code-field{font-family:ui-monospace,'JetBrains Mono',Menlo,monospace!important;font-size:26px!important;
+  font-weight:700;letter-spacing:12px;text-align:center;min-height:62px!important;padding:0 0 0 12px!important}
+.code-meta{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center;margin-top:14px;
+  font-size:13.5px;font-weight:600;color:var(--muted)}
+
+/* Long-form content: FAQs, privacy, the delete-account explainer. */
+.prose{max-width:68ch;font-size:16px;line-height:1.75;color:var(--body)}
+.prose h2{margin:32px 0 10px;font-size:22px;font-weight:800;letter-spacing:-.4px;color:var(--ink)}
+.prose h3{margin:24px 0 8px;font-size:17px;font-weight:800;color:var(--ink)}
+.prose p{margin:0 0 14px}
+.prose ul{margin:0 0 16px;padding-left:20px;list-style:disc}
+.prose li{margin:0 0 7px}
+.prose a{font-weight:700;color:var(--primary)}
+.prose a:hover{text-decoration:underline;text-underline-offset:4px}
+.prose strong{color:var(--ink)}
+
+/* ====================================================================
+   Product grid and cards
+   ==================================================================== */
+
+/* site.css's .g-4 is auto-fit minmax(230px,1fr), which lands on five columns
+   at the 1240px wrap. Products read better four-up, so this grid counts
+   columns instead of fitting them. */
+.grid.cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1024px){.grid.cols-4{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){.grid.cols-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.grid.cols-4{grid-template-columns:1fr}}
+
+/* The monthly figure, then its term on its own line. Keeping "/month x 3"
+   inline with the number wrapped it mid-phrase at card width. The spacer and
+   the cash line are set further down, where the artifact's values are. */
+.p-card .p-term{margin:2px 0 0;font-size:13px;font-weight:600;color:var(--muted)}
+.p-card .p-title a:hover{color:var(--primary)}
+
+/* The placeholder sits BEHIND the picture and is always rendered, so a product
+   with no image shows it without waiting on JavaScript - the product files are
+   AtomShop's and AtomPay can never assume one is there. The picture carries the
+   surface colour so a loaded one covers the glyph, transparent PNGs included.
+   site.js additionally hides a failed <img>, which removes the browser's broken
+   -image marker on top. */
+/* Decorative (aria-hidden, and the card always carries the product name as
+   text), so exempt from 1.4.11 - but #C5CDDA at 1.49:1 was barely visible.
+   #AAB5C8 reads as a placeholder without looking like an error state. */
+.p-card .p-img .ph-glyph{position:absolute;inset:0;margin:auto;width:76px;height:76px;color:#AAB5C8;z-index:0}
+.p-card .p-img img{position:relative;z-index:1;background:var(--surface)}
+
+/* A square image box is 390px tall on a four-up row at 1240px, which left a
+   wall of empty surface above every card's text.
+   NOT max-height: aspect-ratio honours the ratio by shrinking the WIDTH, so a
+   capped square box left a white strip down the right of every card. Dropping
+   the ratio and fixing the height keeps the box full-width. */
+.p-card .p-img{aspect-ratio:auto;height:220px}
+@media (max-width:420px){.p-card .p-img{height:200px}}
+
+/* ====================================================================
+   Narrow tables
+   ==================================================================== */
+/* site.css pins table.t to 640px so the account schedules scroll rather than
+   crush. A three-column table in half a .split does not need that, and the
+   scrollbar it caused hid the amount column. */
+.table-box.tight{overflow-x:visible}
+table.t.tight{min-width:0}
+table.t.tight th,table.t.tight td{padding:12px 14px}
+
+/* ====================================================================
+   App store badges (v2.layout.partials.store-badges)
+   ==================================================================== */
+/* .ic-play and .ic-apple are site.css's own store glyphs, so the badges match
+   the ones on atomshop.pk/apps exactly. */
+.store-badges{display:flex;flex-wrap:wrap;gap:12px}
+.store-badges .store{display:inline-flex;align-items:center;gap:11px;padding:10px 18px;
+  border:1px solid var(--line-2);border-radius:12px;background:#fff;color:var(--ink)}
+.store-badges .store:hover{border-color:var(--primary);background:var(--primary-soft);color:var(--ink)}
+.store-badges .store small{display:block;font-size:11px;font-weight:600;color:var(--muted);line-height:1.2}
+.store-badges .store b{display:block;font-family:inherit;font-size:15px;font-weight:800;letter-spacing:-.2px}
+.store-badges.on-dark .store{border-color:rgba(255,255,255,.22);background:transparent;color:#fff}
+.store-badges.on-dark .store:hover{border-color:#fff;background:rgba(255,255,255,.08);color:#fff}
+.store-badges.on-dark .store small{color:rgba(255,255,255,.6)}
+
+/* The app screen shown beside them. */
+.app-shot{max-width:258px;margin:0 auto;border:9px solid #0B0D0F;border-radius:30px;overflow:hidden;
+  background:#fff;box-shadow:0 22px 50px rgba(0,0,0,.42)}
+.app-shot-top{padding:14px 16px;background:var(--ink);color:#fff}
+.app-shot-top .lbl{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--apay-amber)}
+.app-shot-top b{display:block;margin-top:5px;font-size:24px;font-weight:800;letter-spacing:-.6px}
+.app-shot-top span{font-size:12px;color:rgba(255,255,255,.6)}
+.app-shot-body{padding:14px 16px 18px}
+.app-shot-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #EEF1F6;font-size:12.5px;color:var(--body)}
+.app-shot-row:last-child{border-bottom:0}
+.app-shot-row b{font-weight:800;color:var(--ink)}
+.app-shot-chip{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;background:var(--green-soft);color:var(--green)}
+.app-shot-chip.due{background:var(--amber-soft);color:var(--amber-ink)}
+
+/* Atomshop's DESIGN.md rule 5 says a status badge never wraps, but site.css's
+   .badge does not set it - which is why "AtomPay eligible" broke over two lines
+   on a product card. Fixed here rather than in site.css, which stays a verbatim
+   copy of the shop's. */
+.badge{white-space:nowrap}
+
+/* An alias anchor: v1's section ids (#calculator, #assess) kept alive inside
+   v2's sections, so old links and AssessmentController's redirect still land.
+   Two ids cannot sit on one element, hence the empty span. */
+.anchor{display:block;height:0;scroll-margin-top:96px}
+
+/* The price slider under the plan estimator, in v2's own colours. */
+[data-plan-calc] input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:24px;background:transparent;cursor:pointer;display:block}
+[data-plan-calc] input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:var(--line-2)}
+[data-plan-calc] input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border:3px solid #fff;border-radius:50%;background:var(--primary);box-shadow:0 2px 6px rgba(20,33,61,.25)}
+[data-plan-calc] input[type=range]::-moz-range-track{height:6px;border-radius:6px;background:var(--line-2)}
+[data-plan-calc] input[type=range]::-moz-range-thumb{width:22px;height:22px;border:3px solid #fff;border-radius:50%;background:var(--primary)}
+.field-scale{display:flex;justify-content:space-between;margin-top:2px;font-size:12px;font-weight:600;color:var(--muted)}
+
+/* The badges sit above both the placeholder and the picture: all three are
+   positioned inside .p-img, and without this the glyph's z-index would paint
+   over a badge that comes earlier in the DOM. */
+.p-card .p-img .badge{z-index:2}
+
+/* The store links under each ecosystem card. Compact, because four cards share
+   a row at 1240px. An unpublished platform shows a muted "soon" instead. */
+.eco-apps{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.eco-apps a,.eco-apps .soon{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+  font-size:12px;font-weight:700;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.eco-apps a:hover{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+.eco-apps .soon{color:var(--muted);background:var(--surface);border-style:dashed}
+.eco-apps .ic-play,.eco-apps .ic-apple{width:14px;height:14px}
+.eco-card.here .eco-apps a{border-color:var(--apay-line)}
+.eco-card.here .eco-apps a:hover{border-color:var(--apay-coral);background:var(--apay-wash);color:var(--rose)}
+
+/* ====================================================================
+   Remaining deltas against the approved artifact
+   ====================================================================
+   Found by diffing the artifact's own stylesheet against site.css +
+   this file, property by property. Each of these renders differently,
+   so each is corrected to the artifact's value. */
+
+/* The price is what the flex spacer pushes down, not the cash line: that is
+   what keeps the brand, title and price grouped at the top of the body. */
+.p-card .p-monthly{margin-top:auto}
+
+/* Hover is AtomPay's coral, not the shop's royal blue. */
+.p-card:hover{border-color:var(--apay-coral)}
+
+/* The "available to spend" figure is the largest number on the page. */
+.spend .amt{font-size:clamp(32px,4.6vw,44px);letter-spacing:-1.6px}
+.spend .row{margin-top:10px}
+
+/* The brand lockup: tightened wordmark, rounded mark. */
+.brand strong{letter-spacing:-.4px}
+.brand img{border-radius:10px}
+
+/* 560px, not site.css's 640px: at 640 a four-column schedule scrolled inside
+   a half-width column even before .tight was needed. */
+table.t{min-width:560px}
+
+/* The WhatsApp glyph sits inline with 13px text. */
+.wa-dot{width:16px;height:16px;vertical-align:-.18em}
+
+/* The store badges on the auth panel, in the space above the plan rule. */
+.auth-apps{margin-top:26px}
+.auth-apps .lbl{display:block;margin-bottom:10px;font-size:11px;font-weight:800;
+  letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.5)}
+
+
+/* ====================================================================
+   States and targets  --  gaps found auditing v2 against the checklist
+   ====================================================================
+   site.css is a verbatim copy of the shop's and cannot be edited, so the
+   three findings below are corrected here as overrides. */
+
+/* --- Loading state -------------------------------------------------
+   site.js sets aria-busy="true" and disables the button on submit, but
+   nothing in v2 styled it: the only feedback was .btn[disabled]'s dimming,
+   which reads as "broken", not "working". A spinner in place of the label
+   says the form is in flight. Reuses site.css's own @keyframes spin. */
+.btn[aria-busy="true"]{position:relative;color:transparent;pointer-events:none;opacity:1}
+.btn[aria-busy="true"]>*{visibility:hidden}
+.btn[aria-busy="true"]::after{
+  content:"";position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;
+  border-radius:50%;border:2px solid #fff;border-top-color:transparent;
+  animation:spin .6s linear infinite}
+/* The spinner has to match each variant's own label colour. currentColor is no
+   use here - the parent sets color:transparent to hide the label - and the two
+   light variants would otherwise get a white spinner: .btn-g is a white button,
+   so it would be invisible, and .btn-a (amber) would be low contrast. */
+.btn-g[aria-busy="true"]::after,
+.btn-a[aria-busy="true"]::after{border-color:var(--ink);border-top-color:transparent}
+
+/* --- Invalid state -------------------------------------------------
+   The field component and four auth views set aria-invalid="true", and
+   .field-error prints the message, but the control itself looked untouched.
+   Tint the control so the eye lands on the field, not just the message. */
+.field [aria-invalid="true"],
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"]{border-color:#D23C4E;background:#FFF7F8}
+.field [aria-invalid="true"]:focus-visible{outline-color:#D23C4E}
+
+/* --- Touch targets -------------------------------------------------
+   WCAG 2.2 AA (2.5.8) asks 24x24 and every control already cleared it; these
+   three are the ones a thumb actually hunts for, so they go to the 44px of
+   2.5.5 / the platform guidelines. The small inline pills (.eco-apps a) are
+   left at their design size, above 24 but below 44. */
+.btn-sm{min-height:44px}
+.pill{min-height:44px}
+@media (pointer:coarse){.copy-btn{width:44px;height:44px}}
+
+/* Under 389px site.css shrinks the burger to 40x40 to keep the header on one
+   line - a deliberate trade on the narrowest phones, and still past AA's 24px.
+   Rather than force the box back to 44 and risk the header wrapping on exactly
+   those devices, grow only the hit area: inset:-2px costs no layout space and
+   gives the most-tapped control on mobile its full 44x44. */
+@media (max-width:389px){
+  .nav-burger{position:relative}
+  .nav-burger::before{content:"";position:absolute;inset:-2px;border-radius:inherit}
+}
+
+/* Honour a reduced-motion preference for the one thing that loops. */
+@media (prefers-reduced-motion:reduce){
+  .btn[aria-busy="true"]::after{animation-duration:1.6s}
+}
+
+
+/* ====================================================================
+   KYC application wizard  --  /my/application
+   ====================================================================
+   The 4-step form. Everything else it needs (.card, .form, .field, .docs,
+   .doc, .note, .kv, .track, .spend) already exists above or in site.css. */
+
+/* The stepper carries a second line, which plain .track does not. */
+.track li small{display:block;margin-top:2px;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.35}
+.track li.done small{color:var(--green)}
+.track li.now small{color:var(--primary)}
+.track li[role="button"]{cursor:pointer}
+.track li[role="button"]:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:8px}
+
+/* Disposable income is a read-only figure, so it is an <output> rather than a
+   disabled input - but it should sit on the grid like one. */
+.disp{display:flex;align-items:center;min-height:48px;padding:0 14px;border:1px solid var(--line-2);
+  border-radius:12px;background:var(--surface);font-size:17px;font-weight:800;letter-spacing:-.3px;color:var(--ink)}
+.disp.neg{color:var(--rose);background:var(--rose-soft);border-color:#F3C9D1}
+
+/* The declaration. A 15px tick is too small to hit, so the whole row is the
+   target and the box keeps its own 20px. */
+.consent{display:flex;gap:12px;align-items:flex-start;margin-top:22px;padding:14px 16px;
+  border:1px solid var(--line);border-radius:14px;background:var(--surface);
+  font-size:13.5px;font-weight:600;color:var(--body);cursor:pointer}
+.consent input{flex:none;width:20px;height:20px;margin-top:1px;accent-color:var(--primary);cursor:pointer}
+.consent:focus-within{border-color:var(--primary);background:var(--primary-soft)}
+
+/* Back on the left, Continue/Submit on the right, with the spacer between. */
+.wizard-nav{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:20px}
+.wizard-nav .btn{min-width:150px}
+@media (max-width:560px){
+  .wizard-nav .btn{min-width:0;flex:1}
+  .wizard-nav span{display:none}
+}
+
+/* Each step is its own card in the main column. */
+.acct-main section[data-wizard-step]{margin-bottom:0}
+
+
+/* ====================================================================
+   Searchable dropdowns  --  <select data-search>
+   ====================================================================
+   site.js wraps the native <select> in .combo and puts a text input over it.
+   The <select> stays in the DOM and keeps posting the value, so without
+   JavaScript the customer simply gets the native dropdown and none of this
+   applies. Sized to match .field input exactly (48px, 12px radius). */
+
+.combo{position:relative;display:block}
+
+/* The native control still submits, so it is hidden rather than removed. */
+.combo-native{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+.combo-input{width:100%;min-height:48px;padding:0 38px 0 14px;border:1px solid var(--line-2);
+  border-radius:12px;font-size:15px;font-weight:600;background:#FBFCFE;color:var(--ink);cursor:text}
+.combo-input::placeholder{font-weight:500;color:var(--muted)}
+.combo-input:disabled{background:var(--surface);color:var(--muted);cursor:not-allowed}
+.combo-input[aria-expanded="true"]{border-color:var(--primary);background:#fff}
+
+/* The chevron, so it still reads as a dropdown and not a plain text box. */
+.combo::after{content:"";position:absolute;right:14px;top:21px;width:9px;height:9px;pointer-events:none;
+  border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);
+  transform:rotate(45deg);transform-origin:70% 70%;transition:transform .15s ease}
+.combo:focus-within::after{border-color:var(--primary);transform:rotate(225deg)}
+
+.combo-list{position:absolute;z-index:40;left:0;right:0;top:calc(100% + 6px);max-height:270px;overflow-y:auto;
+  margin:0;padding:6px;list-style:none;background:#fff;border:1px solid var(--line-2);border-radius:14px;
+  box-shadow:0 18px 44px rgba(20,33,61,.16)}
+.combo-opt{padding:10px 12px;border-radius:9px;font-size:14.5px;font-weight:600;color:var(--ink);cursor:pointer}
+.combo-opt:hover,.combo-opt.on{background:var(--primary-soft);color:var(--primary-dark)}
+.combo-opt[aria-selected="true"]{background:var(--apay-wash);color:var(--rose)}
+.combo-opt[aria-selected="true"]::after{content:" ¹3";font-weight:800}
+.combo-none{padding:12px;font-size:14px;font-weight:600;color:var(--muted);text-align:center}
+
+/* A long list on a phone is easier to use from the bottom of the screen than
+   squeezed under the field, so it fills the width and sits above the fold. */
+@media (max-width:560px){
+  .combo-list{max-height:min(54vh,340px)}
+}

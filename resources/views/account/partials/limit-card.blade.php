@@ -20,7 +20,7 @@
             <div class="flex justify-between font-mono text-[10.5px] tracking-[.08em] uppercase text-white/70 mt-2"><span>Used</span><span>Available</span></div>
         </div>
         <p class="text-[11.5px] text-white/65 mt-[18px] leading-normal">
-            Based on {{ (int) (config('atompay.credit.limit_ratio') * 100) }}% of your assessed monthly income. Maximum instalment amount per month is capped at {{ (int) (config('atompay.credit.instalment_ratio') * 100) }}% of income.
+            Based on {{ (int) (config('atompay.credit.limit_ratio') * 100) }}% of your assessed monthly income. Maximum installment amount per month is capped at {{ (int) (config('atompay.credit.instalment_ratio') * 100) }}% of income.
         </p>
     </div>
 </div>

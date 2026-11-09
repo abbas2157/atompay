@@ -79,10 +79,10 @@
                     <x-side-row label="Employer / business name">{{ $assessment->employer_name ?? '—' }}</x-side-row>
                     <x-side-row label="Income source">{{ $assessment->income_source->label() }}</x-side-row>
                     <x-side-row label="Monthly income">@pkr($assessment->monthly_income)</x-side-row>
-                    <x-side-row label="Existing monthly instalments">@pkr($assessment->existing_instalments)</x-side-row>
+                    <x-side-row label="Existing monthly installments">@pkr($assessment->existing_instalments)</x-side-row>
                     <x-side-row label="Monthly expenses">@pkr($assessment->monthly_expenses)</x-side-row>
                     <x-side-row label="Disposable income"><span class="{{ $assessment->disposable_income < 0 ? 'text-coral' : '' }}">@pkr($assessment->disposable_income)</span></x-side-row>
-                    <x-side-row label="Owed to AtomShop now">@pkr($summary['used'])</x-side-row>
+                    <x-side-row label="Owed to Atomshop now">@pkr($summary['used'])</x-side-row>
                 </dl>
             </x-form-section>
         </div>
@@ -101,7 +101,7 @@
                     </div>
                     <dl class="text-[14px]">
                         <x-side-row label="Previous payment history">{{ $risk->paymentHistory->label() }}</x-side-row>
-                        <x-side-row label="Existing obligations (AtomShop)">@pkr($risk->existingObligations)</x-side-row>
+                        <x-side-row label="Existing obligations (Atomshop)">@pkr($risk->existingObligations)</x-side-row>
                         <x-side-row label="Other lenders / month">@pkr($assessment->existing_instalments)</x-side-row>
                     </dl>
                     @if ($risk->reasons)
@@ -109,13 +109,13 @@
                             @foreach ($risk->reasons as $reason)<li>{{ $reason }}</li>@endforeach
                         </ul>
                     @endif
-                    <x-select name="credit_history" label="Credit history (outside AtomShop)" :options="$options['creditHistory']" :value="$assessment->credit_history?->value" required class="mt-4" />
+                    <x-select name="credit_history" label="Credit history (outside Atomshop)" :options="$options['creditHistory']" :value="$assessment->credit_history?->value" required class="mt-4" />
                 </x-form-section>
 
                 <x-form-section number="5" title="AtomPay limit decision" intro="Pre-filled with the provisional figures (30% / 10% rule). Adjust before deciding.">
                     <div class="grid sm:grid-cols-2 gap-4">
                         <x-input name="approved_limit" label="Approved purchase limit (PKR)" type="number" min="0" step="1000" :value="$assessment->approved_limit" required />
-                        <x-input name="max_instalment" label="Maximum instalment (PKR)" type="number" min="0" step="500" :value="$assessment->max_instalment" required />
+                        <x-input name="max_instalment" label="Maximum installment (PKR)" type="number" min="0" step="500" :value="$assessment->max_instalment" required />
                         <x-select name="approved_tenure" label="Approved tenure" :options="array_combine($tenures, array_map(fn ($t) => $t.' months', $tenures))" :value="$assessment->approved_tenure" placeholder="Default (max offered)" />
                         <x-select name="status" label="Limit status" :options="$options['decision']" :value="$assessment->isPending() ? null : $assessment->status->value" required />
                         <div class="sm:col-span-2">

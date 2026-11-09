@@ -4,7 +4,7 @@
             <div class="card p-7 sm:p-9 max-w-[460px] mx-auto">
                 <span class="eyebrow">Forgot password</span>
                 <h1 class="text-[28px] mt-2">Choose a new password</h1>
-                <p class="text-muted text-[14.5px] mt-2">It will work on AtomPay and AtomShop.pk. You'll be signed out of the AtomPay app on every phone.</p>
+                <p class="text-muted text-[14.5px] mt-2">It will work on AtomPay and Atomshop.pk. You'll be signed out of the AtomPay app on every phone.</p>
 
                 @error('reset_token')
                     <x-alert type="error" class="mt-5">{{ $message }} <a href="{{ route('password.request') }}" class="underline">Start again</a></x-alert>

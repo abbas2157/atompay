@@ -5,7 +5,7 @@
 <section class="py-[60px] sm:py-[84px] bg-white border-b border-line" id="assess">
     <div class="wrap">
         <x-section-head eyebrow="Get approved" title="Find out your limit before you shop.">
-            Your approved AtomPay limit is {{ $limitPct }}% of your monthly income, and any single monthly instalment is capped at {{ $instPct }}% of it. The estimate is instant &mdash; your final limit is confirmed after verification.
+            Your approved AtomPay limit is {{ $limitPct }}% of your monthly income, and any single monthly installment is capped at {{ $instPct }}% of it. The estimate is instant &mdash; your final limit is confirmed after verification.
         </x-section-head>
 
         @if ($estimate)

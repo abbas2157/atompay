@@ -108,7 +108,7 @@
     <footer>
         <div class="wrap">
             <div class="spectrum"></div>
-            <p class="fine">&copy; {{ date('Y') }} {{ config('app.name') }} &mdash; instalment payments for AtomShop.pk purchases.</p>
+            <p class="fine">&copy; {{ date('Y') }} {{ config('app.name') }} &mdash; installment payments for Atomshop.pk purchases.</p>
         </div>
     </footer>
 </body>

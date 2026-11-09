@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Area;
 use App\Models\CreditAssessment;
 use App\Models\Enums\AssessmentStatus;
 use App\Models\Enums\VerificationStatus;
@@ -9,7 +10,9 @@ use App\Models\KycProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -76,7 +79,10 @@ class KycAssessmentFlowTest extends TestCase
         $this->assertSame(AssessmentStatus::Pending, $a->status);
         $this->assertNotNull($a->risk_score);
 
-        // Provisional limit is not spendable until staff decide.
+        // Provisional limit is not spendable until staff decide. The wording
+        // below is v1's dashboard; v2's overview is covered in DesignSwitchTest.
+        config(['design.default' => 'v1', 'design.active' => 'v1']);
+
         $this->actingAs($user)->get(route('account.dashboard'))
             ->assertOk()->assertSee('Address verification pending')->assertSee('Not set yet');
     }
@@ -154,7 +160,10 @@ class KycAssessmentFlowTest extends TestCase
         $this->assertSame('good', $assessment->credit_history->value);
         $this->assertGreaterThanOrEqual(70, $assessment->risk_score); // KYC verified + good history
 
-        // The customer now sees the approved limit and can spend it.
+        // The customer now sees the approved limit and can spend it. "PKR" is
+        // v1's money prefix; v2 writes "Rs." and is covered in DesignSwitchTest.
+        config(['design.default' => 'v1', 'design.active' => 'v1']);
+
         $this->actingAs($user)->get(route('account.dashboard'))
             ->assertOk()->assertSee('PKR 50,000')->assertSee('6 months')->assertSee('Approved at reduced limit.');
     }
@@ -243,5 +252,169 @@ class KycAssessmentFlowTest extends TestCase
         $this->actingAs($this->customer())
             ->post(route('account.application.store'), $this->application(['cnic' => '42101-12345']))
             ->assertSessionHasErrors(['cnic' => 'A CNIC has 13 digits; you entered 10.']);
+    }
+
+    /**
+     * The area is captured with the address so Atomshop can raise an order
+     * without guessing it, and it only means anything inside its own city.
+     */
+    public function test_an_area_is_saved_with_the_city_it_belongs_to(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+        $user = $this->customer();
+        $area = Area::query()->where('status', 'active')->whereNotNull('city_id')->firstOrFail();
+
+        $this->actingAs($user)
+            ->post(route('account.application.store'), $this->application([
+                'city_id' => $area->city_id,
+                'area_id' => $area->id,
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $profile = KycProfile::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame((int) $area->city_id, (int) $profile->city_id);
+        $this->assertSame((int) $area->id, (int) $profile->area_id);
+        $this->assertSame($area->title, $profile->area->title);
+    }
+
+    public function test_an_area_from_another_city_is_refused(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+        $user = $this->customer();
+        $area = Area::query()->where('status', 'active')->whereNotNull('city_id')->firstOrFail();
+        $elsewhere = Area::query()->where('status', 'active')
+            ->where('city_id', '!=', $area->city_id)->whereNotNull('city_id')->firstOrFail();
+
+        $this->actingAs($user)
+            ->post(route('account.application.store'), $this->application([
+                'city_id' => $area->city_id,
+                'area_id' => $elsewhere->id,
+            ]))
+            ->assertSessionHasErrors(['area_id' => 'Choose an area that is inside the city you selected.']);
+
+        $this->assertDatabaseMissing('atompay_kyc_profiles', ['user_id' => $user->id]);
+    }
+
+    /** No city means there is nothing to validate the area against, so it is dropped. */
+    public function test_an_area_without_a_city_is_ignored_rather_than_refused(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+        $user = $this->customer();
+        $area = Area::query()->where('status', 'active')->whereNotNull('city_id')->firstOrFail();
+
+        $this->actingAs($user)
+            ->post(route('account.application.store'), $this->application([
+                'city_id' => null,
+                'area_id' => $area->id,
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull(KycProfile::where('user_id', $user->id)->firstOrFail()->area_id);
+    }
+
+    /** The dependent picker's source: one city's areas, and only to a customer. */
+    public function test_the_areas_endpoint_lists_one_citys_areas_to_a_signed_in_customer(): void
+    {
+        $area = Area::query()->where('status', 'active')->whereNotNull('city_id')->firstOrFail();
+
+        $rows = $this->actingAs($this->customer())
+            ->getJson(route('account.areas', ['city' => $area->city_id]))
+            ->assertOk()
+            ->json();
+
+        $this->assertNotEmpty($rows);
+        $this->assertSame(['id', 'title'], array_keys($rows[0]));
+        $this->assertContains($area->id, array_column($rows, 'id'));
+
+        // Every row really is in that city, so the picker cannot offer an
+        // area the validation rule would then reject.
+        $ids = Area::query()->where('city_id', $area->city_id)->where('status', 'active')->pluck('id')->all();
+        foreach (array_column($rows, 'id') as $id) {
+            $this->assertContains($id, $ids);
+        }
+
+        $this->app['auth']->forgetGuards();
+        $this->get(route('account.areas', ['city' => $area->city_id]))->assertRedirect(route('login'));
+    }
+
+    /** Long lists are unusable as plain dropdowns - 474 areas in Lahore alone. */
+    public function test_every_dropdown_on_the_application_form_is_searchable(): void
+    {
+        config(['design.default' => 'v2', 'design.active' => 'v2']);
+
+        $html = $this->actingAs($this->customer())->get(route('account.application'))
+            ->assertOk()->getContent();
+
+        // Every <select> the form renders, by the id the view gives it. Listed
+        // rather than scraped so a new dropdown has to be added here too.
+        $dropdowns = ['city_id', 'area_id', 'employment_status', 'income_source'];
+        $this->assertSame(
+            count($dropdowns),
+            substr_count($html, '<select'),
+            'the form renders a dropdown this test does not know about',
+        );
+
+        foreach ($dropdowns as $id) {
+            $tag = Str::before(Str::after($html, '<select id="'.$id.'"'), '>');
+            $this->assertNotSame('', $tag, "no dropdown rendered for {$id}");
+            $this->assertStringContainsString('data-search', $tag, "{$id} is not searchable");
+        }
+
+        // The area picker is driven by the city picker, and knows where to get
+        // its options; without both it is just an empty dropdown.
+        $area = Str::before(Str::after($html, '<select id="area_id"'), '>');
+        $this->assertStringContainsString('data-area-for="city_id"', $area);
+        $this->assertStringContainsString('/my/areas/__CITY__', $area);
+    }
+
+    /**
+     * The mobile app and the v1 form predate the area field and send nothing;
+     * an update from either must leave the area the customer picked on the web.
+     */
+    public function test_a_submission_without_an_area_keeps_the_one_on_file(): void
+    {
+        $this->withoutMiddleware(ThrottleRequests::class);
+        Storage::fake(config('atompay.kyc.disk'));
+        $user = $this->customer();
+        $area = Area::query()->where('status', 'active')->whereNotNull('city_id')->firstOrFail();
+
+        $this->actingAs($user)->post(route('account.application.store'), $this->application([
+            'city_id' => $area->city_id, 'area_id' => $area->id,
+        ]))->assertSessionHasNoErrors();
+
+        // Same city, no area key at all - as an older client would post.
+        $without = $this->application(['city_id' => $area->city_id, 'monthly_income' => 240000]);
+        unset($without['area_id']);
+
+        $this->actingAs($user->fresh())->post(route('account.application.store'), $without)
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame((int) $area->id, (int) KycProfile::where('user_id', $user->id)->firstOrFail()->area_id);
+    }
+
+    /** But a city change drops an area that city cannot contain. */
+    public function test_changing_city_without_an_area_clears_the_stale_one(): void
+    {
+        $this->withoutMiddleware(ThrottleRequests::class);
+        Storage::fake(config('atompay.kyc.disk'));
+        $user = $this->customer();
+        $area = Area::query()->where('status', 'active')->whereNotNull('city_id')->firstOrFail();
+        $otherCity = Area::query()->where('status', 'active')
+            ->where('city_id', '!=', $area->city_id)->whereNotNull('city_id')->firstOrFail()->city_id;
+
+        $this->actingAs($user)->post(route('account.application.store'), $this->application([
+            'city_id' => $area->city_id, 'area_id' => $area->id,
+        ]))->assertSessionHasNoErrors();
+
+
+        $moved = $this->application(['city_id' => $otherCity]);
+        unset($moved['area_id']);
+
+        $this->actingAs($user)->post(route('account.application.store'), $moved)
+            ->assertSessionHasNoErrors();
+
+        $profile = KycProfile::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame((int) $otherCity, (int) $profile->city_id);
+        $this->assertNull($profile->area_id, 'an area from the previous city must not survive the move');
     }
 }

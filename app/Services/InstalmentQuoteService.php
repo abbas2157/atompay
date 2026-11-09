@@ -120,6 +120,56 @@ class InstalmentQuoteService
         ];
     }
 
+    /**
+     * AtomPay's own plan, which is not the seller-financing plan the rest of
+     * this service prices. Eligible listed products only, always three months,
+     * no advance, 0% markup; the months add up to the price exactly because the
+     * last one takes the rounding. The processing fee is a disclaimer shown
+     * with the plan, never part of the total.
+     *
+     * Mirrors AtomShop's Website\InstallmentPlanService::atompayPlan(). Pinned
+     * by tests/Unit/AtompayPlanTest.
+     *
+     * @return array{price:int, months:int, advance:int, financed:int, markup:int,
+     *               monthly:int, last_monthly:int, total:int, processing_fee:int,
+     *               fee_percent:float, schedule:array<int, array{number:int, due:\Illuminate\Support\Carbon, amount:int, rounding:bool}>}
+     */
+    public function atompayPlan(?int $price = null): array
+    {
+        $price = max(0, $price ?? (int) config('atompay.atompay_plan.example_price'));
+        $months = max(1, (int) config('atompay.atompay_plan.months'));
+        $feePercent = (float) config('atompay.atompay_plan.processing_fee_percent');
+
+        $monthly = intdiv($price, $months);
+        $lastMonthly = $price - $monthly * ($months - 1);
+
+        $schedule = [];
+        for ($number = 1; $number <= $months; $number++) {
+            $isLast = $number === $months;
+            $schedule[] = [
+                'number' => $number,
+                // addMonthsNoOverflow: the 31st never silently becomes the 1st.
+                'due' => now()->addMonthsNoOverflow($number)->startOfDay(),
+                'amount' => $isLast ? $lastMonthly : $monthly,
+                'rounding' => $isLast && $lastMonthly !== $monthly,
+            ];
+        }
+
+        return [
+            'price' => $price,
+            'months' => $months,
+            'advance' => 0,
+            'financed' => $price,
+            'markup' => 0,
+            'monthly' => $monthly,
+            'last_monthly' => $lastMonthly,
+            'total' => $price,
+            'processing_fee' => (int) round($price * $feePercent / 100),
+            'fee_percent' => $feePercent,
+            'schedule' => $schedule,
+        ];
+    }
+
     public function forget(): void
     {
         Cache::forget(self::CACHE_KEY);

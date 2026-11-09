@@ -41,7 +41,7 @@
                     <tr>
                         <td style="padding:20px 8px 0;font-size:12.5px;line-height:1.6;color:#6C6C74;">
                             @yield('footer')
-                            AtomPay is the instalment partner of <a href="{{ config('atompay.shop_url') }}" style="color:#6C6C74;">AtomShop.pk</a>.
+                            AtomPay is the installment partner of <a href="{{ config('atompay.shop_url') }}" style="color:#6C6C74;">Atomshop.pk</a>.
                             AtomPay will never ask for your password or a one-time code by phone, email or WhatsApp.
                         </td>
                     </tr>

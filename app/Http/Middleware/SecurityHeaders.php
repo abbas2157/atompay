@@ -72,6 +72,14 @@ class SecurityHeaders
             $directives['img-src'][] = $host;
         }
 
+        // The v2 design loads Plus Jakarta Sans from Google Fonts; v1 keeps the
+        // tighter self-hosted policy.
+        if (design_is_v2()) {
+            foreach (config('security.csp.design_v2', []) as $directive => $hosts) {
+                array_push($directives[$directive], ...$hosts);
+            }
+        }
+
         // Google Analytics, only when it is switched on.
         if (filled(config('services.google_analytics.measurement_id'))) {
             foreach (config('security.csp.analytics') as $directive => $hosts) {

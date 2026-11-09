@@ -43,7 +43,10 @@ class KycService
      */
     public function submit(User $user, array $data, array $files): KycProfile
     {
-        $profile = $user->kycProfile ?? new KycProfile(['user_id' => $user->id]);
+        // Resolved by key, not through $user->kycProfile: a User instance whose
+        // relation was loaded before the profile existed caches null, and this
+        // would then insert a second row and hit the user_id unique index.
+        $profile = KycProfile::firstOrNew(['user_id' => $user->id]);
 
         foreach (KycProfile::DOCUMENTS as $input => $column) {
             if (isset($files[$input])) {
@@ -52,6 +55,14 @@ class KycService
         }
 
         $profile->fill($data);
+
+        // An area belongs to one city. If the city moved and this submission
+        // did not bring an area with it, the one on file is from the old city -
+        // keeping it would hand Atomshop a city/area pair it rejects.
+        if ($profile->isDirty('city_id') && ! array_key_exists('area_id', $data)) {
+            $profile->area_id = null;
+        }
+
         $profile->submitted_at = now();
 
         // Any change to identity details re-opens verification.

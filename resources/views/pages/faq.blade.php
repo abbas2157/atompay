@@ -10,7 +10,7 @@
 @endphp
 <x-layouts.app
     title="Frequently asked questions"
-    description="Answers about paying for AtomShop.pk purchases in instalments with AtomPay: eligibility, down payments, monthly amounts, and what happens after approval."
+    description="Answers about paying for Atomshop.pk purchases in installments with AtomPay: eligibility, down payments, monthly amounts, and what happens after approval."
     :schema="$schema"
 >
     <section class="py-[60px] sm:py-[84px]">

@@ -38,13 +38,13 @@
             <b class="font-disp text-[17px]" x-text="fmt(limit)"></b>
         </div>
         <div class="flex justify-between text-[14.5px] py-2">
-            <span>Maximum instalment per month ({{ (int) ($ratios['instalment'] * 100) }}% of income)</span>
+            <span>Maximum installment per month ({{ (int) ($ratios['instalment'] * 100) }}% of income)</span>
             <b class="font-disp text-[17px]" x-text="fmt(maxInstalment)"></b>
         </div>
         @guest
             <p class="text-muted text-[13.5px] mt-3">
                 Submit to keep this estimate, then <a href="{{ route('login') }}" class="underline">sign in</a> or
-                <a href="{{ route('register') }}" class="underline">create your AtomShop account</a> so we can verify it.
+                <a href="{{ route('register') }}" class="underline">create your Atomshop account</a> so we can verify it.
             </p>
         @endguest
     </div>

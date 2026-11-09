@@ -54,6 +54,9 @@ class RateLimitServiceProvider extends ServiceProvider
 
         RateLimiter::for('quote', fn (Request $r) => Limit::perMinute($limits['quote'])->by($this->actor($r)));
 
+        // Ask Atom answers from built-in rules, so this is abuse control, not cost control.
+        RateLimiter::for('ask_atom', fn (Request $r) => Limit::perMinute($limits['ask_atom'])->by($this->actor($r)));
+
         RateLimiter::for('assess', fn (Request $r) => [
             Limit::perMinute($limits['assess'])->by($this->actor($r)),
             Limit::perHour($limits['assess_hourly'])->by($this->actor($r)),

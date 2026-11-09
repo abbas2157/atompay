@@ -22,6 +22,10 @@ class SiteTest extends TestCase
 
     public function test_home_renders_with_seo_and_structured_data(): void
     {
+        // The quote below is v1's seller-financing sample; v2 quotes AtomPay's
+        // own plan and is covered in DesignSwitchTest.
+        config(['design.default' => 'v1', 'design.active' => 'v1']);
+
         $this->get('/')
             ->assertOk()
             ->assertSee('<link rel="canonical"', false)
@@ -76,6 +80,10 @@ class SiteTest extends TestCase
     public function test_dashboard_requires_customer_account(): void
     {
         $this->get('/my')->assertRedirect('/login');
+
+        // "Your approved limit" is v1's dashboard heading; v2's overview is
+        // covered in DesignSwitchTest.
+        config(['design.default' => 'v1', 'design.active' => 'v1']);
 
         $this->actingAs($this->customer())->get('/my')
             ->assertOk()

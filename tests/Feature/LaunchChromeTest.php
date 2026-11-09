@@ -31,15 +31,28 @@ class LaunchChromeTest extends TestCase
         $this->get('/')->assertOk()->assertDontSee('wa.me/', false);
     }
 
+    /**
+     * A banner appears only when analytics is configured. The two designs build
+     * it differently - v1 with Alpine (`x-data="cookieBanner"`), v2 with a
+     * `data-cookie-notice` block driven by site.js - so this asserts the
+     * behaviour rather than either implementation.
+     */
     public function test_the_cookie_banner_and_consent_default_come_with_analytics_only(): void
     {
-        config(['services.google_analytics.measurement_id' => 'G-TEST123']);
-        $this->get('/')->assertOk()
-            ->assertSee('x-data="cookieBanner"', false)
-            ->assertSee("gtag('consent', 'default'", false);
+        foreach (['v1' => 'x-data="cookieBanner"', 'v2' => 'data-cookie-notice'] as $design => $marker) {
+            config([
+                'design.default' => $design,
+                'design.active' => $design,
+                'services.google_analytics.measurement_id' => 'G-TEST123',
+            ]);
 
-        config(['services.google_analytics.measurement_id' => null]);
-        $this->get('/')->assertOk()->assertDontSee('cookieBanner', false);
+            $this->get('/')->assertOk()
+                ->assertSee($marker, false)
+                ->assertSee("gtag('consent', 'default'", false);
+
+            config(['services.google_analytics.measurement_id' => null]);
+            $this->get('/')->assertOk()->assertDontSee($marker, false);
+        }
     }
 
     public function test_search_console_verification_tag(): void

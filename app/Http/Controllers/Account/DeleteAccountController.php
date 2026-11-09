@@ -23,7 +23,7 @@ class DeleteAccountController extends Controller
     /** Public: what deletion does, and the way in. Reachable without the app. */
     public function info(): View
     {
-        return view('pages.delete-account');
+        return atompay_view('pages.delete-account');
     }
 
     public function show(Request $request): View
@@ -35,7 +35,7 @@ class DeleteAccountController extends Controller
             $blocked = $e->getMessage();
         }
 
-        return view('account.delete', ['blocked' => $blocked]);
+        return atompay_view('account.delete', ['blocked' => $blocked]);
     }
 
     public function destroy(Request $request): RedirectResponse

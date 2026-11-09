@@ -1,4 +1,4 @@
-<x-layouts.error code="419" title="Your session expired" eyebrow="Page expired">
+<x-dynamic-component :component="design_is_v2() ? 'v2.error-layout' : 'layouts.error'" code="419" title="Your session expired" eyebrow="Page expired">
     <p class="lede">
         For your security, the form you were filling in timed out. Nothing was
         submitted and nothing was lost on our side &mdash; go back, reload the page,
@@ -9,4 +9,4 @@
         <a class="btn btn-ghost" href="{{ route('login') }}">Sign in again</a>
     </div>
     <p class="hint">This also happens if you had the page open in two tabs, or left it open overnight.</p>
-</x-layouts.error>
+</x-dynamic-component>

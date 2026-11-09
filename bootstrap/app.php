@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureUserIsCustomer;
 use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\SetDesign;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -25,7 +26,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // a backstop request ceiling. Both are configured in config/security.php.
         // Trusted proxies are set in AppServiceProvider, where config() is safe
         // to read even once `php artisan config:cache` has run.
+        // SetDesign runs before SecurityHeaders because the v2 design needs two
+        // extra CSP hosts for its web font, and the policy is built on the way out.
         $middleware->web(append: [
+            SetDesign::class,
             SecurityHeaders::class,
             'throttle:global',
         ]);

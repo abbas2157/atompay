@@ -28,6 +28,12 @@ trait ValidatesKycIdentity
             'date_of_birth' => ['required', 'date', 'before:-'.config('atompay.kyc.min_age').' years'],
             'residential_address' => ['required', 'string', 'max:1000'],
             'city_id' => ['nullable', 'integer', 'exists:cities,id'],
+            // Optional, and only meaningful inside a city: an area from another
+            // city would make Atomshop reject the order it is meant to save.
+            'area_id' => [
+                'nullable', 'integer',
+                Rule::exists('areas', 'id')->where(fn ($q) => $q->where('city_id', $this->input('city_id'))),
+            ],
             'cnic_front' => [$hasDocs ? 'nullable' : 'required', ...$image],
             'cnic_back' => [$hasDocs ? 'nullable' : 'required', ...$image],
             'selfie' => [$hasDocs ? 'nullable' : 'required', ...$image],
@@ -38,6 +44,7 @@ trait ValidatesKycIdentity
     {
         return [
             'date_of_birth.before' => 'You must be at least '.config('atompay.kyc.min_age').' to apply.',
+            'area_id.exists' => 'Choose an area that is inside the city you selected.',
         ];
     }
 
@@ -52,6 +59,11 @@ trait ValidatesKycIdentity
      */
     protected function normalizeIdentity(): void
     {
+        if ($this->has('area_id') && ! $this->filled('city_id')) {
+            // An area with no city cannot be checked against anything.
+            $this->merge(['area_id' => null]);
+        }
+
         $this->merge([
             'cnic' => Pakistan::normalizeCnic($this->cnic),
             'mobile' => Pakistan::normalizeMobile($this->mobile) ?: trim((string) $this->mobile),
@@ -61,7 +73,18 @@ trait ValidatesKycIdentity
     /** Section 1 fields (no files). */
     public function identity(): array
     {
-        return $this->safe()->only(['full_name', 'cnic', 'mobile', 'date_of_birth', 'residential_address', 'city_id']);
+        $keys = ['full_name', 'cnic', 'mobile', 'date_of_birth', 'residential_address', 'city_id'];
+
+        // Only when the client actually sent an area. The v1 form and app
+        // builds older than this field send nothing, and they must not blank
+        // the area a customer picked on the web; sending an empty one is still
+        // a deliberate clear, and KycService drops an area the new city cannot
+        // contain.
+        if ($this->has('area_id')) {
+            $keys[] = 'area_id';
+        }
+
+        return $this->safe()->only($keys);
     }
 
     /** @return array<string, UploadedFile> */

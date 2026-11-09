@@ -12,7 +12,7 @@
             <div class="glow w-[480px] h-[480px] -right-[140px] -top-[180px]" aria-hidden="true"></div>
             <div class="relative z-[2]">
                 <x-section-head eyebrow="Estimate a plan" title="See roughly what a monthly payment looks like." :dark="true" class="mb-0 max-w-none">
-                    This is a close estimate to plan your budget &mdash; your exact plan is confirmed at AtomShop checkout once you pick a real product.
+                    This is a close estimate to plan your budget &mdash; your exact plan is confirmed at Atomshop checkout once you pick a real product.
                 </x-section-head>
 
                 <div class="grid md:grid-cols-2 gap-7 mt-8 items-start">
@@ -24,7 +24,7 @@
                             <output for="calc-price" class="font-disp text-[19px] mt-1.5 block" x-text="fmt(price)">@pkr($sample->price)</output>
                         </div>
                         <div class="mb-[18px]">
-                            <label for="calc-months" class="field-label text-white/70">Instalment term</label>
+                            <label for="calc-months" class="field-label text-white/70">Installment term</label>
                             <input type="range" id="calc-months" x-model.number="tenureIndex" min="0" max="{{ count($calculator['tenures']) - 1 }}" step="1">
                             <output for="calc-months" class="font-disp text-[19px] mt-1.5 block" x-text="monthsLabel()">{{ $sample->months }} months</output>
                         </div>
@@ -40,7 +40,7 @@
                 </div>
 
                 <p class="text-[11.5px] text-white/65 mt-4 leading-normal">
-                    Estimate uses the minimum {{ (int) ($calculator['minAdvance'] * 100) }}% down payment and AtomShop&rsquo;s current service rate of {{ $calculator['perMonth'] }}% per month on the financed amount. You can pay up to {{ (int) ($calculator['maxAdvance'] * 100) }}% upfront at checkout to lower the monthly figure. Final pricing depends on the product and your approval.
+                    Estimate uses the minimum {{ (int) ($calculator['minAdvance'] * 100) }}% down payment and Atomshop&rsquo;s current service rate of {{ $calculator['perMonth'] }}% per month on the financed amount. You can pay up to {{ (int) ($calculator['maxAdvance'] * 100) }}% upfront at checkout to lower the monthly figure. Final pricing depends on the product and your approval.
                 </p>
             </div>
         </div>

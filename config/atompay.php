@@ -6,7 +6,7 @@
 |--------------------------------------------------------------------------
 | Every number the product copy promises lives here, so the calculator,
 | the credit assessment, the dashboard and the marketing text can never
-| disagree. The instalment math itself mirrors AtomShop's checkout
+| disagree. The installment math itself mirrors Atomshop's checkout
 | (Web\Order\OrderController::checkout_perform) — keep them in sync.
 */
 
@@ -18,11 +18,61 @@ return [
     // Where AtomShop serves uploaded product pictures from.
     'asset_url' => env('ATOMPAY_ASSET_URL', 'https://atomshop.pk'),
 
+    /*
+    | The Atom ecosystem's apps, shown under each card in the ecosystem section.
+    | Mirrors Atomshop's config('website.app.*') - keep the two in step; the shop
+    | is the authority, because its /apps page and api/app/config serve the same
+    | links. AtomPay's own pair is not repeated here: it lives in api.store_url,
+    | which the mobile API already reads, so each link has one home.
+    |
+    | AtomBrand has no Android build published, so its android link is null and
+    | the card says "Android soon" rather than linking nowhere.
+    */
+    'apps' => [
+        'atomshop' => [
+            'android' => env('ATOMSHOP_APP_ANDROID') ?: 'https://play.google.com/store/apps/details?id=com.ecommerce.atomshop',
+            'ios' => env('ATOMSHOP_APP_IOS') ?: 'https://apps.apple.com/us/app/atomshop/id6744655747',
+        ],
+        'atomseller' => [
+            'android' => env('ATOMSELLER_APP_ANDROID') ?: 'https://play.google.com/store/apps/details?id=com.ecommerce.atomseller',
+            'ios' => env('ATOMSELLER_APP_IOS') ?: 'https://apps.apple.com/us/app/atom-seller-sell-more/id6817232001',
+        ],
+        'atombrand' => [
+            'android' => env('ATOMBRAND_APP_ANDROID'),
+            'ios' => env('ATOMBRAND_APP_IOS') ?: 'https://apps.apple.com/us/app/atombrand-brand-partner/id6820037360',
+        ],
+    ],
+
     'credit' => [
         // Approved limit as a share of declared monthly income.
         'limit_ratio' => 0.30,
         // Cap on any single monthly instalment as a share of income.
         'instalment_ratio' => 0.10,
+    ],
+
+    /*
+    | AtomPay's own plan at Atomshop checkout. Fixed by the owner's decision of
+    | 2026-10-24 and enforced server-side by Atomshop: AtomPay is offered on
+    | eligible listed products only (products.atompay_eligible or
+    | brands.atompay_eligible), and is ALWAYS three months, no advance and 0%
+    | markup. A 3% processing fee is shown with every plan as a disclaimer and
+    | is never added to an order total; delivery charges apply.
+    |
+    | This mirrors AtomShop's Website\InstallmentPlanService::atompayPlan() and
+    | config('website.atompay.processing_fee_percent'). Keep the two in step.
+    |
+    | The `plan` block below is a DIFFERENT product - Atomshop seller financing,
+    | 3-12 months with a 20-60% advance and a markup per month. The v1 design's
+    | calculator quotes that one; the v2 design quotes this one.
+    */
+    'atompay_plan' => [
+        'months' => 3,
+        'advance' => 0,
+        'markup_percent' => 0,
+        'processing_fee_percent' => env('ATOMPAY_PROCESSING_FEE_PERCENT', 3),
+        // The worked example the v2 landing page prices.
+        'example_price' => 100000,
+        'example_income' => 150000,
     ],
 
     'plan' => [
@@ -51,9 +101,17 @@ return [
             'android' => env('ATOMPAY_APP_MIN_ANDROID', '1.0.0'),
             'ios' => env('ATOMPAY_APP_MIN_IOS', '1.0.0'),
         ],
+        /*
+        | The published AtomPay apps. Both stores carry it (Atomshop's
+        | config('website.app.atompay') holds the same two links - keep them in
+        | step). Defaults are the real listings so the site links correctly with
+        | nothing in .env; override only to point at a different build.
+        */
         'store_url' => [
-            'android' => env('ATOMPAY_APP_STORE_ANDROID'),
-            'ios' => env('ATOMPAY_APP_STORE_IOS'),
+            'android' => env('ATOMPAY_APP_STORE_ANDROID')
+                ?: 'https://play.google.com/store/apps/details?id=com.ecommerce.atompay',
+            'ios' => env('ATOMPAY_APP_STORE_IOS')
+                ?: 'https://apps.apple.com/us/app/atompay-pay-in-steps/id6817231756',
         ],
         // Store-listing links. Privacy falls back to this site's /privacy page when unset.
         'links' => [
@@ -72,7 +130,7 @@ return [
     | Customer notifications: an in-app inbox (atompay_notifications) plus a
     | push to every registered device. `php artisan atompay:notify` sweeps
     | for anything worth telling a customer - it runs every 10 minutes and
-    | is idempotent, so decisions made in AtomShop's admin are caught too.
+    | is idempotent, so decisions made in Atomshop's admin are caught too.
     */
     'notifications' => [
         // Instalment reminders: days before the due date, and days overdue.
@@ -117,10 +175,10 @@ return [
         'resend_seconds' => 60,
         'hourly_limit' => 3,          // codes per phone number / email address per hour
         /*
-        | AtomShop's users.email is required and unique, so a mobile-only
+        | Atomshop's users.email is required and unique, so a mobile-only
         | account is given "<03XXXXXXXXX>@<this domain>". AtomPay never mails
         | these (User::hasRealEmail). Use a domain you own with no mailbox, so
-        | anything AtomShop sends there bounces instead of reaching a stranger.
+        | anything Atomshop sends there bounces instead of reaching a stranger.
         */
         'placeholder_email_domain' => env('ATOMPAY_PLACEHOLDER_EMAIL_DOMAIN', 'no-email.atompay.shop'),
     ],
@@ -143,11 +201,11 @@ return [
     'risk' => [
         'bands' => ['low' => 70, 'medium' => 45],
         'penalties' => [
-            'late_instalment' => 8,   // per late AtomShop instalment, up to the cap
+            'late_instalment' => 8,   // per late Atomshop installment, up to the cap
             'late_instalment_cap' => 40,
-            'defaulted' => 30,  // any instalment overdue longer than default_days
+            'defaulted' => 30,  // any installment overdue longer than default_days
             'obligations_ratio' => 25,  // scaled by obligations / monthly income (max 1)
-            'low_disposable' => 20,  // disposable income below the max instalment
+            'low_disposable' => 20,  // disposable income below the max installment
             'no_payment_history' => 5,
             'kyc_not_verified' => 10,
             'credit_history' => ['none' => 5, 'good' => 0, 'fair' => 10, 'poor' => 30],
@@ -158,11 +216,11 @@ return [
     'faqs' => [
         [
             'q' => 'Do I buy directly on atompay.shop?',
-            'a' => 'No. You shop and choose products on AtomShop.pk. AtomPay is the payment method you select there — this site explains how it works, lets you estimate a plan, and lets you check your approved limit before you shop.',
+            'a' => 'No. You shop and choose products on Atomshop.pk. AtomPay is the payment method you select there — this site explains how it works, lets you estimate a plan, and lets you check your approved limit before you shop.',
         ],
         [
-            'q' => 'Is every product on AtomShop eligible?',
-            'a' => 'Only products marked as instalment-eligible on their AtomShop listing can be paid for with AtomPay. Eligibility is set per product.',
+            'q' => 'Is every product on Atomshop eligible?',
+            'a' => 'Only products marked as installment-eligible on their Atomshop listing can be paid for with AtomPay. Eligibility is set per product.',
         ],
         [
             'q' => 'What decides my monthly payment?',
@@ -170,12 +228,12 @@ return [
         ],
         [
             'q' => "What happens after I'm approved?",
-            'a' => 'Your AtomShop order proceeds as normal and ships to you. You then make your down payment and repay the rest in the monthly instalments agreed at checkout.',
+            'a' => 'Your Atomshop order proceeds as normal and ships to you. You then make your down payment and repay the rest in the monthly installments agreed at checkout.',
         ],
     ],
 
     'steps' => [
-        ['title' => 'Shop on AtomShop.pk',        'text' => 'Pick any product marked eligible for instalments.'],
+        ['title' => 'Shop on Atomshop.pk',        'text' => 'Pick any product marked eligible for installments.'],
         ['title' => 'Choose AtomPay at checkout', 'text' => 'Select AtomPay instead of paying the full amount in cash.'],
         ['title' => 'Get a quick approval',       'text' => 'We confirm your details and set your monthly plan.'],
         ['title' => 'Pay monthly, keep the product', 'text' => 'Your order ships right away; you repay over the chosen term.'],

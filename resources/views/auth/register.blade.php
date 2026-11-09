@@ -1,11 +1,11 @@
-<x-layouts.app title="Create your AtomShop account" :noindex="true">
+<x-layouts.app title="Create your Atomshop account" :noindex="true">
     <section class="py-[60px] sm:py-[84px]">
         <div class="wrap">
             <div class="card p-7 sm:p-9 max-w-[460px] mx-auto">
                 <span class="eyebrow">One account, both sites</span>
                 <h1 class="text-[28px] mt-2">Create your account</h1>
                 <p class="text-muted text-[14.5px] mt-2">
-                    This account works on AtomShop.pk and here on AtomPay. Sign up with your
+                    This account works on Atomshop.pk and here on AtomPay. Sign up with your
                     <strong class="text-ink">email</strong> (we'll email you a code) or your
                     <strong class="text-ink">mobile number</strong> (we'll send the code on WhatsApp).
                 </p>

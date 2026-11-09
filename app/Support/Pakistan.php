@@ -92,4 +92,37 @@ final class Pakistan
     {
         return self::normalizeMobile($value) !== '';
     }
+
+    /**
+     * A wa.me link for a Pakistani number, or null when there is no usable one.
+     *
+     * wa.me wants digits only in international form, so a local 03XX number
+     * becomes 923XX - a link built on the local form simply does not resolve.
+     * Both designs call this rather than each building the URL themselves,
+     * which is how v2 shipped links to "03302277522" for a while.
+     */
+    public static function whatsappUrl(?string $value, ?string $message = null): ?string
+    {
+        $digits = self::normalizeMobile($value);
+
+        if ($digits === '') {
+            // Not a mobile we recognise: fall back to any plausible digit string
+            // so a landline or an already-international number still links.
+            $digits = preg_replace('/\D/', '', (string) $value);
+            $digits = str_starts_with($digits, '00') ? substr($digits, 2) : $digits;
+
+            if (strlen($digits) < 10) {
+                return null;
+            }
+
+            return 'https://wa.me/'.$digits.self::waText($message);
+        }
+
+        return 'https://wa.me/92'.substr($digits, 1).self::waText($message);
+    }
+
+    private static function waText(?string $message): string
+    {
+        return $message === null ? '' : '?text='.rawurlencode($message);
+    }
 }

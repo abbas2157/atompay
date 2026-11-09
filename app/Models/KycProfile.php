@@ -24,7 +24,7 @@ class KycProfile extends Model
     ];
 
     protected $fillable = [
-        'user_id', 'full_name', 'cnic', 'mobile', 'date_of_birth', 'residential_address', 'city_id',
+        'user_id', 'full_name', 'cnic', 'mobile', 'date_of_birth', 'residential_address', 'city_id', 'area_id',
         'cnic_front_path', 'cnic_back_path', 'selfie_path', 'face_verified', 'submitted_at',
         'address_verified', 'verification_form_path', 'verified_by', 'verified_at',
         'verification_status', 'verification_notes',
@@ -52,6 +52,12 @@ class KycProfile extends Model
     public function city(): BelongsTo
     {
         return $this->belongsTo(City::class);
+    }
+
+    /** The area within the city, so Atomshop can raise an order without guessing it. */
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(Area::class);
     }
 
     public function verifier(): BelongsTo

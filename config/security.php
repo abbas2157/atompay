@@ -48,6 +48,21 @@ return [
         ],
 
         /*
+        | Added only on a page served in the v2 design, which takes its type
+        | family (Plus Jakarta Sans) from Google Fonts, the same way the
+        | Atomshop.pk v2 storefront does. v1 self-hosts its fonts through Vite
+        | and must keep the tighter policy, so this is applied per request
+        | rather than merged into the directives above.
+        |
+        | Self-hosting Plus Jakarta Sans would remove these two hosts and one
+        | render-blocking request; worth doing once the design settles.
+        */
+        'design_v2' => [
+            'style-src' => ['https://fonts.googleapis.com'],
+            'font-src' => ['https://fonts.gstatic.com'],
+        ],
+
+        /*
         | Added to the policy only when GOOGLE_ANALYTICS_ID is set - Google's
         | documented host list for GA4 (gtag.js loads from googletagmanager,
         | hits go to google-analytics / analytics.google as XHR or pixel).
@@ -102,6 +117,7 @@ return [
         'register' => 10,    // sign-up tries per hour, per contact + IP
         'register_ip' => 30,    // per hour, per IP, all contacts
         'quote' => 60,    // calculator, read-only
+        'ask_atom' => 30,    // Ask Atom questions; answers are built-in, so this is only abuse control
         'assess' => 10,
         'assess_hourly' => 40,
         'application' => 10,

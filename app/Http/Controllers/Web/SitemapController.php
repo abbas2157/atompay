@@ -28,8 +28,29 @@ class SitemapController extends Controller
                 'lastmod' => $this->lastModified([resource_path('views/pages/faq.blade.php'), config_path('atompay.php')]),
             ],
             [
+                // The eligible catalogue. Its content changes whenever Atomshop
+                // marks another product, so weekly rather than monthly.
+                'loc' => route('products'), 'priority' => '0.8', 'changefreq' => 'weekly',
+                'lastmod' => $this->lastModified([
+                    resource_path('views/v2/pages/products.blade.php'),
+                    resource_path('views/components/v2/product-card.blade.php'),
+                ]),
+            ],
+            [
                 'loc' => route('privacy'), 'priority' => '0.3', 'changefreq' => 'yearly',
-                'lastmod' => $this->lastModified([resource_path('views/pages/privacy.blade.php')]),
+                'lastmod' => $this->lastModified([
+                    resource_path('views/pages/privacy.blade.php'),
+                    resource_path('views/pages/partials/privacy-body.blade.php'),
+                ]),
+            ],
+            [
+                // Public on purpose: the app store listings link straight here,
+                // so it must be crawlable and findable without the app.
+                'loc' => route('account.delete.info'), 'priority' => '0.3', 'changefreq' => 'yearly',
+                'lastmod' => $this->lastModified([
+                    resource_path('views/pages/delete-account.blade.php'),
+                    resource_path('views/pages/partials/delete-account-body.blade.php'),
+                ]),
             ],
         ];
 

@@ -6,14 +6,14 @@
                     <span class="w-2 h-2 rounded-full bg-nucleus"></span>
                     <span class="w-2 h-2 rounded-full spectrum"></span>
                 </span>
-                AtomShop.pk &times; AtomPay
+                Atomshop.pk &times; AtomPay
             </span>
-            <h1 class="text-[clamp(36px,5vw,54px)] max-w-[14ch]">Shop on AtomShop. Pay for it in easy monthly steps.</h1>
+            <h1 class="text-[clamp(36px,5vw,54px)] max-w-[14ch]">Shop on Atomshop. Pay for it in easy monthly steps.</h1>
             <p class="text-[clamp(16px,1.7vw,18.5px)] text-[#3a3b42] max-w-[42ch] mt-5">
-                AtomPay is the instalment payment option built into AtomShop.pk checkout. Pick any eligible product on AtomShop, choose AtomPay at checkout, and spread the cost over a few months instead of paying it all at once.
+                AtomPay is the installment payment option built into Atomshop.pk checkout. Pick any eligible product on Atomshop, choose AtomPay at checkout, and spread the cost over a few months instead of paying it all at once.
             </p>
             <div class="flex flex-wrap gap-3.5 mt-8">
-                <a class="btn btn-primary" href="{{ $shopLink }}" target="_blank" rel="noopener">Browse AtomShop.pk <span aria-hidden="true">&rarr;</span></a>
+                <a class="btn btn-primary" href="{{ $shopLink }}" target="_blank" rel="noopener">Browse Atomshop.pk <span aria-hidden="true">&rarr;</span></a>
                 <a class="btn btn-ghost" href="#how">See how it works</a>
             </div>
         </div>
@@ -24,7 +24,7 @@
                 <div class="orbit o2"><span class="electron e2"></span></div>
                 <div class="absolute inset-0 m-auto w-[44%] h-[44%] rounded-[22px] bg-white border border-line grid place-items-center shadow-[0_16px_36px_rgba(20,21,26,.10)] text-center p-2.5">
                     <div>
-                        <b class="font-disp text-[14px] block">Your AtomShop order</b>
+                        <b class="font-disp text-[14px] block">Your Atomshop order</b>
                         <i class="font-mono not-italic text-[9.5px] tracking-[.1em] text-muted block mt-1.5">PAID IN INSTALMENTS</i>
                     </div>
                 </div>

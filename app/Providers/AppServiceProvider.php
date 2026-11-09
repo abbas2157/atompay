@@ -35,6 +35,10 @@ class AppServiceProvider extends ServiceProvider
 
         // {{ }} escapes; @pkr(123456) prints "PKR 123,456" everywhere.
         Blade::directive('pkr', fn (string $expression) => '<?php echo \\'.Money::class."::format({$expression}); ?>");
+        // The v2 design follows Atomshop's money rule (DESIGN.md §1.7): "Rs."
+        // with thousands separators. v1 keeps "PKR". Same formatter, so the two
+        // can never disagree about the number, only about the prefix.
+        Blade::directive('rs', fn (string $expression) => '<?php echo \\'.Money::class."::format({$expression}, 'Rs. '); ?>");
 
         View::share('shopUrl', config('atompay.shop_url'));
         // Outbound links carry UTM tags so AtomShop's analytics credits AtomPay for the visit.

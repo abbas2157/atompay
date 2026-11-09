@@ -34,7 +34,16 @@ class AnalyticsTest extends TestCase
         $response = $this->get('/')->assertOk();
 
         $this->assertStringNotContainsString('googletagmanager', $response->getContent());
-        $this->assertStringNotContainsString('google', $response->headers->get('Content-Security-Policy'));
+
+        // The analytics hosts by name, not the bare word "google": the v2
+        // design legitimately carries fonts.googleapis.com and fonts.gstatic.com
+        // for Plus Jakarta Sans. Self-hosting that font would take both out of
+        // the policy - see docs/design-v2-migration.md.
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+
+        foreach (['googletagmanager', 'google-analytics', 'analytics.google'] as $host) {
+            $this->assertStringNotContainsString($host, $csp);
+        }
     }
 
     public function test_the_staff_area_is_never_tracked(): void

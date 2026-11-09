@@ -16,8 +16,22 @@ class SeoFilesTest extends TestCase
         $doc = simplexml_load_string($xml);
         $this->assertNotFalse($doc, 'sitemap is well-formed XML');
 
+        // Every public, indexable page. /products and /delete-account were
+        // added before launch: the first is the eligible catalogue, the second
+        // is what the app store listings link straight to.
         $locs = array_map('strval', $doc->xpath('//*[local-name()="loc"]'));
-        $this->assertSame([route('home'), route('faq'), route('privacy')], $locs);
+        $this->assertSame([
+            route('home'),
+            route('faq'),
+            route('products'),
+            route('privacy'),
+            route('account.delete.info'),
+        ], $locs);
+
+        // And nothing private slips in.
+        foreach (['/my', '/login', '/register', '/staff', '/documents'] as $private) {
+            $this->assertStringNotContainsString($private, $xml);
+        }
 
         foreach ($doc->xpath('//*[local-name()="lastmod"]') as $lastmod) {
             $this->assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', (string) $lastmod);

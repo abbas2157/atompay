@@ -3,7 +3,7 @@
         <span class="eyebrow">My AtomPay</span>
         <h1 class="mt-2 text-[clamp(26px,3.5vw,34px)]">Delete your account</h1>
         <p class="text-muted mt-2 text-[15px]">
-            This closes your {{ config('app.name') }} and AtomShop.pk account for good and deletes your identity details and documents.
+            This closes your {{ config('app.name') }} and Atomshop.pk account for good and deletes your identity details and documents.
             Past orders and payments are kept, without your name. <a href="{{ route('account.delete.info') }}" class="underline text-ink">What is deleted</a>
         </p>
 

@@ -34,7 +34,7 @@
 <meta property="og:description" content="{{ $description }}">
 <meta property="og:url" content="{{ $canonical }}">
 <meta property="og:image" content="{{ $image }}">
-<meta property="og:image:alt" content="{{ $siteName }} — buy on AtomShop.pk, pay in instalments">
+<meta property="og:image:alt" content="{{ $siteName }} — buy on Atomshop.pk, pay in installments">
 @if ($image === asset('images/og-default.jpg'))
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">

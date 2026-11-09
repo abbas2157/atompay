@@ -23,7 +23,7 @@ class AuthController extends Controller
 
     public function showLogin(): View
     {
-        return view('auth.login');
+        return atompay_view('auth.login');
     }
 
     public function login(LoginRequest $request, LoginService $logins): RedirectResponse
@@ -45,7 +45,7 @@ class AuthController extends Controller
 
     public function showRegister(): View
     {
-        return view('auth.register');
+        return atompay_view('auth.register');
     }
 
     /**
@@ -68,7 +68,7 @@ class AuthController extends Controller
             return redirect()->route('register')->withErrors(['signup' => 'Your sign-up expired. Please fill in your details again.']);
         }
 
-        return view('auth.register-verify', ['state' => $signups->describe($signup)]);
+        return atompay_view('auth.register-verify', ['state' => $signups->describe($signup)]);
     }
 
     /** Step 2: right code -> account created, welcomed and signed in. */

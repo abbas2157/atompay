@@ -22,7 +22,7 @@ class PasswordResetController extends Controller
 
     public function showRequest(): View
     {
-        return view('auth.forgot-password');
+        return atompay_view('auth.forgot-password');
     }
 
     public function sendCode(Request $request): RedirectResponse
@@ -45,7 +45,7 @@ class PasswordResetController extends Controller
             return redirect()->route('password.request');
         }
 
-        return view('auth.verify-code', [
+        return atompay_view('auth.verify-code', [
             'reset' => $reset,
             'resendIn' => $this->resets->resendIn($reset),
         ]);
@@ -79,7 +79,7 @@ class PasswordResetController extends Controller
             return redirect()->route('password.request');
         }
 
-        return view('auth.reset-password');
+        return atompay_view('auth.reset-password');
     }
 
     public function reset(Request $request): RedirectResponse

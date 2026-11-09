@@ -5,7 +5,7 @@
                 <span class="eyebrow">Forgot password</span>
                 <h1 class="text-[28px] mt-2">Reset your password</h1>
                 <p class="text-muted text-[14.5px] mt-2">
-                    Enter the email or mobile number on your AtomShop account. We'll send a one-time code
+                    Enter the email or mobile number on your Atomshop account. We'll send a one-time code
                     by <strong class="text-ink">email</strong>, or on <strong class="text-ink">WhatsApp</strong> if you enter a mobile number.
                 </p>
 

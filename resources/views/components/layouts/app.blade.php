@@ -44,11 +44,11 @@
                     <a href="{{ route('home') }}#how" class="text-muted hover:text-ink no-underline">How it works</a>
                     <a href="{{ route('faq') }}" class="text-muted hover:text-ink no-underline">FAQ</a>
                     <a href="{{ route('privacy') }}" class="text-muted hover:text-ink no-underline">Privacy</a>
-                    <a href="{{ $shopLink }}" target="_blank" rel="noopener" class="text-muted hover:text-ink no-underline">AtomShop.pk</a>
+                    <a href="{{ $shopLink }}" target="_blank" rel="noopener" class="text-muted hover:text-ink no-underline">Atomshop.pk</a>
                 </nav>
             </div>
             <div class="spectrum h-1 rounded mx-auto mt-8 max-w-[1140px]"></div>
-            <p class="font-mono text-[11px] text-muted text-center mt-4 px-5">&copy; {{ date('Y') }} {{ config('app.name') }} &mdash; instalment payments for AtomShop.pk purchases, Pakistan.</p>
+            <p class="font-mono text-[11px] text-muted text-center mt-4 px-5">&copy; {{ date('Y') }} {{ config('app.name') }} &mdash; installment payments for Atomshop.pk purchases, Pakistan.</p>
         </footer>
     </x-slot:footer>
 </x-layouts.base>
