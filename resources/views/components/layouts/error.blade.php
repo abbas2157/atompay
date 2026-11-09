@@ -26,7 +26,9 @@
         <meta name="robots" content="noindex, nofollow">
     @endif
     <meta name="theme-color" content="#FBFAF7">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <style>
         :root {
             --amber: #FAA53A; --coral: #F05465; --rose: #D45771;

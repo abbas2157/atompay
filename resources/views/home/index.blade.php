@@ -8,7 +8,9 @@
             '@type'    => 'Organization',
             'name'     => config('app.name'),
             'url'      => route('home'),
-            'logo'     => asset('favicon.svg'),
+            // schema.org wants the real logo, not the tab icon - same asset the
+            // v2 home reports, so both designs describe the brand identically.
+            'logo'     => asset('web/v2/img/atompay-logo.png'),
             'address'  => ['@type' => 'PostalAddress', 'addressCountry' => 'PK'],
             'parentOrganization' => ['@type' => 'Organization', 'name' => 'Atomshop', 'url' => $shopUrl],
         ],

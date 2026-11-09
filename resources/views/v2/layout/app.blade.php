@@ -22,7 +22,14 @@
 
     @yield('seo')
 
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+    {{-- The AtomPay mark itself, generated from web/v2/img/atompay-mark.png.
+         favicon.ico carries 16/32/48 for browsers that only probe /favicon.ico;
+         the PNGs are what a modern browser picks. iOS ignores transparency, so
+         apple-touch-icon is the one rendered on white. --}}
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="32x32">
+    <link rel="icon" href="{{ asset('favicon-32.png') }}" type="image/png" sizes="32x32">
+    <link rel="icon" href="{{ asset('favicon-192.png') }}" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
