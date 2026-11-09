@@ -378,6 +378,13 @@ table.t.tight th,table.t.tight td{padding:12px 14px}
    over a badge that comes earlier in the DOM. */
 .p-card .p-img .badge{z-index:2}
 
+/* The eligibility flag, pinned to the top-left of the picture.
+   .p-flag carried no rules at all, so it was laid out as an ordinary flex child
+   of .p-img - which centres its children - and ended up halfway down the left
+   edge, across the middle of the product. Out of stock was already pinned to
+   the top-right inline, so the two sit on the same line and never collide. */
+.p-card .p-img .p-flag{position:absolute;left:12px;top:12px;max-width:calc(100% - 24px)}
+
 /* The store links under each ecosystem card. Compact, because four cards share
    a row at 1240px. An unpublished platform shows a muted "soon" instead. */
 .eco-apps{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}

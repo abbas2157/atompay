@@ -585,4 +585,26 @@ class AtomshopEndToEndTest extends TestCase
             'the pictures must come from the same host as the product links'
         );
     }
+
+    /**
+     * The eligibility badge belongs at the top of the picture, not halfway down
+     * it. .p-flag carried no rules at all, so it was laid out as an ordinary
+     * flex child of .p-img - which centres its children - and sat across the
+     * middle of the product while also pushing the picture off centre. An
+     * unstyled class is invisible to a markup assertion, so check the rule.
+     */
+    public function test_the_eligibility_badge_is_pinned_to_the_top_of_the_picture(): void
+    {
+        config(['design.default' => 'v2', 'design.active' => 'v2']);
+
+        $tile = $this->firstTile($this->get(route('products'))->assertOk()->getContent());
+        $this->assertStringContainsString('class="badge b-rose p-flag"', $tile);
+
+        $css = file_get_contents(public_path('web/v2/css/atompay.css'));
+        preg_match('/\.p-card \.p-img \.p-flag\{([^}]*)\}/', (string) $css, $m);
+
+        $this->assertNotEmpty($m, '.p-flag has no rule, so it falls back to being an in-flow flex child');
+        $this->assertStringContainsString('position:absolute', $m[1]);
+        $this->assertStringContainsString('top:12px', $m[1]);
+    }
 }
