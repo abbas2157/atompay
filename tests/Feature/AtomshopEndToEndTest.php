@@ -474,4 +474,59 @@ class AtomshopEndToEndTest extends TestCase
 
         $this->get(route('products'))->assertRedirect(config('atompay.shop_url'));
     }
+
+    /**
+     * Product pictures live on AtomShop, not here. products.picture holds a
+     * path like "images/products/foo.webp" and the shop serves those under
+     * /public, so a value that is relative, or that points at AtomPay's own
+     * host, 404s every image on the site - which is how it shipped to live
+     * once. These assertions are about the shape of the URL, not the host,
+     * so they hold for localhost and production alike.
+     */
+    public function test_product_pictures_are_served_from_the_shop_not_from_atompay(): void
+    {
+        $product = new Product;
+        $product->picture = 'images/products/foo-123-abc.webp';
+        $url = $product->picture_url;
+
+        $this->assertMatchesRegularExpression(
+            '#^https?://#', $url,
+            'the asset url must be absolute - a relative one resolves against atompay and 404s'
+        );
+        $this->assertStringEndsWith('/images/products/foo-123-abc.webp', $url);
+
+        // products.picture is served from /public on the shop.
+        $this->assertStringContainsString('/public/images/products/', $url);
+
+        /*
+         * Never AtomPay itself. Comparing hosts does not work portably - in
+         * development both apps sit on localhost and differ only by path, and
+         * in the test environment APP_URL is a bare host - but the one value
+         * that is always wrong is one naming AtomPay. The live breakage was
+         * ATOMPAY_ASSET_URL=https://atompay.shop/public, which is absolute and
+         * does contain /public/images/products/, so the checks above pass it
+         * and only this catches it.
+         */
+        $this->assertStringNotContainsStringIgnoringCase(
+            'atompay',
+            $url,
+            'pictures must come from AtomShop - ATOMPAY_ASSET_URL points at AtomPay'
+        );
+
+        // No picture, no URL - the card renders its placeholder instead.
+        $blank = new Product;
+        $blank->picture = null;
+        $this->assertNull($blank->picture_url);
+    }
+
+    /** A trailing slash on the configured base must not double up. */
+    public function test_the_asset_url_is_joined_without_a_double_slash(): void
+    {
+        config(['atompay.asset_url' => 'https://atomshop.pk/public/']);
+
+        $product = new Product;
+        $product->picture = '/images/products/foo.webp';
+
+        $this->assertSame('https://atomshop.pk/public/images/products/foo.webp', $product->picture_url);
+    }
 }

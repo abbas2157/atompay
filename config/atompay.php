@@ -15,8 +15,18 @@ return [
     // The storefront this service is the payment option for.
     'shop_url' => env('ATOMSHOP_URL', 'https://atomshop.pk'),
 
-    // Where AtomShop serves uploaded product pictures from.
-    'asset_url' => env('ATOMPAY_ASSET_URL', 'https://atomshop.pk'),
+    /*
+    | Where AtomShop serves uploaded product pictures from. It MUST be absolute
+    | and MUST end in /public - products.picture holds a path like
+    | "images/products/foo.webp", and the shop serves those under /public:
+    |
+    |   https://atomshop.pk/public/images/products/foo.webp   200
+    |   https://atomshop.pk/images/products/foo.webp          404
+    |
+    | A relative value such as "/public" resolves against AtomPay's own host,
+    | so every picture 404s from atompay.shop instead of loading from the shop.
+    */
+    'asset_url' => env('ATOMPAY_ASSET_URL', 'https://atomshop.pk/public'),
 
     /*
     | The Atom ecosystem's apps, shown under each card in the ecosystem section.
