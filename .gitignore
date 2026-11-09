@@ -3,6 +3,10 @@
 .env
 .env.backup
 .env.production
+# Any other .env copy - a timestamped or named backup holds APP_KEY and the
+# database password, and .env.backup alone does not cover .env.backup-2026-01-01
+.env.*
+!.env.example
 .phpactor.json
 .phpunit.result.cache
 /.fleet
