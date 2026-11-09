@@ -16,17 +16,24 @@ return [
     'shop_url' => env('ATOMSHOP_URL', 'https://atomshop.pk'),
 
     /*
-    | Where AtomShop serves uploaded product pictures from. It MUST be absolute
-    | and MUST end in /public - products.picture holds a path like
-    | "images/products/foo.webp", and the shop serves those under /public:
+    | Where AtomShop serves uploaded product pictures from. products.picture
+    | holds a path like "images/products/foo.webp", and the shop serves those
+    | under /public:
     |
     |   https://atomshop.pk/public/images/products/foo.webp   200
     |   https://atomshop.pk/images/products/foo.webp          404
     |
-    | A relative value such as "/public" resolves against AtomPay's own host,
-    | so every picture 404s from atompay.shop instead of loading from the shop.
+    | Derived from ATOMSHOP_URL, so the shop's host is configured in exactly one
+    | place and cannot drift from the product links built off shop_url. Set
+    | ATOMPAY_ASSET_URL only when the pictures are somewhere other than
+    | <shop>/public - in development, say, where the shop is on localhost.
+    |
+    | It must be ABSOLUTE and point at the SHOP. A relative value such as
+    | "/public", or an absolute one naming AtomPay, resolves against
+    | atompay.shop and 404s every picture on the site.
     */
-    'asset_url' => env('ATOMPAY_ASSET_URL', 'https://atomshop.pk/public'),
+    'asset_url' => env('ATOMPAY_ASSET_URL')
+        ?: rtrim(env('ATOMSHOP_URL', 'https://atomshop.pk'), '/').'/public',
 
     /*
     | The Atom ecosystem's apps, shown under each card in the ecosystem section.

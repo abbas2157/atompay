@@ -529,4 +529,23 @@ class AtomshopEndToEndTest extends TestCase
 
         $this->assertSame('https://atomshop.pk/public/images/products/foo.webp', $product->picture_url);
     }
+
+    /**
+     * With ATOMPAY_ASSET_URL unset - which is how production should run - the
+     * picture host derives from ATOMSHOP_URL, so the shop is named in one place
+     * and the pictures cannot drift from the product links built off shop_url.
+     * That drift is exactly what shipped: links went to atomshop.pk while the
+     * images pointed at atompay.shop.
+     */
+    public function test_the_picture_host_derives_from_the_shop_url_when_unset(): void
+    {
+        $derived = rtrim(env('ATOMSHOP_URL', 'https://atomshop.pk'), '/').'/public';
+
+        $this->assertSame('https://atomshop.pk/public', $derived);
+        $this->assertStringStartsWith(
+            rtrim(config('atompay.shop_url'), '/'),
+            $derived,
+            'the pictures must come from the same host as the product links'
+        );
+    }
 }
