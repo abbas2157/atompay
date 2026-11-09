@@ -89,6 +89,8 @@ class DeployCheck extends Command
         if (stripos($url, 'atompay') !== false) {
             $this->assetUrlSound = false;
             $this->bad("asset url points at AtomPay: {$url}", 'pictures are served by AtomShop, not by this app');
+            $this->explainOrigin('ATOMPAY_ASSET_URL');
+            $this->explainOrigin('ATOMSHOP_URL');
 
             return;
         }
@@ -103,6 +105,66 @@ class DeployCheck extends Command
         $assetHost === $shopHost
             ? $this->good('asset url', $url)
             : $this->warn("  ~ asset url host ({$assetHost}) differs from the shop ({$shopHost}) - expected in development");
+    }
+
+    /**
+     * Where a value actually comes from.
+     *
+     * Two things quietly beat an edit to .env, both confirmed by experiment
+     * rather than assumed:
+     *
+     *   - a variable already in the process environment (Apache SetEnv, an fcgi
+     *     param, a hosting panel, systemd) overrides .env entirely;
+     *   - within .env itself, the LAST occurrence of a key wins, so a stale
+     *     line further down silently beats a corrected one above it.
+     *
+     * So when a value looks wrong, say where it came from instead of leaving it
+     * to guesswork.
+     */
+    private function explainOrigin(string $key): void
+    {
+        $this->line("      <fg=cyan>where {$key} comes from:</>");
+
+        $lines = [];
+        $path = base_path('.env');
+        if (is_readable($path)) {
+            foreach (file($path, FILE_IGNORE_NEW_LINES) as $i => $line) {
+                if (preg_match('/^\s*'.preg_quote($key, '/').'\s*=(.*)$/', $line, $m)) {
+                    $lines[] = ['n' => $i + 1, 'value' => trim($m[1], " 	\"'")];
+                }
+            }
+        }
+
+        if ($lines === []) {
+            $this->line('        .env: not set');
+        }
+        $last = count($lines) - 1;
+        foreach ($lines as $k => $line) {
+            // The last assignment in the file is the one that takes effect.
+            $note = $k === $last
+                ? ' <fg=green>(this one wins)</>'
+                : ' <fg=yellow>(overridden by the later line below)</>';
+            $this->line("        .env line {$line['n']}: ".($line['value'] === '' ? '<blank>' : $line['value']).($last > 0 ? $note : ''));
+        }
+
+        // A real environment variable is set before .env is read, so it wins
+        // over every line above.
+        $process = getenv($key);
+        if ($process === false) {
+            $process = $_SERVER[$key] ?? $_ENV[$key] ?? null;
+        }
+        if ($process === false || $process === null || $process === '') {
+            $this->line('        effective value: not set');
+
+            return;
+        }
+
+        // .env is loaded into the process environment, so this matching the
+        // winning line above just confirms .env is in charge. Differing is the
+        // interesting case: something set it before .env was ever read.
+        $lines !== [] && end($lines)['value'] === $process
+            ? $this->line("        effective value: {$process} <fg=gray>(from the .env line above)</>")
+            : $this->line("        effective value: {$process} <fg=red>(set OUTSIDE .env - a web server SetEnv, fcgi param, panel or systemd unit is overriding it)</>");
     }
 
     /**
