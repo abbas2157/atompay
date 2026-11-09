@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -444,16 +445,52 @@ class AtomshopEndToEndTest extends TestCase
             ->assertSee('alt=""', false)
             ->getContent();
 
-        // Behind, not in front, and never hidden.
-        $img = (string) preg_replace('/.*?<div class="p-img">/s', '', $html);
-        $img = substr($img, 0, (int) strpos($img, '</div>'));
+        // A card that HAS a picture carries the placeholder hidden: site.js
+        // reveals it only if the picture then fails. Rendering it visible
+        // underneath showed the glyph around every image, because the image box
+        // is 72% of the tile with object-fit:contain and does not cover it.
+        $tile = $this->firstTile($html);
+        $this->assertStringContainsString('<img', $tile, 'this product should have a picture');
+        $this->assertTrue($this->glyphIsHidden($tile), 'the placeholder must be hidden behind a real picture');
+    }
 
-        $this->assertLessThan(
-            strpos($img, '<img'),
-            strpos($img, 'ph-glyph'),
-            'the placeholder must be rendered before the picture, so it sits behind it',
-        );
-        $this->assertStringNotContainsString('ph-glyph" hidden', $img);
+    /** With no picture there is nothing to cover it, so it shows. */
+    public function test_a_product_without_a_picture_shows_the_placeholder(): void
+    {
+        config(['design.default' => 'v2', 'design.active' => 'v2']);
+
+        // Every eligible product, so whichever sorts first has no picture.
+        // products is Atomshop's table and the model is guarded, so go round it;
+        // DatabaseTransactions rolls this back.
+        $ids = Product::query()->visible()->atompayEligible()->pluck('id');
+        DB::table('products')->whereIn('id', $ids)->update(['picture' => null]);
+
+        $tile = $this->firstTile($this->get(route('products'))->assertOk()->getContent());
+
+        $this->assertStringNotContainsString('<img', $tile, 'there is no picture to render');
+        $this->assertFalse($this->glyphIsHidden($tile), 'the placeholder must be visible when there is no picture');
+    }
+
+    /** The markup of the first .p-img tile on the page. */
+    private function firstTile(string $html): string
+    {
+        $tile = (string) preg_replace('/.*?<div class="p-img">/s', '', $html);
+
+        return substr($tile, 0, (int) strpos($tile, '</div>'));
+    }
+
+    /**
+     * Whether the placeholder in this tile carries the hidden attribute. Read
+     * off the <svg> tag itself: matching a string like 'ph-glyph" hidden'
+     * silently passes whenever another attribute sits in between, which is how
+     * the glyph came to be rendered over every picture unnoticed.
+     */
+    private function glyphIsHidden(string $tile): bool
+    {
+        preg_match('/<svg[^>]*class="ph-glyph"[^>]*>/', $tile, $m);
+        $this->assertNotEmpty($m, 'no placeholder rendered in this tile');
+
+        return (bool) preg_match('/\shidden(\s|=|>)/', $m[0]);
     }
 
     /** The 01-04 counters were removed from the How it works cards. */

@@ -22,11 +22,16 @@
                 <span class="badge b-grey" style="position:absolute;right:12px;top:12px">Out of stock</span>
             @endunless
 
-            {{-- The placeholder is always rendered, behind the picture: a loaded
-                 one covers it, a missing one leaves it showing, and neither
-                 depends on JavaScript. data-fallback lets site.js additionally
-                 hide a failed <img> so no broken-image marker sits on top. --}}
-            <svg class="ph-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true">
+            {{-- The placeholder is rendered for a product with no picture, and
+                 hidden for one that has it - site.js reveals it if the <img>
+                 then fails to load (data-fallback).
+
+                 It used to be rendered visible underneath every picture, on the
+                 assumption that a loaded one covered it. It does not: the image
+                 box is 72% of the tile with object-fit:contain, so the 76px
+                 glyph showed around its edges on every card. --}}
+            <svg class="ph-glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.1"
+                 aria-hidden="true" @if ($product->picture_url) hidden @endif>
                 <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
                 <path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
             </svg>
