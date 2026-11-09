@@ -9,6 +9,17 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
+/*
+ * The design helpers are also listed in composer.json's "autoload.files", but
+ * that list is compiled into vendor/composer/ when the autoloader is dumped - a
+ * deploy that pulls the code without running `composer dump-autoload` would not
+ * have them, and SecurityHeaders calls design_is_v2() on every single request.
+ * Requiring them here means a missed deploy step cannot take the site down.
+ * design.php guards each function with function_exists(), so loading it from
+ * both places is safe.
+ */
+require_once __DIR__.'/../app/Support/design.php';
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
