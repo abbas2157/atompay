@@ -17,10 +17,26 @@ Call this on every launch, before `GET /me`.
     "terms_url": null,
     "account_deletion_url": "https://atompay.shop/delete-account",
     "support": { "phone": null, "whatsapp": null, "email": null },
-    "features": { "push": true, "password_reset_channels": ["email", "whatsapp"], "signup_channels": ["email", "whatsapp"] }
+    "maintenance": { "active": false, "message": null, "until": null },
+    "apps": {
+      "atomshop":   { "android": "https://play.google.com/store/apps/details?id=com.ecommerce.atomshop", "ios": "https://apps.apple.com/us/app/atomshop/id6744655747", "web": "https://atomshop.pk" },
+      "atompay":    { "android": "https://play.google.com/store/apps/details?id=com.ecommerce.atompay", "ios": "https://apps.apple.com/us/app/atompay-pay-in-steps/id6817231756", "web": "https://atompay.shop" },
+      "atomseller": { "android": "https://play.google.com/store/apps/details?id=com.ecommerce.atomseller", "ios": "https://apps.apple.com/us/app/atom-seller-sell-more/id6817232001", "web": "https://atomshop.pk/smart-seller" },
+      "atombrand":  { "android": null, "ios": "https://apps.apple.com/us/app/atombrand-brand-partner/id6820037360", "web": "https://atomshop.pk/brand-partners" }
+    },
+    "features": { "push": true, "voice": true, "password_reset_channels": ["email", "whatsapp"], "signup_channels": ["email", "whatsapp"] }
   }
 }
 ```
+
+- **`maintenance.active: true`** → show the blocking Maintenance screen (no back), with `message` if set
+  and "Back by about {time}" from `until` (ISO-8601, or `null` for no time). **Try again** re-calls
+  `/app-config`. Set with `ATOMPAY_APP_MAINTENANCE`, `_MESSAGE` and `_UNTIL`. A `503` from any endpoint
+  (`php artisan down`) means the same thing, without a message or time.
+- **`apps`** feeds the Ecosystem screen. A `null` store link means the app isn't published there yet:
+  show "Android soon" / "iOS soon" instead of a link.
+- **`features.voice`** is `false` to hide the Ask Atom microphone without a new build
+  (`ATOMPAY_APP_VOICE`).
 
 - If the app's version is **lower than** `min_version[platform]`, show a blocking "Update
   required" screen that links to `store_url[platform]`.
@@ -55,10 +71,17 @@ Values and labels for the application form's pickers. Always send `value`, and d
       { "value": "salary", "label": "Salary" }, { "value": "business", "label": "Business" },
       { "value": "rental", "label": "Rental" }, { "value": "remittance", "label": "Remittance" },
       { "value": "pension", "label": "Pension" }, { "value": "other", "label": "Other" }
+    ],
+    "complaint_topics": [
+      { "value": "payment", "label": "A payment" }, { "value": "order", "label": "An order" },
+      { "value": "limit", "label": "My limit or application" }, { "value": "account", "label": "My account or sign-in" },
+      { "value": "other", "label": "Something else" }
     ]
   }
 }
 ```
+
+`complaint_topics` fills the "What is it about?" picker on the complaint form ([complaints.md](complaints.md)).
 
 When `has_employer` is `true`, the **employer / business name** field is required. Show it
 only in that case.

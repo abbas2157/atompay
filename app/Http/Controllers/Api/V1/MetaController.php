@@ -8,6 +8,7 @@ use App\Models\Enums\IncomeSource;
 use App\Services\Messaging\WhatsAppClient;
 use App\Services\Push\FcmClient;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Carbon;
 
 /** Public, cacheable facts the app needs before (or without) signing in. */
 class MetaController extends Controller
@@ -27,8 +28,16 @@ class MetaController extends Controller
             'terms_url' => $api['links']['terms_url'] ?: null,
             'account_deletion_url' => $api['links']['account_deletion_url'] ?: route('account.delete.info'),
             'support' => $api['support'],
+            'maintenance' => [
+                'active' => (bool) $api['maintenance']['active'],
+                'message' => $api['maintenance']['message'] ?: null,
+                'until' => $this->isoOrNull($api['maintenance']['until']),
+            ],
+            // The ecosystem screen. A null link means "not published on that store yet".
+            'apps' => $this->apps(),
             'features' => [
                 'push' => $fcm->enabled(),
+                'voice' => (bool) $api['voice'],
                 // Which ways a reset code can be sent: email always, WhatsApp when configured.
                 // Where codes can go (sign-up and reset): email always, WhatsApp when configured.
                 'password_reset_channels' => $channels = $whatsapp->available() ? ['email', 'whatsapp'] : ['email'],
@@ -50,6 +59,41 @@ class MetaController extends Controller
                 'value' => $s->value,
                 'label' => $s->label(),
             ], IncomeSource::cases()),
+            'complaint_topics' => collect(config('atompay.complaints.topics'))
+                ->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])
+                ->values(),
         ]]);
+    }
+
+    /** @return array<string, array{android: string|null, ios: string|null, web: string}> */
+    private function apps(): array
+    {
+        $shop = rtrim((string) config('atompay.shop_url'), '/');
+        $apps = config('atompay.apps');
+
+        return [
+            'atomshop' => ['android' => $apps['atomshop']['android'] ?: null, 'ios' => $apps['atomshop']['ios'] ?: null, 'web' => $shop],
+            'atompay' => [
+                'android' => config('atompay.api.store_url.android') ?: null,
+                'ios' => config('atompay.api.store_url.ios') ?: null,
+                'web' => rtrim((string) config('app.url'), '/'),
+            ],
+            'atomseller' => ['android' => $apps['atomseller']['android'] ?: null, 'ios' => $apps['atomseller']['ios'] ?: null, 'web' => $shop.'/smart-seller'],
+            'atombrand' => ['android' => $apps['atombrand']['android'] ?: null, 'ios' => $apps['atombrand']['ios'] ?: null, 'web' => $shop.'/brand-partners'],
+        ];
+    }
+
+    /** A bad value in .env must not break app launch: it becomes "no time given". */
+    private function isoOrNull(?string $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->toIso8601String();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

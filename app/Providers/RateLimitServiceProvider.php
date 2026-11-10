@@ -75,6 +75,13 @@ class RateLimitServiceProvider extends ServiceProvider
         // Deleting the account asks for the password, so it is a guess like a login.
         RateLimiter::for('account_delete', fn (Request $r) => Limit::perMinute($limits['account_delete'])->by('delete:'.$this->actor($r)));
 
+        // Changing the password checks the current one, so it is a guess like a login.
+        RateLimiter::for('password_change', fn (Request $r) => Limit::perMinute($limits['password_change'])->by('password:'.$this->actor($r)));
+
+        // Each complaint is read by a person, and each KFS copy is an email.
+        RateLimiter::for('complaints', fn (Request $r) => Limit::perHour($limits['complaints'])->by('complaints:'.$this->actor($r)));
+        RateLimiter::for('kfs_send', fn (Request $r) => Limit::perHour($limits['kfs_send'])->by('kfs:'.$this->actor($r)));
+
         /*
          * Sending codes (forgot password, sign-up resend). What stops someone's
          * phone being spammed is the services, not these: PasswordResetService

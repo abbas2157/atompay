@@ -2,6 +2,10 @@
 
 [← API index](README.md) · [Conventions, errors & limits](conventions.md)
 
+> **For AtomPay's own plan use [`GET /plan-preview`](products.md#get-plan-preview) instead.** These
+> three price **Atomshop seller financing** (3–12 months, an advance and a markup), a different product.
+> The v2 app does not call `/calculator` or `/quote`; `/estimate` is still the income → limit estimate.
+
 All three are public, so they work before sign-up. They use the same pricing as AtomShop checkout:
 
 ```

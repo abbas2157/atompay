@@ -20,6 +20,7 @@ Returns the customer's identity profile. Before the first submission, this is a 
     "date_of_birth": "1992-03-14",
     "residential_address": "House 7, Street 3, Gulshan, Karachi",
     "city": { "id": 1, "name": "Karachi" },
+    "area": { "id": 12, "title": "Clifton" },
     "documents": {
       "cnic_front": { "uploaded": true,  "url": "https://atompay.shop/api/v1/profile/documents/cnic_front" },
       "cnic_back":  { "uploaded": true,  "url": "https://atompay.shop/api/v1/profile/documents/cnic_back" },
@@ -49,6 +50,7 @@ Creates or updates the profile. Send **every text field every time**. The images
 | `date_of_birth` | required, `YYYY-MM-DD`, customer must be **18+** |
 | `residential_address` | required, ≤ 1000 |
 | `city_id` | optional, an `id` from `GET /cities` |
+| `area_id` | optional, an `id` from `GET /areas?city_id=` **for the same `city_id`** (422 otherwise). Leave the field out to keep the saved area; send it empty to clear it. A new city that doesn't contain the saved area clears it. |
 | `cnic_front`, `cnic_back`, `selfie` | image files: jpg / jpeg / png / webp, **≤ 4 MB each** |
 
 **`201 Created`** on the first submission and **`200 OK`** on an update. Both return the profile
@@ -90,3 +92,15 @@ AtomShop's active cities, sorted A–Z, for the profile's city picker.
 ```
 
 The list changes rarely. Caching it for the session is fine.
+
+## `GET /areas?city_id={id}`
+
+The active areas of one active city, sorted A–Z, for the area picker (Lahore has 474). Ask for them
+after a city is chosen, and clear the area when the city changes.
+
+```json
+{ "data": [ { "id": 2041, "title": "Abdalian Housing Society" }, { "id": 2042, "title": "Abu Bakar Block" } ] }
+```
+
+`422` when `city_id` is missing, unknown or inactive. Every list in the app is searchable, so filter
+this one on the phone as the customer types.

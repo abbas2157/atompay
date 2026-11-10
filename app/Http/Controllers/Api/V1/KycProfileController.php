@@ -25,7 +25,7 @@ class KycProfileController extends Controller
     /** The saved profile, or a new one pre-filled from AtomShop. */
     public function show(Request $request): KycProfileResource
     {
-        return new KycProfileResource($this->kyc->profileFor($request->user())->load('city'));
+        return new KycProfileResource($this->kyc->profileFor($request->user())->load(['city', 'area']));
     }
 
     /** Multipart POST: fields + cnic_front / cnic_back / selfie images. */
@@ -33,7 +33,7 @@ class KycProfileController extends Controller
     {
         $profile = DB::transaction(fn () => $this->kyc->submit($request->user(), $request->identity(), $request->documents()));
 
-        return (new KycProfileResource($profile->load('city')))
+        return (new KycProfileResource($profile->load(['city', 'area'])))
             ->response()
             ->setStatusCode($profile->wasRecentlyCreated ? 201 : 200);
     }

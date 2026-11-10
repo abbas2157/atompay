@@ -28,6 +28,7 @@ class KycProfileResource extends JsonResource
             'date_of_birth' => $this->date_of_birth?->toDateString(),
             'residential_address' => $this->residential_address,
             'city' => $this->city_id && $this->city ? new CityResource($this->city) : null,
+            'area' => $this->area_id && $this->area ? ['id' => $this->area->id, 'title' => $this->area->title] : null,
             'documents' => $this->documents(),
             'address_verified' => (bool) $this->address_verified,
             'verified_at' => $this->verified_at?->toDateString(),

@@ -30,17 +30,77 @@ class AskAtomService
      */
     public function answer(string $question): array
     {
+        return $this->shape($this->resolve($question));
+    }
+
+    /**
+     * The same answer for the mobile app: plain paragraphs (`**bold**` is
+     * the only markup), an optional month-by-month table, and actions that
+     * point at app routes instead of web pages. A link with no app screen
+     * (WhatsApp, a store, Atomshop.pk) stays a `url` for the browser.
+     *
+     * @return array{paragraphs: list<string>, table: list<array{label: string, value: int}>|null,
+     *               actions: list<array{label: string, route: string|null, url: string|null}>, chips: list<string>}
+     */
+    public function answerForApp(string $question): array
+    {
+        $reply = $this->resolve($question);
+
+        return [
+            'paragraphs' => $this->paragraphs($reply[0]),
+            'table' => $reply[2] ?? null,
+            'actions' => array_map(fn (array $a) => $this->appAction($a), $reply[1] ?? []),
+            'chips' => $this->chips(),
+        ];
+    }
+
+    /** @return array{0: string, 1: array, 2?: array} [html, actions, table?] */
+    private function resolve(string $question): array
+    {
         $q = Str::lower(trim($question));
 
         foreach ($this->rules() as $rule) {
             foreach ($rule['match'] as $needle) {
                 if (str_contains($q, $needle)) {
-                    return $this->shape($rule['reply']($q));
+                    return $rule['reply']($q);
                 }
             }
         }
 
-        return $this->shape($this->fallback());
+        return $this->fallback();
+    }
+
+    /** @return list<string> */
+    private function paragraphs(string $html): array
+    {
+        $html = preg_replace('#<strong>(.*?)</strong>#s', '**$1**', $html);
+        preg_match_all('#<(p|li)>(.*?)</\1>#s', $html, $blocks, PREG_SET_ORDER);
+
+        return array_values(array_filter(array_map(function (array $b) {
+            $text = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($b[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+
+            return $text === '' ? null : ($b[1] === 'li' ? '• '.$text : $text);
+        }, $blocks)));
+    }
+
+    /** @param array{label: string, url: string} $action */
+    private function appAction(array $action): array
+    {
+        $routes = [
+            route('home').'#plan' => '/calculator',
+            route('home').'#how' => '/help',
+            route('faq') => '/help',
+            route('products') => '/shop',
+            route('register') => '/register',
+            route('login') => '/login',
+            route('password.request') => '/forgot',
+            route('account.application') => '/application',
+            route('account.applications') => '/application/status',
+            route('account.orders') => '/plans',
+        ];
+        $route = $routes[$action['url']] ?? null;
+
+        return ['label' => $action['label'], 'route' => $route, 'url' => $route ? null : $action['url']];
     }
 
     /** The questions offered before anything is typed. */
@@ -175,6 +235,8 @@ class AskAtomService
             .'<p>No advance, no markup, '.$this->rs($plan['total']).' repaid in total. Your limit has to cover the '
             .'whole '.$this->rs($plan['price']).', because nothing is paid at checkout.</p>',
             [['label' => 'Products near this price', 'url' => route('products')]],
+            // The app shows the months as a table (the website says it in the sentence).
+            array_map(fn (array $s) => ['label' => 'Month '.$s['number'], 'value' => $s['amount']], $plan['schedule']),
         ];
     }
 

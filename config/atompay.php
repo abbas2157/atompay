@@ -141,6 +141,50 @@ return [
             'whatsapp' => env('ATOMPAY_SUPPORT_WHATSAPP'),
             'email' => env('ATOMPAY_SUPPORT_EMAIL'),
         ],
+        /*
+        | Planned downtime. While `active`, GET /app-config tells the app to
+        | show its Maintenance screen. `php artisan down` (a 503 on every
+        | route) has the same effect, without a message or a time.
+        */
+        'maintenance' => [
+            'active' => (bool) env('ATOMPAY_APP_MAINTENANCE', false),
+            'message' => env('ATOMPAY_APP_MAINTENANCE_MESSAGE'),
+            'until' => env('ATOMPAY_APP_MAINTENANCE_UNTIL'),   // ISO-8601, e.g. 2026-11-10T16:30:00+05:00
+        ],
+        // Ask Atom by voice. Off hides the mic in the app (no new build needed).
+        'voice' => (bool) env('ATOMPAY_APP_VOICE', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Key Fact Statement (SECP Circular 15/2022)
+    |--------------------------------------------------------------------------
+    | The lender's legal identity and the terms that are not yet decided stay
+    | null until the business supplies them; the app shows a placeholder for
+    | null rather than a guess.
+    */
+    'lender' => [
+        'name' => env('ATOMPAY_LENDER_NAME'),
+        'licence' => env('ATOMPAY_LENDER_LICENCE'),
+        'address' => env('ATOMPAY_LENDER_ADDRESS'),
+    ],
+    'kfs' => [
+        'late_payment' => env('ATOMPAY_KFS_LATE_PAYMENT'),
+        'early_settlement' => env('ATOMPAY_KFS_EARLY_SETTLEMENT'),
+        'complaints' => 'In the app: Help › Complaints. If you are not satisfied with our answer, you can complain to the SECP.',
+    ],
+
+    // In-app complaints (POST /api/v1/complaints). Value => label, in display order.
+    'complaints' => [
+        'topics' => [
+            'payment' => 'A payment',
+            'order' => 'An order',
+            'limit' => 'My limit or application',
+            'account' => 'My account or sign-in',
+            'other' => 'Something else',
+        ],
+        'min_length' => 10,
+        'max_length' => 2000,
     ],
 
     /*

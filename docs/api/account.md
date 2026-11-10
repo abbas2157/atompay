@@ -79,3 +79,20 @@ The response has the same shape as `GET`. `email_alerts` switches off the **aler
 (limit decided, KYC outcome, instalment reminders, application received). The in-app inbox and
 push are unaffected. Security emails (reset codes, "password changed") and the welcome email
 are always sent. The same switch is behind the unsubscribe link in every alert email.
+
+## `POST /me/password`
+
+Change the password while signed in. It is the **AtomShop** account's password, so it changes on
+Atomshop.pk too.
+
+```json
+{ "current_password": "old-one", "password": "new-password", "password_confirmation": "new-password" }
+```
+
+| Status | When |
+|---|---|
+| `204` | Changed. **This phone stays signed in**; every other app sign-in (and its push device) is ended, and "remember me" on the websites stops working. A "password changed" email goes to a real address. |
+| `422` | `errors.current_password` (wrong) · `errors.password` (under 8 characters, not confirmed, or the same as the current one) |
+| `429` | 5 tries a minute per account |
+
+Forgotten the current one? Use [forgot password](auth.md#forgot-password-otp) instead.

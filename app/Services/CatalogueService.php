@@ -98,15 +98,48 @@ class CatalogueService
             ->get(['id', 'title', 'slug']));
     }
 
+    /**
+     * The category filter for the app, with how many eligible products each has.
+     *
+     * @return Collection<int, array{id: int, title: string, count: int}>
+     */
+    public function categoriesWithCounts(): Collection
+    {
+        return Cache::remember('atompay.catalogue.category_counts', self::FILTER_CACHE_TTL, function () {
+            $counts = $this->query()->toBase()->reorder()
+                ->selectRaw('category_id, COUNT(*) as aggregate')
+                ->groupBy('category_id')
+                ->pluck('aggregate', 'category_id');
+
+            return $this->categories()
+                ->filter(fn (Category $c) => ($counts[$c->id] ?? 0) > 0)
+                ->map(fn (Category $c) => ['id' => $c->id, 'title' => $c->title, 'count' => (int) $counts[$c->id]])
+                ->values();
+        });
+    }
+
+    /** One eligible product with its plan, or null if it is not (or no longer) eligible. */
+    public function find(int $id): ?Product
+    {
+        $product = $this->query()->find($id);
+
+        if ($product) {
+            $this->decorate(new Collection([$product]));
+        }
+
+        return $product;
+    }
+
     public function forgetFilters(): void
     {
         Cache::forget('atompay.catalogue.categories');
         Cache::forget('atompay.catalogue.brands');
+        Cache::forget('atompay.catalogue.category_counts');
     }
 
     /* ------------------------------------------------------------ internals */
 
-    /** @param array{category?: int|null, brand?: int|null, max?: int|null} $filters */
+    /** @param array{category?: int|null, brand?: int|null, max?: int|null, q?: string|null, none?: bool} $filters */
     private function query(array $filters = []): Builder
     {
         return Product::query()
@@ -117,6 +150,13 @@ class CatalogueService
             ->when($filters['category'] ?? null, fn (Builder $q, $id) => $q->where('category_id', $id))
             ->when($filters['brand'] ?? null, fn (Builder $q, $id) => $q->where('brand_id', $id))
             ->when($filters['max'] ?? null, fn (Builder $q, $max) => $q->where('price', '<=', $max))
+            // Every word must appear in the title, in any order: "oppo a6" finds "Oppo A6K".
+            ->when(trim((string) ($filters['q'] ?? '')), function (Builder $q, string $text) {
+                foreach (preg_split('/\s+/', $text) as $word) {
+                    $q->where('title', 'like', '%'.addcslashes($word, '%_\\').'%');
+                }
+            })
+            ->when($filters['none'] ?? false, fn (Builder $q) => $q->whereRaw('1 = 0'))
             ->with(['brand:id,title,slug', 'category:id,title,slug']);
     }
 

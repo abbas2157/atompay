@@ -18,7 +18,7 @@
     ];
     $atomSvg = '<svg viewBox="0 0 64 64" aria-hidden="true">'
         .'<line x1="32" y1="7" x2="32" y2="13" stroke="#14213D" stroke-width="2.6" stroke-linecap="round"/>'
-        .'<circle cx="32" cy="5.5" r="3.6" fill="#FAA53A"/>'
+        .'<circle cx="32" cy="5.5" r="3.6" fill="#F7A928"/>'
         .'<circle cx="8" cy="37" r="5.2" fill="#F05465"/><circle cx="56" cy="37" r="5.2" fill="#F05465"/>'
         .'<circle cx="32" cy="37" r="24" fill="#fff" stroke="#14213D" stroke-width="2.6"/>'
         .'<rect x="15" y="27" width="34" height="21" rx="10.5" fill="#14213D"/>'

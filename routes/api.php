@@ -2,6 +2,11 @@
 
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\ApplicationController;
+use App\Http\Controllers\Api\V1\AskAtomController;
+use App\Http\Controllers\Api\V1\ComplaintController;
+use App\Http\Controllers\Api\V1\KeyFactStatementController;
+use App\Http\Controllers\Api\V1\PasswordController;
+use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CalculatorController;
 use App\Http\Controllers\Api\V1\CityController;
@@ -34,6 +39,17 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/calculator', [CalculatorController::class, 'config'])->name('calculator');
     });
     Route::post('/quote', [CalculatorController::class, 'quote'])->middleware('throttle:quote')->name('quote');
+
+    // Public, with optional sign-in (a token adds "does it fit my limit?" / signed-in answers).
+    // AtomPay's own plan: 3 months, no advance, 0% markup. /quote above is seller financing.
+    Route::get('/plan-preview', [ProductController::class, 'preview'])->middleware('throttle:quote')->name('plan-preview');
+    Route::middleware('throttle:global')->group(function () {
+        Route::get('/products', [ProductController::class, 'index'])->name('products');
+        Route::get('/products/categories', [ProductController::class, 'categories'])->name('products.categories');
+        Route::get('/products/{product}', [ProductController::class, 'show'])->whereNumber('product')->name('products.show');
+        Route::get('/ask-atom/chips', [AskAtomController::class, 'chips'])->name('ask-atom.chips');
+    });
+    Route::post('/ask-atom', [AskAtomController::class, 'ask'])->middleware('throttle:ask_atom')->name('ask-atom');
     Route::post('/estimate', [CalculatorController::class, 'estimate'])->middleware('throttle:assess')->name('estimate');
 
     // Sign in / sign up - against AtomShop's users table.
@@ -57,6 +73,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         Route::get('/me', [AccountController::class, 'show'])->name('me');
         Route::post('/me/delete', [AccountController::class, 'destroy'])->middleware('throttle:account_delete')->name('me.delete');
+        Route::post('/me/password', [PasswordController::class, 'update'])->middleware('throttle:password_change')->name('me.password');
         Route::get('/me/preferences', [PreferenceController::class, 'show'])->name('me.preferences');
         Route::patch('/me/preferences', [PreferenceController::class, 'update'])->name('me.preferences.update');
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
@@ -77,6 +94,12 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         // AtomShop orders paid with AtomPay.
         Route::get('/plans', [PlanController::class, 'index'])->name('plans');
         Route::get('/plans/{order}', [PlanController::class, 'show'])->whereNumber('order')->name('plans.show');
+        Route::get('/plans/{order}/kfs', [KeyFactStatementController::class, 'show'])->whereNumber('order')->name('plans.kfs');
+        Route::post('/plans/{order}/kfs/send', [KeyFactStatementController::class, 'send'])->whereNumber('order')->middleware('throttle:kfs_send')->name('plans.kfs.send');
+
+        // In-app complaints (SECP grievance route).
+        Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints');
+        Route::post('/complaints', [ComplaintController::class, 'store'])->middleware('throttle:complaints')->name('complaints.store');
 
         // Push + inbox.
         Route::post('/devices', [DeviceController::class, 'store'])->name('devices.store');
@@ -86,5 +109,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->whereNumber('notification')->name('notifications.read');
 
         Route::get('/cities', [CityController::class, 'index'])->name('cities');
+        Route::get('/areas', [CityController::class, 'areas'])->name('areas');
     });
 });
