@@ -47,6 +47,60 @@ class AppScreensApiTest extends ApiTestCase
         $this->getJson('/api/v1/app-config')->assertOk()->assertJsonPath('data.maintenance.until', null);
     }
 
+    public function test_app_config_business_has_every_key_null_until_set(): void
+    {
+        Config::set('atompay.company', array_fill_keys(CompanySettings::KEYS, null));
+        Config::set('atompay.api.support', ['phone' => '', 'whatsapp' => '   ', 'email' => null]);
+        $this->companySettings([]);
+
+        $this->getJson('/api/v1/app-config')->assertOk()
+            ->assertJsonPath('data.business', [
+                'company_name' => null, 'registered_address' => null, 'data_hosting' => null,
+                'late_payment' => null, 'early_settlement' => null, 'complaint_response_time' => null,
+            ])
+            ->assertJsonPath('data.support', ['phone' => null, 'whatsapp' => null, 'email' => null]);   // never ""
+    }
+
+    public function test_app_config_business_comes_from_atomshop_settings_then_env(): void
+    {
+        Config::set('atompay.company', [...array_fill_keys(CompanySettings::KEYS, null),
+            'company_name' => 'From Env (Pvt) Ltd', 'late_payment' => 'From env', 'data_hosting' => 'Env hosting']);
+        Config::set('atompay.api.support', ['phone' => '021 111 222 333', 'whatsapp' => null, 'email' => 'help@example.test']);
+        $this->companySettings([
+            'company_name' => 'Atom Retail (Pvt) Ltd',              // the admin wins over .env
+            'registered_address' => 'Plot 1, Karachi',
+            'data_hosting' => '   ',                                // blank: falls back to .env
+            'early_settlement' => 'No charge for paying early.',
+            'complaint_response_time' => '2 working days',
+        ]);
+
+        $this->getJson('/api/v1/app-config')->assertOk()
+            ->assertJsonPath('data.business', [
+                'company_name' => 'Atom Retail (Pvt) Ltd',
+                'registered_address' => 'Plot 1, Karachi',
+                'data_hosting' => 'Env hosting',
+                'late_payment' => 'From env',                       // not saved in the admin: .env
+                'early_settlement' => 'No charge for paying early.',
+                'complaint_response_time' => '2 working days',
+            ])
+            ->assertJsonPath('data.support', ['phone' => '021 111 222 333', 'whatsapp' => null, 'email' => 'help@example.test']);
+    }
+
+    public function test_company_settings_are_cached_for_a_minute(): void
+    {
+        Config::set('atompay.company', array_fill_keys(CompanySettings::KEYS, null));
+        $this->companySettings(['company_name' => 'Old Name Ltd']);
+        $this->getJson('/api/v1/app-config')->assertJsonPath('data.business.company_name', 'Old Name Ltd');
+
+        // Atomshop's admin saves a new name; Atomshop cannot clear AtomPay's cache.
+        DB::table('atom_settings')->where('key', 'atompay.company_name')->update(['value' => 'New Name Ltd']);
+
+        $this->travel(30)->seconds();
+        $this->getJson('/api/v1/app-config')->assertJsonPath('data.business.company_name', 'Old Name Ltd');
+        $this->travel(31)->seconds();
+        $this->getJson('/api/v1/app-config')->assertJsonPath('data.business.company_name', 'New Name Ltd');
+    }
+
     public function test_options_list_complaint_topics(): void
     {
         $this->getJson('/api/v1/options')

@@ -17,6 +17,14 @@ Call this on every launch, before `GET /me`.
     "terms_url": null,
     "account_deletion_url": "https://atompay.shop/delete-account",
     "support": { "phone": null, "whatsapp": null, "email": null },
+    "business": {
+      "company_name": null,
+      "registered_address": null,
+      "data_hosting": null,
+      "late_payment": null,
+      "early_settlement": null,
+      "complaint_response_time": null
+    },
     "maintenance": { "active": false, "message": null, "until": null },
     "apps": {
       "atomshop":   { "android": "https://play.google.com/store/apps/details?id=com.ecommerce.atomshop", "ios": "https://apps.apple.com/us/app/atomshop/id6744655747", "web": "https://atomshop.pk" },
@@ -50,7 +58,24 @@ Call this on every launch, before `GET /me`.
   an email only, because a mobile number would be refused.
 - `features.push` is `false` when the server has no FCM credentials. Skip the notification
   permission prompt in that case.
-- Hide any `support` entry that is `null`.
+- Hide any `support` entry that is `null`. An unset contact is always `null`, never `""`.
+- **`business`** holds the company facts. Atomshop sells on instalments itself (merchant credit): there
+  is no separate lender and no licence. All six keys are always present, and each is `null` until set:
+
+  | Key | Meaning | Example |
+  |---|---|---|
+  | `company_name` | The company that sells on instalments (runs Atomshop) | `"Atom Retail (Pvt) Ltd"` |
+  | `registered_address` | Its registered address | `"Plot 1, …, Karachi"` |
+  | `data_hosting` | Where customer data is stored ("Your data is stored in …") | `"Pakistan (Karachi)"` |
+  | `late_payment` | What happens when a payment is late | `"…"` |
+  | `early_settlement` | What happens when you pay early | `"…"` |
+  | `complaint_response_time` | How soon a complaint is answered ("We reply within …") | `"2 working days"` |
+
+  The values come from Atomshop's admin panel (shared `atom_settings` table, keys `atompay.<name>`),
+  falling back to `.env` (`ATOMPAY_COMPANY_NAME`, `ATOMPAY_COMPANY_ADDRESS`, `ATOMPAY_DATA_LOCATION`,
+  `ATOMPAY_KFS_LATE_PAYMENT`, `ATOMPAY_KFS_EARLY_SETTLEMENT`, `ATOMPAY_COMPLAINT_RESPONSE_TIME`). Blank
+  counts as unset. A change in the admin shows here within about a minute. Show a visible placeholder for
+  `null`, never a guess.
 
 ## `GET /options` (public)
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Enums\EmploymentStatus;
 use App\Models\Enums\IncomeSource;
+use App\Services\CompanySettings;
 use App\Services\Messaging\WhatsAppClient;
 use App\Services\Push\FcmClient;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +15,7 @@ use Illuminate\Support\Carbon;
 class MetaController extends Controller
 {
     /** Called on every launch: force-update check, links, support contacts. */
-    public function appConfig(FcmClient $fcm, WhatsAppClient $whatsapp): JsonResponse
+    public function appConfig(FcmClient $fcm, WhatsAppClient $whatsapp, CompanySettings $company): JsonResponse
     {
         $api = config('atompay.api');
 
@@ -27,7 +28,14 @@ class MetaController extends Controller
             'privacy_url' => $api['links']['privacy_url'] ?: route('privacy'),
             'terms_url' => $api['links']['terms_url'] ?: null,
             'account_deletion_url' => $api['links']['account_deletion_url'] ?: route('account.delete.info'),
-            'support' => $api['support'],
+            // Each contact is null (not "") when unset, so the app hides that row.
+            'support' => array_map(fn ($value) => blank($value) ? null : trim((string) $value), [
+                'phone' => $api['support']['phone'] ?? null,
+                'whatsapp' => $api['support']['whatsapp'] ?? null,
+                'email' => $api['support']['email'] ?? null,
+            ]),
+            // Company facts from Atomshop's admin panel (.env as fallback); every key always present, null when unset.
+            'business' => $company->all(),
             'maintenance' => [
                 'active' => (bool) $api['maintenance']['active'],
                 'message' => $api['maintenance']['message'] ?: null,

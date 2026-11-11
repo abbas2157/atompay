@@ -1537,6 +1537,10 @@ Call this on every launch, before `/me`.
     "shop_url": "https://atomshop.pk",
     "password_reset_url": "https://atompay.shop/forgot-password",
     "support": { "phone": null, "whatsapp": null, "email": null },
+    "business": {
+      "company_name": null, "registered_address": null, "data_hosting": null,
+      "late_payment": null, "early_settlement": null, "complaint_response_time": null
+    },
     "features": {
       "push": true,
       "password_reset_channels": ["email", "whatsapp"],
@@ -1550,7 +1554,9 @@ Call this on every launch, before `/me`.
 - `features.push: false` → skip the notification permission prompt and don't register devices.
 - `*_channels` is `["email"]` or `["email","whatsapp"]`. Without `whatsapp`, hide the mobile option.
 - `password_reset_url` is a website fallback only. The app's flow is native.
-- Hide any `support` entry that is `null`.
+- Hide any `support` entry that is `null` (an unset contact is `null`, never `""`).
+- `business` holds the company facts (every key always present, `null` until set). Atomshop sells on
+  instalments itself: there is no lender and no licence. Full field list: [api/app-config.md](api/app-config.md).
 
 ### `GET /options`
 

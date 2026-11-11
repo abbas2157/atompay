@@ -33,7 +33,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 | [ask-atom.md](ask-atom.md) | Ask Atom chips and answers (public) |
 | [complaints.md](complaints.md) | In-app complaints (Help › Complaints) |
 | [calculator.md](calculator.md) | Seller-financing calculator and quote (not used by the v2 app), income estimate (all public) |
-| [app-config.md](app-config.md) | Launch config (force update, links, support) and form options (public) |
+| [app-config.md](app-config.md) | Launch config (force update, links, support, **company facts: `business`**) and form options (public) |
 | [notifications.md](notifications.md) | Push device registration, push payload, notifications inbox, email/push/inbox channels |
 
 ## Endpoint index
