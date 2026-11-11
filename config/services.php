@@ -43,6 +43,8 @@ return [
     */
     'fcm' => [
         'credentials' => env('FCM_CREDENTIALS'),
+        // The Firebase project the AtomPay app is registered in; deploy-check refuses credentials for another.
+        'project_id' => env('FCM_PROJECT_ID', 'atomshop-a726c'),
     ],
 
     /*

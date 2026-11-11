@@ -157,9 +157,18 @@ class PasswordResetService
 
         DB::transaction(function () use ($reset, $user, $password) {
             $user->forceFill([
-                'password' => $password,                       // hashed by the model cast (bcrypt, same as AtomShop)
+                'password' => $password,                       // hashed by the model cast (bcrypt, same as AtomShop) - never Hash::make() here too
                 'remember_token' => Str::random(60),
-            ])->save();
+            ]);
+
+            // A code that reached the inbox proves the address. AtomShop's website signs out
+            // anyone whose email is unverified and asks for another code, so without this the
+            // new password "doesn't work" there even though it is right.
+            if ($reset->channel === PasswordReset::CHANNEL_EMAIL && $user->email_verified_at === null) {
+                $user->forceFill(['email_verified_at' => now()]);
+            }
+
+            $user->save();
 
             $reset->forceFill(['used_at' => now()])->save();
             PasswordReset::where('user_id', $user->id)->whereNull('used_at')->update(['expires_at' => now(), 'token_expires_at' => now()]);

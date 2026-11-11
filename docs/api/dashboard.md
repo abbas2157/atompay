@@ -26,8 +26,10 @@ The whole home screen in one call. Refresh it on pull-to-refresh and when the ap
       "available": 40000,
       "used_percent": 33,
       "max_instalment": 20000,
-      "tenure": 12
+      "tenure": 12,
+      "available_after_next": 52500
     },
+    "lowest_eligible_price": 47000,
     "stages": [
       { "key": "kyc", "title": "KYC", "hint": "Identity details and CNIC uploaded", "state": "done" },
       { "key": "address", "title": "Address verification", "hint": "One-time physical visit by our team", "state": "done" },
@@ -38,7 +40,7 @@ The whole home screen in one call. Refresh it on pull-to-refresh and when the ap
     ],
     "next_due": {
       "id": 812, "order_id": 1043, "label": "2nd Instalment", "due_date": "2026-10-05",
-      "amount": 12500, "paid_amount": null, "paid_on": null, "state": "due",
+      "amount": 12500, "paid_amount": null, "paid_on": null, "paid_via": null, "state": "due",
       "order_reference": "AS-01043", "product_title": "Poco C75 8GB RAM"
     },
     "plans": { "active_count": 1, "pending_count": 0, "has_late": false },
@@ -54,5 +56,7 @@ The whole home screen in one call. Refresh it on pull-to-refresh and when the ap
 | `banner.action` | Where the button goes. `apply` means start with the profile, then the application. `profile` opens the profile form. `application` opens the income form. The `text` may be the reviewer's own note. |
 | `limit` | The limit **in force**. When `has_limit` is `false`, show "Not set yet": the money fields are `0`, and `status` and `tenure` are `null`. `status` is `approved` or `conditional`. |
 | `limit.used` | Unpaid AtomShop instalments. `available = max(0, approved − used)`. |
+| `limit.available_after_next` | What `limit.available` becomes once `next_due` is paid in full ("After 10 Jan you will have Rs. 52,500 to spend"). `null` when there is no limit or no `next_due`. Worked out the way `used` is: an unpaid instalment counts in full until it is marked paid, so `max(0, approved − (used − next_due.amount))`. That equals `min(approved, available + (next_due.amount − (next_due.paid_amount ?? 0)))` whenever nothing is part-paid and the limit isn't over-used; where they differ, this is the figure the dashboard will show after the payment. Never compute it in the app. **Live.** |
+| `lowest_eligible_price` | Price of the cheapest product `GET /products` would list (same eligibility filter), for the "Nothing fits Rs. X right now" card: "The lowest-priced eligible product is Rs. 47,000." `null` when the customer has no limit (or nothing is eligible). **Live.** |
 | `stages[].state` | `done` · `current` · `upcoming` · `blocked`. There are always six stages in this order. |
-| `next_due` | The earliest unpaid monthly instalment across all orders, or `null`. `state` is `paid`, `late`, `due` (within 14 days) or `upcoming`. |
+| `next_due` | The earliest unpaid monthly instalment across all orders, or `null`. `state` is `paid`, `late`, `due` (within 14 days) or `upcoming`. Same instalment object as `GET /plans/{order_id}`, including `paid_via`. |

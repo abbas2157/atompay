@@ -113,6 +113,31 @@ class OrderInstalment extends Model
             && $this->installment_date->between(Carbon::today(), Carbon::today()->addDays($days));
     }
 
+    /**
+     * How a paid instalment was paid, as the app shows it ("paid 9 Dec by
+     * JazzCash"). AtomShop's screens store payment_method in several
+     * spellings (Easypaisa / EasyPaisa / easypaisa, Bank / Bank Transfer,
+     * By Hand / cash); anything else - "Online" among them, which does not
+     * say how - is null rather than a guess.
+     */
+    protected function paidVia(): Attribute
+    {
+        return Attribute::get(function () {
+            if (! $this->isPaid()) {
+                return null;
+            }
+
+            return match (preg_replace('/[^a-z]/', '', strtolower((string) $this->payment_method))) {
+                'jazzcash' => 'JazzCash',
+                'easypaisa' => 'EasyPaisa',
+                'bank', 'banktransfer', 'banktransfers' => 'Bank transfer',
+                'cash', 'byhand' => 'Cash',
+                'card', 'debitcard', 'creditcard' => 'Card',
+                default => null,
+            };
+        });
+    }
+
     /** paid | late | due | upcoming - what the dashboard colours on. */
     protected function state(): Attribute
     {

@@ -5,6 +5,7 @@ namespace App\Http\Resources\Api\V1;
 use App\Models\Order;
 use App\Models\OrderInstalment;
 use App\Models\Product;
+use App\Support\ShopTime;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -40,7 +41,9 @@ class PlanResource extends JsonResource
                 'reference' => $order->reference,
                 'status' => $order->status->value,
                 'status_label' => $order->status->label(),
-                'ordered_at' => $order->created_at?->toIso8601String(),
+                // AtomShop's Karachi wall-clock times, with their real +05:00 offset (see ShopTime).
+                'ordered_at' => ShopTime::iso($order->created_at),
+                'delivered_at' => $this['delivered_at']?->toIso8601String(),   // null before delivery and for cancelled orders
                 'total_price' => $order->total_deal_price,
                 'advance' => $order->advance_price,
                 'financed' => $order->financed_amount,

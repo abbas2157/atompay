@@ -2,11 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\CustomOrder;
 use App\Models\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderInstalment;
 use App\Models\User;
+use App\Support\ShopTime;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Builds the "Your orders" view: every order, whatever its status, with its
@@ -24,7 +28,9 @@ class PaymentScheduleService
             ->latest('id')
             ->get();
 
-        return $orders->map(fn (Order $order) => $this->plan($order));
+        $delivered = $this->deliveredAt($orders);
+
+        return $orders->map(fn (Order $order) => $this->plan($order, $delivered[$order->id] ?? null));
     }
 
     /** One of the customer's own orders, whatever its status; null if it is not theirs. */
@@ -35,7 +41,7 @@ class PaymentScheduleService
             ->with(['cart.product', 'instalments', 'mirrorInstalments'])
             ->find($orderId);
 
-        return $order ? $this->plan($order) : null;
+        return $order ? $this->plan($order, $this->deliveredAt(collect([$order]))[$order->id] ?? null) : null;
     }
 
     /** Earliest unpaid monthly instalment across every order, with its order loaded; or null. */
@@ -55,7 +61,53 @@ class PaymentScheduleService
         return $next;
     }
 
-    private function plan(Order $order): array
+    /**
+     * When AtomShop marked each order Delivered, from order_change_histories
+     * (the latest Delivered row, as AtomShop's own apps read it). An AtomPay
+     * order's status changes are often recorded against its custom_orders
+     * mirror, so both are looked up - two queries for any number of orders.
+     * Kept once the order moves on to Instalments or Completed; never given
+     * for an order not delivered yet, or cancelled.
+     *
+     * @param Collection<int, Order> $orders
+     * @return array<int, Carbon> order id => delivered at
+     */
+    public function deliveredAt(Collection $orders): array
+    {
+        $ids = $orders
+            ->filter(fn (Order $o) => in_array($o->status, [OrderStatus::Delivered, OrderStatus::Instalments, OrderStatus::Completed], true))
+            ->pluck('id')->all();
+
+        if (! $ids) {
+            return [];
+        }
+
+        $mirrors = CustomOrder::query()->atomPayMirrors()->whereIn('source_order_id', $ids)->pluck('source_order_id', 'id')->all();
+
+        $rows = DB::table('order_change_histories')
+            ->where('status', OrderStatus::Delivered->value)
+            ->where(fn ($q) => $q
+                ->where(fn ($n) => $n->where('order_type', OrderInstalment::ORDER_NORMAL)->whereIn('order_id', $ids))
+                ->when($mirrors, fn ($w) => $w->orWhere(fn ($c) => $c
+                    ->where('order_type', OrderInstalment::ORDER_CUSTOM)->whereIn('order_id', array_keys($mirrors)))))
+            ->get(['order_id', 'order_type', 'created_at']);
+
+        $delivered = [];
+        foreach ($rows as $row) {
+            $orderId = $row->order_type === OrderInstalment::ORDER_CUSTOM ? ($mirrors[$row->order_id] ?? null) : (int) $row->order_id;
+            if (! $orderId || ! $row->created_at) {
+                continue;
+            }
+            $at = ShopTime::of($row->created_at);
+            if (! isset($delivered[$orderId]) || $at->gt($delivered[$orderId])) {
+                $delivered[$orderId] = $at;
+            }
+        }
+
+        return $delivered;
+    }
+
+    private function plan(Order $order, ?Carbon $deliveredAt = null): array
     {
         $monthly = $order->schedule->where('type', OrderInstalment::TYPE_INSTALMENT)->values();
         $paid    = $monthly->filter->isPaid();
@@ -67,7 +119,8 @@ class PaymentScheduleService
 
         return [
             'order'        => $order,
-            'product'      => $order->cart?->product,
+            'delivered_at' => $deliveredAt,
+            'product'     => $order->cart?->product,
             'instalments'  => $monthly,
             'paid_count'   => $paid->count(),
             'total_count'  => $monthly->count(),

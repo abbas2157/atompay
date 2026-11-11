@@ -42,6 +42,7 @@ class DeployCheck extends Command
         $this->checkAssetUrl();
         $this->checkCaches();
         $this->checkMigrations();
+        $this->checkStoreRelease();
 
         if (! $this->option('no-network')) {
             $this->checkAPictureLoads();
@@ -249,6 +250,39 @@ class DeployCheck extends Command
         // a content gap (common in development), not a bad deploy.
         $this->warn("  ~ a product picture returned HTTP {$status} - the url is well formed, so the file is");
         $this->warn('    missing from the shop rather than misconfigured here: '.$product->picture_url);
+    }
+
+    /**
+     * What the store listings and the privacy policy depend on. Warnings, not
+     * failures: none of it breaks the site, but each gap is visible to Apple
+     * or Google reviewers (see config('atompay.privacy')).
+     */
+    private function checkStoreRelease(): void
+    {
+        $missing = array_keys(array_filter([
+            'ATOMPAY_LENDER_NAME (legal entity on /privacy and the KFS)' => blank(config('atompay.lender.name')),
+            'ATOMPAY_DATA_LOCATION (where /privacy says data is stored)' => blank(config('atompay.privacy.data_location')),
+            'ATOMPAY_RECORD_RETENTION_YEARS (how long /privacy says records are kept)' => blank(config('atompay.privacy.record_retention_years')),
+            'ATOMPAY_SUPPORT_EMAIL (privacy contact)' => blank(config('atompay.api.support.email')),
+            'ATOMPAY_REVIEW_A_EMAIL / ATOMPAY_REVIEW_B_EMAIL (reviewer sign-ins)' => blank(config('atompay.review_accounts.a.email')) || blank(config('atompay.review_accounts.b.email')),
+        ]));
+
+        $missing
+            ? $this->warn('  ~ store release: not set yet - '.implode(', ', $missing))
+            : $this->good('store release settings');
+
+        $fcm = app(\App\Services\Push\FcmClient::class);
+        if (! $fcm->enabled()) {
+            $this->warn('  ~ push is off (FCM_CREDENTIALS unset or unreadable): /app-config says features.push = false');
+
+            return;
+        }
+
+        $project = json_decode((string) @file_get_contents(config('services.fcm.credentials')), true)['project_id'] ?? null;
+        $expected = config('services.fcm.project_id');
+        $project && $expected && $project !== $expected
+            ? $this->bad("push credentials are for Firebase project {$project}", "The app is registered in {$expected}; pushes would never arrive.")
+            : $this->good('push on', 'Firebase project '.($project ?? '?'));
     }
 
     private function good(string $what, string $detail = ''): void

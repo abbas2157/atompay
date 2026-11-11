@@ -15,6 +15,9 @@ return [
     // The storefront this service is the payment option for.
     'shop_url' => env('ATOMSHOP_URL', 'https://atomshop.pk'),
 
+    // AtomShop writes its timestamps in its own APP_TIMEZONE; AtomPay runs in UTC. See App\Support\ShopTime.
+    'shop_timezone' => env('ATOMSHOP_TIMEZONE', 'Asia/Karachi'),
+
     /*
     | Where AtomShop serves uploaded product pictures from. products.picture
     | holds a path like "images/products/foo.webp", and the shop serves those
@@ -168,6 +171,32 @@ return [
         'licence' => env('ATOMPAY_LENDER_LICENCE'),
         'address' => env('ATOMPAY_LENDER_ADDRESS'),
     ],
+    /*
+    | Facts the privacy policy states that only the business can confirm. Each
+    | line appears on /privacy once its value is set; `atompay:deploy-check`
+    | lists the ones still missing. The legal entity is lender.name above.
+    */
+    'privacy' => [
+        // Where the servers are, e.g. "Pakistan (Karachi)". The app shows "Your data is stored in ...".
+        'data_location' => env('ATOMPAY_DATA_LOCATION'),
+        // How long financial and identity records are kept after an account closes or is deleted.
+        'record_retention_years' => env('ATOMPAY_RECORD_RETENTION_YEARS'),
+        // Whether a credit bureau (e.g. SBP's eCIB or a private bureau) is checked or reported to.
+        'credit_bureau' => env('ATOMPAY_CREDIT_BUREAU'),
+    ],
+
+    /*
+    | Fixed sign-ins for Apple and Google app review, (re)made by
+    | `php artisan atompay:seed-review-accounts`. Credentials live only in
+    | .env and the store submission notes - never in the repository.
+    | A: full account (KYC verified, limit, an order being repaid, inbox).
+    | B: verified with a limit and no orders, so deleting it succeeds.
+    */
+    'review_accounts' => [
+        'a' => ['email' => env('ATOMPAY_REVIEW_A_EMAIL'), 'password' => env('ATOMPAY_REVIEW_A_PASSWORD')],
+        'b' => ['email' => env('ATOMPAY_REVIEW_B_EMAIL'), 'password' => env('ATOMPAY_REVIEW_B_PASSWORD')],
+    ],
+
     'kfs' => [
         'late_payment' => env('ATOMPAY_KFS_LATE_PAYMENT'),
         'early_settlement' => env('ATOMPAY_KFS_EARLY_SETTLEMENT'),

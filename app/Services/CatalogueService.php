@@ -73,6 +73,18 @@ class CatalogueService
         return $products;
     }
 
+    /**
+     * The cheapest product GET /products would list - the same eligibility
+     * filter - for "the lowest-priced eligible product is Rs. X" when nothing
+     * fits the limit. Null when nothing is eligible.
+     */
+    public function lowestPrice(): ?int
+    {
+        $price = Cache::remember('atompay.catalogue.lowest_price', 600, fn () => $this->query()->min('price'));
+
+        return $price === null ? null : (int) $price;
+    }
+
     public function count(array $filters = []): int
     {
         return $this->query($filters)->count();
@@ -135,6 +147,7 @@ class CatalogueService
         Cache::forget('atompay.catalogue.categories');
         Cache::forget('atompay.catalogue.brands');
         Cache::forget('atompay.catalogue.category_counts');
+        Cache::forget('atompay.catalogue.lowest_price');
     }
 
     /* ------------------------------------------------------------ internals */

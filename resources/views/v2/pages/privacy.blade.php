@@ -15,7 +15,7 @@
 
 @section('content')
     @php
-        $updated = '9 October 2026';
+        $updated = '11 November 2026';
         $contacts = array_filter([
             'Email' => $support['email'] ? '<a href="mailto:'.e($support['email']).'" class="link">'.e($support['email']).'</a>' : null,
             'WhatsApp' => $support['whatsapp'] ? e($support['whatsapp']) : null,
@@ -26,9 +26,11 @@
             'collect' => 'What we collect',
             'use' => 'How we use it',
             'share' => 'Who we share it with',
+            'where' => 'Where it is stored',
             'keep' => 'How long we keep it',
             'security' => 'How we protect it',
             'rights' => 'Your choices and rights',
+            'delete' => 'Deleting your account',
             'children' => 'Children',
             'changes' => 'Changes to this policy',
             'contact' => 'Contact us',

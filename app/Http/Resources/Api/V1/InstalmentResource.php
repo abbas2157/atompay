@@ -19,6 +19,7 @@ class InstalmentResource extends JsonResource
             'amount' => $this->installment_price,
             'paid_amount' => $this->installment_paid_price,
             'paid_on' => $this->installment_paid_date?->toDateString(),
+            'paid_via' => $this->paid_via,                         // JazzCash | EasyPaisa | Bank transfer | Cash | Card | null
             'state' => $this->state,                               // paid | late | due | upcoming
             // Only where the instalment stands alone (dashboard "next due").
             'order_reference' => $this->whenLoaded('order', fn () => $this->order->reference),

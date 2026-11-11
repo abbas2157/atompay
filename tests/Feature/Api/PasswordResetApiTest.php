@@ -98,6 +98,44 @@ class PasswordResetApiTest extends ApiTestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    /**
+     * Store-release blocker: forgot -> verify -> reset -> logout -> login with
+     * the new password, exactly as the app sends it, then the website login.
+     * Also pins the stored value as ONE bcrypt hash of the password - a
+     * Hash::make() on top of the model's `hashed` cast would store a hash of
+     * a hash, and only the reset's own auto sign-in would ever work.
+     */
+    public function test_forgot_verify_reset_logout_then_login_with_the_new_password(): void
+    {
+        $user = $this->makeCustomer();
+        $user->forceFill(['email_verified_at' => null])->save();
+
+        $requestId = $this->postJson('/api/v1/auth/password/forgot', ['login' => '  '.$user->email.' '])->assertStatus(202)->json('data.request_id');
+        $resetToken = $this->postJson('/api/v1/auth/password/verify', ['request_id' => $requestId, 'code' => $this->emailedCode()])
+            ->assertOk()->json('data.reset_token');
+
+        $password = ' New pass 9! ';   // spaces kept: the app sends the password exactly as typed
+        $token = $this->postJson('/api/v1/auth/password/reset', [
+            'reset_token' => $resetToken, 'password' => $password, 'password_confirmation' => $password, 'device_name' => 'Pixel 8',
+        ])->assertOk()->json('data.token');
+
+        $stored = (string) \Illuminate\Support\Facades\DB::table('users')->where('id', $user->id)->value('password');
+        $this->assertSame('bcrypt', password_get_info($stored)['algoName']);
+        $this->assertTrue(password_verify($password, $stored), 'The stored hash must be of the password itself, not of another hash.');
+
+        $this->freshRequest()->withToken($token)->postJson('/api/v1/auth/logout')->assertNoContent();
+
+        $this->freshRequest()->postJson('/api/v1/auth/login', ['login' => trim(' '.$user->email.' '), 'password' => $password, 'device_name' => 'Pixel 8'])
+            ->assertOk()->assertJsonPath('data.user.id', $user->id);
+
+        // The code reached the inbox, so the address is proven - AtomShop's website signs out unverified emails.
+        $this->assertNotNull($user->fresh()->email_verified_at);
+
+        $this->freshRequest()->app['auth']->setDefaultDriver('web');   // the API calls above switched the default to sanctum
+        $this->post('/login', ['login' => $user->email, 'password' => $password])->assertRedirect(route('account.dashboard'));
+        $this->assertAuthenticatedAs($user);
+    }
+
     /** Reported: "too many attempts" after the second try (double-firing taps + resend). */
     public function test_repeated_requests_for_a_code_are_not_a_429_and_send_one_code(): void
     {
