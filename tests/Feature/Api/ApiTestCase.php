@@ -177,4 +177,23 @@ abstract class ApiTestCase extends TestCase
 
         CompanySettings::flush();
     }
+
+    /**
+     * Atomshop's record that the customer accepted an order's KFS at checkout
+     * (atompay_kfs_acceptances). A TEMPORARY stand-in, as in companySettings().
+     */
+    protected function acceptKfs(int $orderId, int $userId, string $acceptedAt): void
+    {
+        DB::statement('CREATE TEMPORARY TABLE IF NOT EXISTS atompay_kfs_acceptances (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, order_id BIGINT UNSIGNED NOT NULL UNIQUE,
+            user_id BIGINT UNSIGNED NOT NULL, accepted_at DATETIME NOT NULL, ip VARCHAR(45) NULL,
+            user_agent VARCHAR(255) NULL, version VARCHAR(255) NULL, snapshot JSON NULL,
+            created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL)');
+
+        DB::table('atompay_kfs_acceptances')->insert([
+            'order_id' => $orderId, 'user_id' => $userId, 'accepted_at' => $acceptedAt,
+            'ip' => '203.0.113.7', 'user_agent' => 'Atomshop checkout', 'version' => '1',
+            'snapshot' => json_encode(['order_id' => $orderId]), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+    }
 }

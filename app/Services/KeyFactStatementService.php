@@ -5,6 +5,10 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderInstalment;
 use App\Models\User;
+use App\Support\ShopTime;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The Key Fact Statement for one AtomPay order: amount, fees, APR, tenor,
@@ -19,10 +23,14 @@ use App\Models\User;
  *
  * Anything the business has not supplied (company name and address,
  * late-payment and early-settlement terms - see CompanySettings) is null,
- * never invented.
+ * never invented. `accepted_at` is when the customer accepted the KFS at
+ * Atomshop checkout (atompay_kfs_acceptances, written by Atomshop), or null.
  */
 class KeyFactStatementService
 {
+    /** Atomshop's record of each order's KFS being accepted at checkout. */
+    public const ACCEPTANCES_TABLE = 'atompay_kfs_acceptances';
+
     public function __construct(
         private readonly PaymentScheduleService $schedule,
         private readonly InstalmentQuoteService $quotes,
@@ -84,6 +92,7 @@ class KeyFactStatementService
             'late_payment' => $company['late_payment'],
             'early_settlement' => $company['early_settlement'],
             'complaints' => self::complaints($company['complaint_response_time']),
+            'accepted_at' => $this->acceptedAt($order->id),
             'issued_at' => now()->toIso8601String(),
         ];
     }
@@ -92,6 +101,35 @@ class KeyFactStatementService
     public static function complaints(?string $responseTime): string
     {
         return 'In the app: Help › Complaints.'.($responseTime ? " We reply within {$responseTime}." : '');
+    }
+
+    /** ISO 8601 (Atomshop writes Karachi wall-clock time); null if not accepted or not recorded. */
+    private function acceptedAt(int $orderId): ?string
+    {
+        if (! $this->acceptancesRecorded()) {
+            return null;
+        }
+
+        return ShopTime::iso(DB::table(self::ACCEPTANCES_TABLE)->where('order_id', $orderId)->value('accepted_at'));
+    }
+
+    /**
+     * Whether Atomshop has created the acceptances table yet, remembered for
+     * five minutes. A probe rather than Schema::hasTable(): hasTable reads
+     * information_schema, which does not list the temporary table the tests
+     * create inside their transaction (a real CREATE TABLE would commit it).
+     */
+    private function acceptancesRecorded(): bool
+    {
+        return Cache::remember('atompay.kfs_acceptances_table', 300, function () {
+            try {
+                DB::table(self::ACCEPTANCES_TABLE)->limit(1)->exists();
+
+                return true;
+            } catch (QueryException) {
+                return false;
+            }
+        });
     }
 
     /**

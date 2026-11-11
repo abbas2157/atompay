@@ -230,7 +230,8 @@ class AppScreensApiTest extends ApiTestCase
             ->assertJsonPath('data.lender', ['name' => null, 'licence' => null, 'address' => null])   // never invented
             ->assertJsonPath('data.late_payment', null)
             ->assertJsonPath('data.early_settlement', null)
-            ->assertJsonPath('data.complaints', 'In the app: Help › Complaints.');
+            ->assertJsonPath('data.complaints', 'In the app: Help › Complaints.')
+            ->assertJsonPath('data.accepted_at', null);
     }
 
     public function test_kfs_names_the_company_from_atomshop_settings_and_never_a_licence(): void
@@ -250,6 +251,20 @@ class AppScreensApiTest extends ApiTestCase
             ->assertJsonPath('data.late_payment', 'Rs. 500 per late month.')          // .env fallback
             ->assertJsonPath('data.early_settlement', 'No charge for paying early.')
             ->assertJsonPath('data.complaints', 'In the app: Help › Complaints. We reply within 2 working days.');
+    }
+
+    public function test_kfs_accepted_at_is_when_atomshop_recorded_the_acceptance(): void
+    {
+        $user = $this->makeCustomer();
+        $accepted = $this->makeAtomPayOrder($user, [['2026-12-10', 2666, false]]);
+        $notAccepted = $this->makeAtomPayOrder($user, [['2026-12-10', 2666, false]]);
+        $this->acceptKfs($accepted, $user->id, '2026-11-09 21:30:00');   // Karachi wall-clock time, as Atomshop writes it
+        $token = $this->tokenFor($user);
+
+        $this->withToken($token)->getJson("/api/v1/plans/{$accepted}/kfs")->assertOk()
+            ->assertJsonPath('data.accepted_at', '2026-11-09T21:30:00+05:00');
+        $this->freshRequest()->withToken($token)->getJson("/api/v1/plans/{$notAccepted}/kfs")->assertOk()
+            ->assertJsonPath('data.accepted_at', null);
     }
 
     public function test_kfs_before_the_schedule_exists_uses_the_plan_without_dates(): void

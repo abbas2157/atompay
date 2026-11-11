@@ -128,6 +128,7 @@ credit): there is no separate lender and no licence.
     "late_payment": null,
     "early_settlement": null,
     "complaints": "In the app: Help › Complaints. We reply within 2 working days.",
+    "accepted_at": "2026-11-09T21:30:00+05:00",
     "issued_at": "2026-11-10T10:00:00+05:00"
   }
 }
@@ -137,9 +138,13 @@ credit): there is no separate lender and no licence.
   [`/app-config`](app-config.md)) and `address` its registered address. Label it "Sold by", not "Lender".
   **`lender.licence` is always `null`**; the key stays only so older builds keep parsing.
 - **`null` means "not supplied yet"** (company name and address, late-payment and early-settlement
-  terms). They come from Atomshop's admin panel, falling back to `.env`. Show a visible placeholder, never a guess.
+  terms). They come from Atomshop's admin panel, falling back to `.env` (see `business` in
+  [app-config.md](app-config.md)). Show a visible placeholder, never a guess.
 - **`complaints`** is `"In the app: Help › Complaints."`, plus `" We reply within {time}."` once
   `complaint_response_time` is set.
+- **`accepted_at`** is when you accepted this KFS at Atomshop checkout (ISO-8601, Pakistan time), from
+  Atomshop's `atompay_kfs_acceptances` record for the order; `null` if there is no record (an order placed
+  before acceptances were recorded, or one not accepted yet).
 - **`schedule_final: false`** while the order awaits approval: the instalments are AtomPay's plan for
   the amount, with `due_date: null` ("set when your order is delivered").
 - **`apr_percent`** is the nominal annual rate that makes the monthly payments worth the amount financed

@@ -28,7 +28,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 | [profile.md](profile.md) | KYC Section 1 (identity + CNIC/selfie uploads), own documents, cities, **areas** |
 | [application.md](application.md) | KYC Section 3 (income → limit), the assessment object, history |
 | [dashboard.md](dashboard.md) | Home screen: limit card, status banner, stepper, next due |
-| [plans.md](plans.md) | AtomShop instalment orders and their schedules, **Key Fact Statement** |
+| [plans.md](plans.md) | AtomShop instalment orders and their schedules, **Key Fact Statement** (with `accepted_at`) |
 | [products.md](products.md) | AtomPay-eligible products, categories, **plan preview** (public) |
 | [ask-atom.md](ask-atom.md) | Ask Atom chips and answers (public) |
 | [complaints.md](complaints.md) | In-app complaints (Help › Complaints) |
