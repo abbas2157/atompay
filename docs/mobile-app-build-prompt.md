@@ -20,7 +20,11 @@ Work in this order:
 
 Ask before inventing anything: copy, numbers, legal text, endpoints, permissions. Every
 placeholder in the canvas (`[LICENSED ENTITY NAME]`, `[RESPONSE TIME]`…) stays a visible
-placeholder until the business supplies the real value. Never fill one with a guess.
+placeholder until the business supplies the real value. Never fill one with a guess. The company
+facts now come from `GET /app-config` `business` (`company_name`, `complaint_response_time`, …): show
+the value when it is set, the placeholder while it is `null`. AtomPay is **not** registered with the
+SECP and has no licence: Atomshop sells on instalments itself (merchant credit). Never show a licence
+or a lender, and never point customers to the SECP.
 
 ## 1. Sources of truth, in order
 
@@ -50,8 +54,8 @@ Superseded parts of the handbook:
    table). Sign-up creates an Atomshop.pk account. Password changes and deletion affect both.
 4. **Limit** = 30% of monthly income; monthly cap = min(10% of income, disposable income).
    Server-computed; shown, never derived.
-5. **English only.** No language switch, no RTL. (Open: SECP wants the Key Fact Statement in
-   Urdu too, see §11.)
+5. **English only.** No language switch, no RTL. (Open: whether the Key Fact Statement should also
+   be in Urdu, see §11.)
 
 ## 3. Stack and architecture
 
@@ -291,7 +295,9 @@ markup), not AtomPay. The calculator uses `GET /plan-preview`.
 - **Area:** `area_id` is **optional** and must belong to the `city_id` sent with it (422 otherwise).
   Leaving the field out keeps the saved area, and sending it empty clears it.
 - **Key Fact Statement:** AtomPay orders only (404 for seller financing).
-  - `null` lender and terms mean not supplied yet: render a visible placeholder.
+  - `lender` is the seller (Atomshop's company): label it "Sold by". `lender.licence` is always `null`;
+    never show a licence line. `null` name and terms mean not supplied yet: render a visible placeholder.
+  - `accepted_at` (ISO-8601 or `null`) is when the customer accepted the KFS at Atomshop checkout.
   - `schedule_final: false` (awaiting approval) means every `due_date` is `null`: show "set when your
     order is delivered".
   - `apr_percent` is calculated: 18.5 with the 3% fee, 0 without.
@@ -405,7 +411,7 @@ Nothing is asked at launch.
 
 **Never declare:** contacts, `READ_EXTERNAL_STORAGE`, `READ_MEDIA_*`, `WRITE_EXTERNAL_STORAGE`,
 location, phone state or numbers, call log, SMS, `QUERY_ALL_PACKAGES`. Google Play's personal
-loan policy and SECP forbid them for lending apps, even with consent. CI must fail if the merged
+loan policy forbids them for apps that offer credit, even with consent. CI must fail if the merged
 manifest contains any of them.
 
 iOS: write purpose strings for camera, microphone and speech recognition in plain English that
@@ -413,19 +419,21 @@ match the explainers.
 
 ## 11. Compliance (canvas board "Compliance")
 
-- **Google Play Financial Services:** proof of SECP approval to offer or facilitate lending in
-  Pakistan, plus the Personal Loan App Declaration. **Blocked** until the licensed entity is
-  named.
-- **SECP Circular 15/2022:**
-  - corporate name and licence on First run, the KFS and About
-  - the Key Fact Statement before disbursement
-  - an in-app grievance route (Complaints)
-  - data stored in Pakistan
+- **No SECP, no licence, no lender.** AtomPay is not registered with the SECP. Atomshop sells on
+  instalments itself (merchant credit). Nothing in the app may claim a licence, name a lender or
+  offer SECP escalation.
+- **Google Play Financial Services:** answer the declaration as instalment sales by the merchant
+  itself (no lender); the business confirms the wording before submission.
+- **What the app still does, as good practice:**
+  - the company name (`business.company_name`) on First run, the KFS ("Sold by") and About
+  - the Key Fact Statement before checkout
+  - an in-app complaints route (Help › Complaints), with the reply time once set
+  - where data is stored (`business.data_hosting`)
   - no coercive recovery language anywhere (late-payment copy is "Talk to us")
 - **Apple 3.2.2(ix):** disclose APR including fees and due dates. APR is **18.5%** if the 3%
   fee is charged, otherwise 0%. Open decision; the KFS shows both as placeholders until it's
   decided.
-- **Open: Urdu KFS.** The app is English only by decision; SECP asks for the KFS in Urdu too.
+- **Open: Urdu KFS.** The app is English only by decision; the business may still want the KFS in Urdu.
   Do not build Urdu; leave the KFS ready to show a second language if the business decides so.
 - **Account deletion:** in-app (Settings) and on the web (`app-config.account_deletion_url`),
   both required by the stores.
@@ -471,4 +479,4 @@ match the explainers.
 - [ ] No hard-coded colours or font sizes (lint rule)
 - [ ] Every canvas placeholder still visible as a placeholder (nothing invented)
 - [ ] Store listing: data-safety form matches §10 and §12; privacy URL and account-deletion URL
-      set; Financial Services declaration and SECP proof attached
+      set; Financial Services declaration answered (merchant credit, no lender)
