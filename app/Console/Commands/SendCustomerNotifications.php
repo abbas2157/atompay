@@ -8,10 +8,12 @@ use App\Models\Enums\AssessmentStatus;
 use App\Models\Enums\OrderStatus;
 use App\Models\Enums\VerificationStatus;
 use App\Models\KycProfile;
+use App\Models\Order;
 use App\Models\OrderInstalment;
 use App\Services\NotificationService;
 use App\Support\Money;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
 /**
@@ -125,7 +127,15 @@ class SendCustomerNotifications extends Command
             });
     }
 
-    /** @param array{remind_before_days: int[], remind_overdue_days: int[]} $config */
+    /**
+     * Due and overdue reminders for both places AtomShop keeps a schedule:
+     * order_type = Normal rows on the order itself, and an AtomPay order's
+     * order_type = Custom rows on its custom_orders mirror. The two sets are
+     * different rows, and each message is keyed by the row's id, so nothing
+     * is sent twice.
+     *
+     * @param array{remind_before_days: int[], remind_overdue_days: int[]} $config
+     */
     private function reminders(NotificationService $notifications, Carbon $today, array $config): void
     {
         $dates = [];
@@ -136,36 +146,59 @@ class SendCustomerNotifications extends Command
             $dates[$today->copy()->subDays($days)->toDateString()] = ['overdue', $days];
         }
 
+        $active = fn (Builder $order) => $order->whereIn('status', OrderStatus::active());
+
         OrderInstalment::query()
             ->normalOrders()->monthly()->unpaid()
             ->whereIn('installment_date', array_keys($dates))
-            ->whereHas('order', fn ($q) => $q->whereIn('status', OrderStatus::active()))
+            ->whereHas('order', $active)
             ->with(['order.cart.product', 'order.user'])
-            ->chunkById(200, function ($instalments) use ($notifications, $dates) {
-                foreach ($instalments as $i) {
-                    $user = $i->order?->user;
-                    if (! $user?->isCustomer()) {
-                        continue;
-                    }
+            ->chunkById(200, fn ($instalments) => $this->remind($notifications, $instalments, $dates, fn (OrderInstalment $i) => $i->order));
 
-                    [$kind, $days] = $dates[$i->installment_date->toDateString()];
-                    $amount = Money::format($i->installment_price);
-                    $product = $i->order->cart?->product?->title ?? 'your AtomShop order';
-                    $date = $i->installment_date->format('j M');
+        // AtomPay orders: the schedule lives on the mirror; status, product and customer on the order.
+        // An order that (also) has Normal monthly rows is reminded through those above, not twice.
+        OrderInstalment::query()
+            ->where('order_type', OrderInstalment::ORDER_CUSTOM)->monthly()->unpaid()
+            ->whereIn('installment_date', array_keys($dates))
+            ->whereHas('customOrder', fn (Builder $mirror) => $mirror->atomPayMirrors()
+                ->whereHas('sourceOrder', fn (Builder $order) => $active($order)
+                    ->whereDoesntHave('instalments', fn (Builder $normal) => $normal->monthly())))
+            ->with(['customOrder.sourceOrder.cart.product', 'customOrder.sourceOrder.user'])
+            ->chunkById(200, fn ($instalments) => $this->remind($notifications, $instalments, $dates, fn (OrderInstalment $i) => $i->customOrder?->sourceOrder));
+    }
 
-                    [$title, $body] = match (true) {
-                        $kind === 'overdue' => ['Instalment overdue', "{$amount} for {$product} was due on {$date}. Please pay to keep your limit in good standing."],
-                        $days === 0 => ['Instalment due today', "{$amount} for {$product} is due today."],
-                        default => ["Instalment due in {$days} days", "{$amount} for {$product} is due on {$date}."],
-                    };
+    /**
+     * @param iterable<OrderInstalment> $instalments
+     * @param array<string, array{0: string, 1: int}> $dates due date => [due|overdue, days]
+     * @param \Closure(OrderInstalment): ?Order $orderOf the orders row the instalment repays
+     */
+    private function remind(NotificationService $notifications, iterable $instalments, array $dates, \Closure $orderOf): void
+    {
+        foreach ($instalments as $i) {
+            $order = $orderOf($i);
+            $user = $order?->user;
+            if (! $user?->isCustomer()) {
+                continue;
+            }
 
-                    $this->record($notifications->notify($user,
-                        $kind === 'overdue' ? CustomerNotification::TYPE_INSTALMENT_OVERDUE : CustomerNotification::TYPE_INSTALMENT_DUE,
-                        $title, $body,
-                        ['screen' => 'plan', 'order_id' => $i->order_id, 'instalment_id' => $i->id],
-                        "instalment:{$i->id}:{$kind}:{$days}"));
-                }
-            });
+            [$kind, $days] = $dates[$i->installment_date->toDateString()];
+            $amount = Money::format($i->installment_price);
+            $product = $order->cart?->product?->title ?? 'your AtomShop order';
+            $date = $i->installment_date->format('j M');
+
+            [$title, $body] = match (true) {
+                $kind === 'overdue' => ['Instalment overdue', "{$amount} for {$product} was due on {$date}. Please pay to keep your limit in good standing."],
+                $days === 0 => ['Instalment due today', "{$amount} for {$product} is due today."],
+                default => ["Instalment due in {$days} days", "{$amount} for {$product} is due on {$date}."],
+            };
+
+            $this->record($notifications->notify($user,
+                $kind === 'overdue' ? CustomerNotification::TYPE_INSTALMENT_OVERDUE : CustomerNotification::TYPE_INSTALMENT_DUE,
+                $title, $body,
+                // The orders row, as the app knows it - never the mirror's id.
+                ['screen' => 'plan', 'order_id' => $order->id, 'instalment_id' => $i->id],
+                "instalment:{$i->id}:{$kind}:{$days}"));
+        }
     }
 
     private function record(?CustomerNotification $notification): void

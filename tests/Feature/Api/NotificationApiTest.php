@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\CustomerNotification;
 use App\Models\Device;
 use App\Models\Enums\VerificationStatus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class NotificationApiTest extends ApiTestCase
@@ -106,6 +107,47 @@ class NotificationApiTest extends ApiTestCase
         $this->assertSame(['screen' => 'dashboard', 'assessment_id' => $assessment->id], $sent[0]->data);
         $this->assertSame('Instalment due in 3 days', $sent[1]->title);
         $this->assertSame($orderId, $sent[2]->data['order_id']);
+    }
+
+    public function test_atompay_orders_are_reminded_from_their_mirror_schedule_exactly_once(): void
+    {
+        $user = $this->makeCustomer();
+        // AtomShop keeps an AtomPay order's schedule as Custom rows on its custom_orders mirror.
+        $atompay = $this->makeAtomPayOrder($user, [
+            [now('Asia/Karachi')->addDays(3), 2666, false],
+            [now('Asia/Karachi')->subDay(), 2666, false],
+        ]);
+        $normal = $this->makeOrder($user, [[now('Asia/Karachi')->addDays(3), 12500, false]]);
+        $this->makeAtomPayOrder($user, [[now('Asia/Karachi')->addDays(3), 999, false]], 'Cancelled');   // nothing owed: no reminder
+
+        $this->artisan('atompay:notify', ['--now' => $this->pktNoon()])->assertSuccessful();
+        $this->artisan('atompay:notify', ['--now' => $this->pktNoon()])->assertSuccessful();   // idempotent
+
+        $sent = CustomerNotification::where('user_id', $user->id)->orderBy('id')->get();
+        $this->assertSame(['instalment_due', 'instalment_due', 'instalment_overdue'], $sent->pluck('type')->all());
+        $this->assertSame([$normal, $atompay, $atompay], $sent->map(fn ($n) => $n->data['order_id'])->all(), 'the order the app knows, never the mirror');
+        $this->assertStringStartsWith('PKR 2,666 for ', $sent[1]->body);
+        $this->assertSame('Instalment overdue', $sent[2]->title);
+    }
+
+    public function test_an_atompay_order_with_its_schedule_in_both_places_is_reminded_once(): void
+    {
+        $user = $this->makeCustomer();
+        $due = now('Asia/Karachi')->addDays(3);
+        $orderId = $this->makeAtomPayOrder($user, [[$due, 2666, false]]);
+        // The same instalment also written on the order itself (order_type = Normal).
+        DB::table('order_instalments')->insert([
+            'user_id' => $user->id, 'order_id' => $orderId, 'month' => 'Instalment 1',
+            'installment_price' => 2666, 'installment_date' => $due->toDateString(),
+            'type' => 'Instalment', 'status' => 'Unpaid', 'order_type' => 'Normal',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->artisan('atompay:notify', ['--now' => $this->pktNoon()])->assertSuccessful();
+
+        $sent = CustomerNotification::where('user_id', $user->id)->sole();
+        $this->assertSame('instalment_due', $sent->type);
+        $this->assertSame($orderId, $sent->data['order_id']);
     }
 
     public function test_reminders_wait_for_waking_hours(): void

@@ -77,7 +77,9 @@ The server checks every 10 minutes. Each event is announced **once**.
 | `instalment_due` | 3 days before and on the due date | "Instalment due in 3 days" / "Instalment due today" |
 | `instalment_overdue` | 1 and 7 days after the due date, if still unpaid | "Instalment overdue" |
 
-Reminders are only sent between 09:00 and 21:00 Pakistan time.
+Reminders are only sent between 09:00 and 21:00 Pakistan time. They cover every order with a schedule,
+AtomPay orders included (Atomshop keeps their schedule on a separate record; `data.order_id` is always
+the order's own id).
 
 ### `GET /notifications?page=1`
 
