@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Api;
 
+use App\Mail\KeyFactStatementMail;
 use App\Models\User;
+use App\Services\CompanySettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -110,6 +112,9 @@ class StoreReleaseApiTest extends ApiTestCase
 
     public function test_the_privacy_policy_states_the_business_facts_once_configured(): void
     {
+        config(['atompay.company' => array_fill_keys(CompanySettings::KEYS, null)]);
+        $this->companySettings([]);
+
         $this->get('/privacy')->assertOk()
             ->assertSee('not use it for advertising or tracking')
             ->assertSee('Account → Settings → Delete account')
@@ -117,17 +122,45 @@ class StoreReleaseApiTest extends ApiTestCase
             ->assertSee('Ask Atom')
             ->assertDontSee('stored on our servers in');
 
-        config([
-            'atompay.lender' => ['name' => 'Example Finance (Pvt) Ltd', 'licence' => 'SECP/123', 'address' => null],
-            'atompay.privacy' => ['data_location' => 'Pakistan (Karachi)', 'record_retention_years' => 10, 'credit_bureau' => null],
-        ]);
+        // The company and hosting from Atomshop's admin panel; retention from .env.
+        $this->companySettings(['company_name' => 'Atom Retail (Pvt) Ltd', 'data_hosting' => 'Pakistan (Karachi)']);
+        config(['atompay.privacy' => ['record_retention_years' => 10, 'credit_bureau' => null]]);
 
         $this->get('/privacy')->assertOk()
-            ->assertSee('Example Finance (Pvt) Ltd')
-            ->assertSee('licence SECP/123')
+            ->assertSee('provided by <strong>Atom Retail (Pvt) Ltd</strong>', false)
+            ->assertSee('sells to you on instalments itself')
             ->assertSee('stored on our servers in Pakistan (Karachi)')
-            ->assertSee('10 years after the plan is repaid');
+            ->assertSee('10 years after the plan is repaid')
+            ->assertDontSee('SECP')
+            ->assertDontSee('Securities and Exchange Commission')
+            ->assertDontSee('licence');
         $this->get('/privacy-policy')->assertRedirect('/privacy');
+    }
+
+    /* ------------------------------------------- no licence or SECP claims */
+
+    public function test_the_kfs_and_its_email_claim_no_licence_or_secp(): void
+    {
+        config(['atompay.company' => [...array_fill_keys(CompanySettings::KEYS, null), 'company_name' => 'Atom Retail (Pvt) Ltd']]);
+        $this->companySettings(['registered_address' => 'Plot 1, Karachi', 'complaint_response_time' => '2 working days']);
+        $user = $this->makeCustomer();
+        $order = $this->makeAtomPayOrder($user, [[now()->addMonth(), 5000, false]]);
+
+        $response = $this->withToken($this->tokenFor($user))->getJson("/api/v1/plans/{$order}/kfs")->assertOk()
+            ->assertJsonPath('data.lender.licence', null);
+
+        $json = $response->getContent();
+        $this->assertStringNotContainsStringIgnoringCase('SECP', $json);
+        $this->assertStringNotContainsStringIgnoringCase('licence', str_replace('"licence":null', '', $json));   // the key stays for old builds; never a value
+
+        $email = (new KeyFactStatementMail('Ali', $response->json('data')))->render();
+        $this->assertStringContainsString('Sold by', $email);
+        $this->assertStringContainsString('Atom Retail (Pvt) Ltd', $email);
+        $this->assertStringContainsString('Plot 1, Karachi', $email);
+        $this->assertStringContainsString('We reply within 2 working days.', $email);
+        $this->assertStringNotContainsStringIgnoringCase('SECP', $email);
+        $this->assertStringNotContainsStringIgnoringCase('licence', $email);
+        $this->assertStringNotContainsString('Lender', $email);
     }
 
     /* ---------------------------------------------------------- new fields */

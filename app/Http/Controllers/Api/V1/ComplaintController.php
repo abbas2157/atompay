@@ -16,7 +16,7 @@ use Illuminate\Validation\Rule;
 use Throwable;
 
 /**
- * In-app complaints: the grievance route SECP asks digital lenders for.
+ * In-app complaints: how a customer raises a problem with Atomshop.
  * Each one gets a reference the customer can quote; a person replies.
  */
 class ComplaintController extends Controller

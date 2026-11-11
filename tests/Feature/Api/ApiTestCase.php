@@ -7,6 +7,7 @@ use App\Models\Enums\VerificationStatus;
 use App\Models\KycProfile;
 use App\Models\User;
 use App\Services\AccountService;
+use App\Services\CompanySettings;
 use App\Services\CreditAssessmentService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
@@ -150,5 +151,30 @@ abstract class ApiTestCase extends TestCase
         }
 
         return $orderId;
+    }
+
+    /**
+     * Company facts as Atomshop's admin panel saves them (atom_settings, keys
+     * atompay.<name>); [] clears them so only config('atompay.company') is left.
+     *
+     * Atomshop owns the table, so it may not exist in the test database. A
+     * TEMPORARY table stands in (and hides a real one from this connection):
+     * unlike CREATE TABLE it does not commit the test's transaction, and it
+     * is gone when the connection closes.
+     *
+     * @param array<string, ?string> $values short key => value
+     */
+    protected function companySettings(array $values): void
+    {
+        DB::statement('CREATE TEMPORARY TABLE IF NOT EXISTS atom_settings (
+            `key` VARCHAR(60) NOT NULL PRIMARY KEY, `value` TEXT NULL, updated_by BIGINT UNSIGNED NULL,
+            created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL)');
+        DB::table('atom_settings')->where('key', 'like', 'atompay.%')->delete();
+
+        foreach ($values as $key => $value) {
+            DB::table('atom_settings')->insert(['key' => 'atompay.'.$key, 'value' => $value, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        CompanySettings::flush();
     }
 }

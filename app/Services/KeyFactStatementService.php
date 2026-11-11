@@ -7,21 +7,26 @@ use App\Models\OrderInstalment;
 use App\Models\User;
 
 /**
- * The Key Fact Statement for one AtomPay order (SECP Circular 15/2022):
- * amount, fees, APR, tenor, and every instalment with its date.
+ * The Key Fact Statement for one AtomPay order: amount, fees, APR, tenor,
+ * and every instalment with its date. Atomshop sells on instalments itself
+ * (merchant credit), so the `lender` block names Atomshop's company as the
+ * seller; there is no licence, and `lender.licence` is always null (the key
+ * stays for older app builds).
  *
  * Figures come from the order Atomshop wrote. Before Atomshop raises the
  * schedule (an order awaiting approval) the instalments are AtomPay's plan
  * for the order's price, with no dates yet - `schedule_final` says which.
  *
- * Anything the business has not supplied (lender identity, late-payment and
- * early-settlement terms) is null, never invented.
+ * Anything the business has not supplied (company name and address,
+ * late-payment and early-settlement terms - see CompanySettings) is null,
+ * never invented.
  */
 class KeyFactStatementService
 {
     public function __construct(
         private readonly PaymentScheduleService $schedule,
         private readonly InstalmentQuoteService $quotes,
+        private readonly CompanySettings $company,
     ) {}
 
     /** Null when the order is not the customer's, or is not an AtomPay order. */
@@ -55,15 +60,16 @@ class KeyFactStatementService
         $feePercent = (float) config('atompay.atompay_plan.processing_fee_percent');
         $fee = (int) round($financed * $feePercent / 100);
         $amounts = array_column($rows, 'amount');
+        $company = $this->company->all();
 
         return [
             'order_id' => $order->id,
             'order_number' => $order->reference,
             'product' => $plan['product']?->title,
-            'lender' => [
-                'name' => config('atompay.lender.name') ?: null,
-                'licence' => config('atompay.lender.licence') ?: null,
-                'address' => config('atompay.lender.address') ?: null,
+            'lender' => [                        // the seller (Atomshop's company); there is no separate lender
+                'name' => $company['company_name'],
+                'licence' => null,               // never set: merchant credit needs no licence
+                'address' => $company['registered_address'],
             ],
             'amount_financed' => $financed,
             'advance' => (int) $order->advance_price,
@@ -75,11 +81,17 @@ class KeyFactStatementService
             'schedule_final' => $final,
             'instalments' => $rows,
             'total_repayable' => array_sum($amounts),
-            'late_payment' => config('atompay.kfs.late_payment') ?: null,
-            'early_settlement' => config('atompay.kfs.early_settlement') ?: null,
-            'complaints' => config('atompay.kfs.complaints'),
+            'late_payment' => $company['late_payment'],
+            'early_settlement' => $company['early_settlement'],
+            'complaints' => self::complaints($company['complaint_response_time']),
             'issued_at' => now()->toIso8601String(),
         ];
+    }
+
+    /** Where to complain, and how soon we answer once the business has said. */
+    public static function complaints(?string $responseTime): string
+    {
+        return 'In the app: Help › Complaints.'.($responseTime ? " We reply within {$responseTime}." : '');
     }
 
     /**

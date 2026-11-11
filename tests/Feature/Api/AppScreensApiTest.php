@@ -7,6 +7,7 @@ use App\Mail\PasswordChangedMail;
 use App\Models\Area;
 use App\Models\Complaint;
 use App\Models\Product;
+use App\Services\CompanySettings;
 use App\Services\KeyFactStatementService;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
@@ -158,6 +159,8 @@ class AppScreensApiTest extends ApiTestCase
 
     public function test_kfs_of_an_atompay_order(): void
     {
+        Config::set('atompay.company', array_fill_keys(CompanySettings::KEYS, null));
+        $this->companySettings([]);
         $user = $this->makeCustomer();
         $order = $this->makeAtomPayOrder($user, [['2026-12-10', 2666, true], ['2027-01-10', 2666, false], ['2027-02-10', 2668, false]]);
 
@@ -170,8 +173,29 @@ class AppScreensApiTest extends ApiTestCase
             ->assertJsonPath('data.total_repayable', 8000)
             ->assertJsonPath('data.processing_fee', 240)
             ->assertJsonPath('data.apr_percent', 18.5)
-            ->assertJsonPath('data.lender.name', null)                     // never invented
-            ->assertJsonPath('data.late_payment', null);
+            ->assertJsonPath('data.lender', ['name' => null, 'licence' => null, 'address' => null])   // never invented
+            ->assertJsonPath('data.late_payment', null)
+            ->assertJsonPath('data.early_settlement', null)
+            ->assertJsonPath('data.complaints', 'In the app: Help › Complaints.');
+    }
+
+    public function test_kfs_names_the_company_from_atomshop_settings_and_never_a_licence(): void
+    {
+        Config::set('atompay.company', [...array_fill_keys(CompanySettings::KEYS, null), 'late_payment' => 'Rs. 500 per late month.']);
+        $this->companySettings([
+            'company_name' => 'Atom Retail (Pvt) Ltd',
+            'registered_address' => 'Plot 1, Karachi',
+            'early_settlement' => 'No charge for paying early.',
+            'complaint_response_time' => '2 working days',
+        ]);
+        $user = $this->makeCustomer();
+        $order = $this->makeAtomPayOrder($user, [['2026-12-10', 2666, false]]);
+
+        $this->withToken($this->tokenFor($user))->getJson("/api/v1/plans/{$order}/kfs")->assertOk()
+            ->assertJsonPath('data.lender', ['name' => 'Atom Retail (Pvt) Ltd', 'licence' => null, 'address' => 'Plot 1, Karachi'])
+            ->assertJsonPath('data.late_payment', 'Rs. 500 per late month.')          // .env fallback
+            ->assertJsonPath('data.early_settlement', 'No charge for paying early.')
+            ->assertJsonPath('data.complaints', 'In the app: Help › Complaints. We reply within 2 working days.');
     }
 
     public function test_kfs_before_the_schedule_exists_uses_the_plan_without_dates(): void

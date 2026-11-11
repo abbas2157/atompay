@@ -160,25 +160,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Key Fact Statement (SECP Circular 15/2022)
+    | The company behind AtomPay
     |--------------------------------------------------------------------------
-    | The lender's legal identity and the terms that are not yet decided stay
-    | null until the business supplies them; the app shows a placeholder for
-    | null rather than a guess.
+    | Atomshop sells on instalments itself (merchant credit): there is no
+    | separate lender and no licence. These facts appear on the Key Fact
+    | Statement, /privacy and GET /app-config `business`.
+    |
+    | Atomshop's admin panel is the source (shared `atom_settings` table, keys
+    | `atompay.<name>`, read by App\Services\CompanySettings); the values here
+    | are only the fallback for a key the admin has left empty. Anything
+    | still unset is null - the app shows a placeholder rather than a guess.
+    | The old ATOMPAY_LENDER_* names are still read so existing .env files
+    | keep working.
     */
-    'lender' => [
-        'name' => env('ATOMPAY_LENDER_NAME'),
-        'licence' => env('ATOMPAY_LENDER_LICENCE'),
-        'address' => env('ATOMPAY_LENDER_ADDRESS'),
+    'company' => [
+        'company_name' => env('ATOMPAY_COMPANY_NAME') ?: env('ATOMPAY_LENDER_NAME'),
+        'registered_address' => env('ATOMPAY_COMPANY_ADDRESS') ?: env('ATOMPAY_LENDER_ADDRESS'),
+        // Where the servers are, e.g. "Pakistan (Karachi)". The app shows "Your data is stored in ...".
+        'data_hosting' => env('ATOMPAY_DATA_LOCATION'),
+        'late_payment' => env('ATOMPAY_KFS_LATE_PAYMENT'),
+        'early_settlement' => env('ATOMPAY_KFS_EARLY_SETTLEMENT'),
+        // e.g. "2 working days"; the KFS complaints line adds "We reply within ...".
+        'complaint_response_time' => env('ATOMPAY_COMPLAINT_RESPONSE_TIME'),
     ],
     /*
     | Facts the privacy policy states that only the business can confirm. Each
     | line appears on /privacy once its value is set; `atompay:deploy-check`
-    | lists the ones still missing. The legal entity is lender.name above.
+    | lists the ones still missing. The company name and data hosting are in
+    | `company` above.
     */
     'privacy' => [
-        // Where the servers are, e.g. "Pakistan (Karachi)". The app shows "Your data is stored in ...".
-        'data_location' => env('ATOMPAY_DATA_LOCATION'),
         // How long financial and identity records are kept after an account closes or is deleted.
         'record_retention_years' => env('ATOMPAY_RECORD_RETENTION_YEARS'),
         // Whether a credit bureau (e.g. SBP's eCIB or a private bureau) is checked or reported to.
@@ -195,12 +206,6 @@ return [
     'review_accounts' => [
         'a' => ['email' => env('ATOMPAY_REVIEW_A_EMAIL'), 'password' => env('ATOMPAY_REVIEW_A_PASSWORD')],
         'b' => ['email' => env('ATOMPAY_REVIEW_B_EMAIL'), 'password' => env('ATOMPAY_REVIEW_B_PASSWORD')],
-    ],
-
-    'kfs' => [
-        'late_payment' => env('ATOMPAY_KFS_LATE_PAYMENT'),
-        'early_settlement' => env('ATOMPAY_KFS_EARLY_SETTLEMENT'),
-        'complaints' => 'In the app: Help › Complaints. If you are not satisfied with our answer, you can complain to the SECP.',
     ],
 
     // In-app complaints (POST /api/v1/complaints). Value => label, in display order.

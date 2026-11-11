@@ -137,9 +137,15 @@ FCM_PROJECT_ID=atomshop-a726c
 # Store release. The privacy policy states each of these once set, and
 # `atompay:deploy-check` lists the ones still missing. Only the business can
 # confirm them - never fill in a guess.
-ATOMPAY_LENDER_NAME="..."            # the licensed legal entity
-ATOMPAY_LENDER_LICENCE=...
+# The company facts (name, registered address, data hosting, late payment,
+# early settlement, complaint response time) are set in Atomshop's admin panel
+# (atom_settings, keys atompay.*). These .env values are only the fallback for
+# a field left empty there. Atomshop sells on instalments itself: there is no
+# lender and no licence (ATOMPAY_LENDER_LICENCE is no longer read; delete it).
+ATOMPAY_COMPANY_NAME="..."           # the company that runs Atomshop (old name ATOMPAY_LENDER_NAME still read)
+ATOMPAY_COMPANY_ADDRESS="..."        # registered address (old name ATOMPAY_LENDER_ADDRESS still read)
 ATOMPAY_DATA_LOCATION="Pakistan (...)"   # where the servers are
+ATOMPAY_COMPLAINT_RESPONSE_TIME=     # e.g. "2 working days"
 ATOMPAY_RECORD_RETENTION_YEARS=...   # financial/AML records kept after an account closes
 ATOMPAY_CREDIT_BUREAU=               # name it only if a bureau is really checked or reported to
 

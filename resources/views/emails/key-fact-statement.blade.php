@@ -15,7 +15,7 @@
     <p style="margin:0 0 16px;">Hi {{ $name }}, here is the copy you asked for{{ $kfs['product'] ? ' of the terms for '.$kfs['product'] : '' }}.</p>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;line-height:1.45;">
-        <tr><td style="{{ $row }}color:#656F88;width:45%;">Lender</td><td style="{{ $row }}font-weight:700;">{{ $kfs['lender']['name'] ?? $tbd }}@if ($kfs['lender']['licence']) · SECP licence {{ $kfs['lender']['licence'] }}@endif</td></tr>
+        <tr><td style="{{ $row }}color:#656F88;width:45%;">Sold by</td><td style="{{ $row }}font-weight:700;">{{ $kfs['lender']['name'] ?? $tbd }}@if ($kfs['lender']['address'])<br><span style="font-weight:500;color:#656F88;">{{ $kfs['lender']['address'] }}</span>@endif</td></tr>
         <tr><td style="{{ $row }}color:#656F88;">Amount financed</td><td style="{{ $row }}font-weight:700;">{{ $rs($kfs['amount_financed']) }}</td></tr>
         <tr><td style="{{ $row }}color:#656F88;">Advance</td><td style="{{ $row }}font-weight:700;">{{ $rs($kfs['advance']) }}</td></tr>
         <tr><td style="{{ $row }}color:#656F88;">Markup</td><td style="{{ $row }}font-weight:700;">{{ rtrim(rtrim(number_format($kfs['markup_percent'], 2), '0'), '.') }}%</td></tr>

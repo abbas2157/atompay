@@ -2,9 +2,10 @@
 
 [← API index](README.md) · [Conventions, errors & limits](conventions.md)
 
-The in-app grievance route (SECP Circular 15/2022). A person reads every complaint and replies; the
-customer quotes the `reference` to support. Complaints are kept when an account is deleted, linked to
-the anonymised account, because the regulator can ask for them.
+How a customer raises a problem with Atomshop (Help › Complaints). A person reads every complaint and
+replies; the customer quotes the `reference` to support. Complaints are kept when an account is deleted,
+linked to the anonymised account, as a record of how each was handled. How soon we reply is
+`business.complaint_response_time` in [`/app-config`](app-config.md) (`null` until set).
 
 ## `POST /complaints`
 

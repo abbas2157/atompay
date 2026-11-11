@@ -5,10 +5,9 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Customer complaints raised in the app - the in-app grievance route SECP
- * Circular 15/2022 asks digital lenders for. Kept when an account is
- * deleted (like orders), because the regulator can ask for them; the
- * account they point at is anonymised by then.
+ * Customer complaints raised in the app (Help > Complaints). Kept when an
+ * account is deleted (like orders), as a record of how each was handled;
+ * the account they point at is anonymised by then.
  */
 return new class extends Migration
 {

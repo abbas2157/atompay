@@ -255,13 +255,16 @@ class DeployCheck extends Command
     /**
      * What the store listings and the privacy policy depend on. Warnings, not
      * failures: none of it breaks the site, but each gap is visible to Apple
-     * or Google reviewers (see config('atompay.privacy')).
+     * or Google reviewers (see config('atompay.privacy')). Company facts count
+     * as set when Atomshop's admin panel or .env has them (CompanySettings).
      */
     private function checkStoreRelease(): void
     {
+        $company = app(\App\Services\CompanySettings::class)->all();
+
         $missing = array_keys(array_filter([
-            'ATOMPAY_LENDER_NAME (legal entity on /privacy and the KFS)' => blank(config('atompay.lender.name')),
-            'ATOMPAY_DATA_LOCATION (where /privacy says data is stored)' => blank(config('atompay.privacy.data_location')),
+            'company name (Atomshop admin > AtomPay settings, or ATOMPAY_COMPANY_NAME): on /privacy and the KFS' => blank($company['company_name']),
+            'data hosting (Atomshop admin, or ATOMPAY_DATA_LOCATION): where /privacy says data is stored' => blank($company['data_hosting']),
             'ATOMPAY_RECORD_RETENTION_YEARS (how long /privacy says records are kept)' => blank(config('atompay.privacy.record_retention_years')),
             'ATOMPAY_SUPPORT_EMAIL (privacy contact)' => blank(config('atompay.api.support.email')),
             'ATOMPAY_REVIEW_A_EMAIL / ATOMPAY_REVIEW_B_EMAIL (reviewer sign-ins)' => blank(config('atompay.review_accounts.a.email')) || blank(config('atompay.review_accounts.b.email')),

@@ -97,7 +97,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/plans/{order}/kfs', [KeyFactStatementController::class, 'show'])->whereNumber('order')->name('plans.kfs');
         Route::post('/plans/{order}/kfs/send', [KeyFactStatementController::class, 'send'])->whereNumber('order')->middleware('throttle:kfs_send')->name('plans.kfs.send');
 
-        // In-app complaints (SECP grievance route).
+        // In-app complaints (Help > Complaints).
         Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints');
         Route::post('/complaints', [ComplaintController::class, 'store'])->middleware('throttle:complaints')->name('complaints.store');
 

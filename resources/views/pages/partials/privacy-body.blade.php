@@ -8,13 +8,17 @@
     matching section here and the "Last updated" date in BOTH views.
     $sections and $contacts come from the including view.
 
-    Facts only the business can confirm (legal entity, server location,
-    record retention, credit bureau) come from config('atompay.lender') and
-    config('atompay.privacy') and appear once set - `atompay:deploy-check`
-    lists the missing ones. Never write a guess for them here.
+    Facts only the business can confirm appear once set, and never as a
+    guess: the company name, address and data hosting come from
+    CompanySettings (Atomshop's admin panel, falling back to .env); record
+    retention and credit bureau from config('atompay.privacy').
+    `atompay:deploy-check` lists the missing ones.
+
+    Atomshop sells on instalments itself (merchant credit). There is no
+    separate lender and no licence - do not add one here.
 --}}
 @php
-    $lender = config('atompay.lender');
+    $company = app(\App\Services\CompanySettings::class)->all();
     $privacy = config('atompay.privacy');
     $retentionYears = (int) ($privacy['record_retention_years'] ?? 0);
 @endphp
@@ -25,8 +29,8 @@
                         <a href="{{ $shopLink }}" target="_blank" rel="noopener" class="underline">Atomshop.pk</a> in Pakistan.
                         It is run by Atomshop, and your {{ config('app.name') }} account is your Atomshop account.
                         In this policy, "we" and "us" mean {{ config('app.name') }} and Atomshop.</p>
-                    @if ($lender['name'])
-                        <p>{{ config('app.name') }} is provided by <strong>{{ $lender['name'] }}</strong>{{ $lender['licence'] ? ', licensed by the Securities and Exchange Commission of Pakistan (licence '.$lender['licence'].')' : '' }}{{ $lender['address'] ? ', '.$lender['address'] : '' }}. It is responsible for your personal information.</p>
+                    @if ($company['company_name'])
+                        <p>{{ config('app.name') }} is provided by <strong>{{ $company['company_name'] }}</strong>{{ $company['registered_address'] ? ', '.$company['registered_address'] : '' }}, the company that runs Atomshop. It sells to you on instalments itself - there is no bank or other lender in between - and it is responsible for your personal information.</p>
                     @endif
                 </div>
 
@@ -86,8 +90,8 @@
 
                 <div id="{{ $k = 'where' }}" class="scroll-mt-24">
                     <h3>{{ $sections[$k] }}</h3>
-                    @if ($privacy['data_location'])
-                        <p>Your account, KYC documents and plan records are stored on our servers in {{ $privacy['data_location'] }}.</p>
+                    @if ($company['data_hosting'])
+                        <p>Your account, KYC documents and plan records are stored on our servers in {{ $company['data_hosting'] }}.</p>
                     @endif
                     <p>CNIC photos, selfies and verification forms are kept in private storage that is not reachable from the internet. The providers above may process the data they need for their service, such as a message to deliver, where they operate.</p>
                 </div>

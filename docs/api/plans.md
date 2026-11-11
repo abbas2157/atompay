@@ -100,8 +100,9 @@ Payments are made through AtomShop's existing channels. The app only shows statu
 
 ## `GET /plans/{order_id}/kfs`
 
-The **Key Fact Statement** of one of your AtomPay orders (SECP Circular 15/2022). `404` for an order
-that isn't yours or isn't an AtomPay order (seller financing has no KFS here).
+The **Key Fact Statement** of one of your AtomPay orders. `404` for an order that isn't yours or isn't
+an AtomPay order (seller financing has no KFS here). Atomshop sells on instalments itself (merchant
+credit): there is no separate lender and no licence.
 
 ```json
 {
@@ -109,7 +110,7 @@ that isn't yours or isn't an AtomPay order (seller financing has no KFS here).
     "order_id": 1279,
     "order_number": "AS-01279",
     "product": "OXY 3218L Android",
-    "lender": { "name": null, "licence": null, "address": null },
+    "lender": { "name": "Atom Retail (Pvt) Ltd", "licence": null, "address": null },
     "amount_financed": 47000,
     "advance": 0,
     "markup_percent": 0,
@@ -126,14 +127,19 @@ that isn't yours or isn't an AtomPay order (seller financing has no KFS here).
     "total_repayable": 47000,
     "late_payment": null,
     "early_settlement": null,
-    "complaints": "In the app: Help › Complaints. If you are not satisfied with our answer, you can complain to the SECP.",
+    "complaints": "In the app: Help › Complaints. We reply within 2 working days.",
     "issued_at": "2026-11-10T10:00:00+05:00"
   }
 }
 ```
 
-- **`null` means "not supplied yet"** (lender identity, late-payment and early-settlement terms, set in
-  `.env`). Show a visible placeholder, never a guess.
+- **`lender` is the seller**: `name` is the company that runs Atomshop (`business.company_name` in
+  [`/app-config`](app-config.md)) and `address` its registered address. Label it "Sold by", not "Lender".
+  **`lender.licence` is always `null`**; the key stays only so older builds keep parsing.
+- **`null` means "not supplied yet"** (company name and address, late-payment and early-settlement
+  terms). They come from Atomshop's admin panel, falling back to `.env`. Show a visible placeholder, never a guess.
+- **`complaints`** is `"In the app: Help › Complaints."`, plus `" We reply within {time}."` once
+  `complaint_response_time` is set.
 - **`schedule_final: false`** while the order awaits approval: the instalments are AtomPay's plan for
   the amount, with `due_date: null` ("set when your order is delivered").
 - **`apr_percent`** is the nominal annual rate that makes the monthly payments worth the amount financed

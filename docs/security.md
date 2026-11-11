@@ -192,7 +192,7 @@ Named honestly, so nobody assumes otherwise:
   stored outside the web root where they cannot execute, but a malicious PDF
   reaching a reviewer's machine is not defended against.
 - **No audit log.** `decided_by`/`verified_by` record who made each decision,
-  but not who *looked* at a customer's CNIC. For a regulated lender this is
+  but not who *looked* at a customer's CNIC. For a business holding CNIC copies this is
   usually required.
 - **No automated dependency scanning.** Run `composer audit` and `npm audit` as
   part of deploying.
