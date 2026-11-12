@@ -51,10 +51,19 @@ Creates or updates the profile. Send **every text field every time**. The images
 | `residential_address` | required, ≤ 1000 |
 | `city_id` | optional, an `id` from `GET /cities` |
 | `area_id` | optional, an `id` from `GET /areas?city_id=` **for the same `city_id`** (422 otherwise). Leave the field out to keep the saved area; send it empty to clear it. A new city that doesn't contain the saved area clears it. |
-| `cnic_front`, `cnic_back`, `selfie` | image files: jpg / jpeg / png / webp, **≤ 4 MB each** |
+| `cnic_front`, `cnic_back`, `selfie` | image files: jpg / jpeg / png / webp, **≤ 4 MB each**, checked for malware (below) |
 
 **`201 Created`** on the first submission and **`200 OK`** on an update. Both return the profile
 object above.
+
+Every image is checked before it is saved: its content must really be a JPEG / PNG / WebP image,
+and it is virus-scanned. Two new `422` field errors on `cnic_front`, `cnic_back` or `selfie` come
+from this:
+
+| `errors.<field>[0]` | Meaning | What the app should do |
+|---|---|---|
+| *"This file can't be accepted. Please upload a clear photo (JPG, PNG or WebP) or, for forms, a plain PDF."* | The file was refused. Not temporary. | Show it under that photo and ask for a new one (retake / pick again). |
+| *"We couldn't check this file just now. Please try again in a few minutes."* | The scanner is briefly unavailable. Nothing is wrong with the photo. | Keep the form and photos as they are and offer **Try again**. Don't make the customer retake. |
 
 > **Changing name, CNIC, date of birth, address or any document sends the profile back to
 > `pending`**, so staff verify it again. Warn the customer before they save changes to a
@@ -63,7 +72,9 @@ object above.
 Client tips:
 
 - Compress photos before upload (longest side ~1600 px, JPEG quality ~85). Phone cameras
-  easily exceed 4 MB.
+  easily exceed 4 MB. Always **output JPEG** (`flutter_image_compress` with
+  `format: CompressFormat.jpeg`): iPhones shoot HEIC, which is refused.
+- Allow at least 60 s for the upload request; the scan adds a moment on the server.
 - Use the camera for the selfie (front lens) and the gallery or camera for the CNIC.
 - For client-side checks, mirror the server rules: 13 digits with the first digit 1–7,
   `03` + 9 digits, age ≥ 18.

@@ -115,6 +115,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 
 | Date | Change |
 |---|---|
+| 2026-11-12 | **KYC images are malware-checked.** `POST /profile` can return two new `422` messages on `cnic_front` / `cnic_back` / `selfie` (refused file; scanner briefly unavailable). See [profile.md](profile.md#post-profile-multipartform-data). No shape change. |
 | 2026-11-12 | **`/calculator` and `/quote` price AtomPay's plan**, not Atomshop seller financing: tenures `[3]`, no advance, 0% markup. Same response shape; values changed. Added fields: `plan` (both), `processing_fee_percent` (both), `last_monthly` and `processing_fee` (`/quote`). A `months` other than 3 or any non-zero `advance` is a `422` field error. |
 | 2026-11-10 | **v2 app endpoints.** New: `GET /areas`, `GET /plan-preview`, `GET /products`, `/products/categories`, `/products/{id}`, `GET /plans/{id}/kfs`, `POST /plans/{id}/kfs/send`, `GET\|POST /complaints`, `GET /ask-atom/chips`, `POST /ask-atom`, `POST /me/password`. Added fields: `/app-config` → `maintenance`, `apps`, `features.voice`; `/options` → `complaint_topics`; `/profile` → `area`. Nothing renamed or removed. |
 | 2026-10-10 | **`GET /plans` lists every order**, in any status, including AtomPay-financed ones. `state` gains `pending`, `processing` and `cancelled`, and `?include=completed` is ignored. `GET /dashboard` gains `plans.pending_count`, and `active_count` counts only orders being repaid. `POST /application` can return `409 nothing_changed` once a limit is approved. |
