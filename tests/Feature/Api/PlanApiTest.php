@@ -159,34 +159,37 @@ class PlanApiTest extends ApiTestCase
             ->assertJsonPath('data.limit.available', 30000 - 11666);
     }
 
-    public function test_calculator_config_and_quote_use_the_checkout_math(): void
+    /** AtomPay's plan, not seller financing: 3 months, no advance, 0% markup. */
+    public function test_calculator_config_and_quote_price_atompays_plan(): void
     {
-        $quotes = app(InstalmentQuoteService::class);
-        $months = $quotes->tenures()[0];
-        $expected = $quotes->quote(100000, $months)->toArray();
-
         $this->getJson('/api/v1/calculator')
             ->assertOk()
-            ->assertJsonPath('data.tenures', $quotes->tenures())
-            ->assertJsonPath('data.advance.min_ratio', 0.2);
+            ->assertJsonPath('data.plan', 'atompay')
+            ->assertJsonPath('data.tenures', [3])
+            ->assertJsonPath('data.per_month_percentage', 0)
+            ->assertJsonPath('data.advance', ['min_ratio' => 0, 'max_ratio' => 0]);
 
-        $this->postJson('/api/v1/quote', ['price' => 100000, 'months' => $months])
+        $this->postJson('/api/v1/quote', ['price' => 100000, 'months' => 3])
             ->assertOk()
-            ->assertJsonPath('data.monthly', $expected['monthly'])
-            ->assertJsonPath('data.total', $expected['total'])
-            ->assertJsonPath('data.advance', 20000)
-            ->assertJsonPath('data.advance_bounds', ['min' => 20000, 'max' => 60000]);
+            ->assertJsonPath('data.plan', 'atompay')
+            ->assertJsonPath('data.advance', 0)
+            ->assertJsonPath('data.markup', 0)
+            ->assertJsonPath('data.total', 100000)
+            ->assertJsonPath('data.monthly', 33333)
+            ->assertJsonPath('data.last_monthly', 33334)
+            ->assertJsonPath('data.processing_fee', 3000)
+            ->assertJsonPath('data.advance_bounds', ['min' => 0, 'max' => 0]);
+
+        // An explicit zero advance is fine.
+        $this->postJson('/api/v1/quote', ['price' => 100000, 'months' => 3, 'advance' => 0])->assertOk();
     }
 
     public function test_a_bad_tenure_or_down_payment_is_a_field_error(): void
     {
-        // Tenures come from AtomShop's calculator row, so pick one it doesn't offer.
-        $offered = app(InstalmentQuoteService::class)->tenures();
-        $unoffered = collect(range(1, 60))->first(fn ($m) => ! in_array($m, $offered, true));
-
-        $this->postJson('/api/v1/quote', ['price' => 100000, 'months' => $unoffered, 'advance' => 5000])
+        $this->postJson('/api/v1/quote', ['price' => 100000, 'months' => 6, 'advance' => 5000])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['months', 'advance'])
-            ->assertJsonPath('errors.advance.0', 'Down payment must be between PKR 20,000 and PKR 60,000.');
+            ->assertJsonPath('errors.months.0', 'AtomPay plans are always 3 months.')
+            ->assertJsonPath('errors.advance.0', 'AtomPay takes no down payment.');
     }
 }

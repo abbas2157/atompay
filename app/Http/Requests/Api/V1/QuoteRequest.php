@@ -7,8 +7,8 @@ use App\Services\InstalmentQuoteService;
 use Illuminate\Validation\Validator;
 
 /**
- * The web quote endpoint reports an unavailable tenure or out-of-range
- * down payment as one generic message. The app gets them as field errors
+ * The web quote endpoint reports a tenure other than AtomPay's, or any
+ * down payment, as one generic message. The app gets them as field errors
  * on `months` / `advance`, so it can show them next to the right control.
  */
 class QuoteRequest extends WebQuoteRequest
@@ -20,21 +20,15 @@ class QuoteRequest extends WebQuoteRequest
                 return;
             }
 
-            $quotes = app(InstalmentQuoteService::class);
-            $tenures = $quotes->tenures();
+            // AtomPay's plan: one fixed term, no advance.
+            $tenures = app(InstalmentQuoteService::class)->atompayTenures();
 
             if (! in_array((int) $this->months, $tenures, true)) {
-                $validator->errors()->add('months', 'Choose one of: '.implode(', ', $tenures).' months.');
+                $validator->errors()->add('months', InstalmentQuoteService::atompayTermMessage());
             }
 
-            if ($this->filled('advance')) {
-                $bounds = $quotes->advanceBounds((int) $this->price);
-                if ($this->advance < $bounds['min'] || $this->advance > $bounds['max']) {
-                    $validator->errors()->add('advance', sprintf(
-                        'Down payment must be between PKR %s and PKR %s.',
-                        number_format($bounds['min']), number_format($bounds['max']),
-                    ));
-                }
+            if ($this->filled('advance') && (int) $this->advance !== 0) {
+                $validator->errors()->add('advance', InstalmentQuoteService::NO_ADVANCE_MESSAGE);
             }
         }];
     }

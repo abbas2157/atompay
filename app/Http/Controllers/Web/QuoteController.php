@@ -10,7 +10,8 @@ use InvalidArgumentException;
 
 /**
  * Server-side quote for anything that must not trust client math
- * (mobile app, checkout hand-off, support tools).
+ * (mobile app, checkout hand-off, support tools). Quotes AtomPay's own plan -
+ * 3 months, no advance, 0% markup - not AtomShop seller financing.
  */
 class QuoteController extends Controller
 {
@@ -19,7 +20,7 @@ class QuoteController extends Controller
     public function __invoke(QuoteRequest $request): JsonResponse
     {
         try {
-            $quote = $this->quotes->quote(
+            $quote = $this->quotes->atompayQuote(
                 price: (int) $request->validated('price'),
                 months: (int) $request->validated('months'),
                 advance: $request->filled('advance') ? (int) $request->validated('advance') : null,
@@ -28,6 +29,6 @@ class QuoteController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
 
-        return response()->json(['success' => true, 'quote' => $quote->toArray()]);
+        return response()->json(['success' => true, 'quote' => $quote]);
     }
 }

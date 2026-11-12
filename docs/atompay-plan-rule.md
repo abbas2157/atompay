@@ -62,10 +62,10 @@ of markup and a Rs. 20,000 advance.
 
 1. **The v1 page.** Either correct its calculator or retire v1 once v2 covers
    every page. Until then the live site offers a plan AtomPay does not sell.
-2. **`POST /quote` and the mobile `plan` endpoint.** Both still answer with
-   seller-financing figures. The app shows them beside an AtomPay limit, which
-   invites exactly the wrong conclusion. Decide whether they should return both
-   plans, labelled, or only AtomPay's.
+2. ~~**`POST /quote` and the mobile `plan` endpoint.**~~ **Done 12 Nov 2026.**
+   `POST /quote`, `POST /api/v1/quote` and `GET /api/v1/calculator` now answer
+   with AtomPay's plan only (`InstalmentQuoteService::atompayQuote()`), in the
+   same response shape so older app builds show the right figures unchanged.
 3. **The processing fee.** Carried in two places now
    (`atompay.atompay_plan.processing_fee_percent` here,
    `website.atompay.processing_fee_percent` in AtomShop). They must not drift;

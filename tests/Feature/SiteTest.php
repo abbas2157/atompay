@@ -44,12 +44,16 @@ class SiteTest extends TestCase
 
     public function test_quote_endpoint_returns_server_math(): void
     {
-        $this->postJson('/quote', ['price' => 100000, 'months' => 6])
+        // AtomPay's plan: 3 months, no advance, 0% markup.
+        $this->postJson('/quote', ['price' => 100000, 'months' => 3])
             ->assertOk()
-            ->assertJsonPath('quote.total', 119200);
+            ->assertJsonPath('quote.plan', 'atompay')
+            ->assertJsonPath('quote.total', 100000)
+            ->assertJsonPath('quote.monthly', 33333)
+            ->assertJsonPath('quote.last_monthly', 33334);
 
-        $this->postJson('/quote', ['price' => 100000, 'months' => 6, 'advance' => 1])
-            ->assertStatus(422);
+        $this->postJson('/quote', ['price' => 100000, 'months' => 6])->assertStatus(422);
+        $this->postJson('/quote', ['price' => 100000, 'months' => 3, 'advance' => 1])->assertStatus(422);
     }
 
     public function test_guest_estimate_is_kept_in_session_not_recorded(): void

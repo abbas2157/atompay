@@ -65,7 +65,8 @@ The five-section form maps onto two AtomPay-owned tables and three roles:
 ## Business rules (all in `config/atompay.php`)
 
 - **Plan pricing** mirrors AtomShop's checkout (`Web\Order\OrderController::checkout_perform`):
-  `markup = per_month% × months × (price − advance)`, down payment 20–60% of price. Implemented once in `InstalmentQuoteService`; the Alpine calculator mirrors it client-side and `POST /quote` exposes it server-side. `tests/Unit/InstalmentQuoteServiceTest` pins the numbers.
+  `markup = per_month% × months × (price − advance)`, down payment 20–60% of price. Implemented once in `InstalmentQuoteService::quote()`; only the v1 landing calculator still uses it. `tests/Unit/InstalmentQuoteServiceTest` pins the numbers.
+- **AtomPay's own plan** (3 months, no advance, 0% markup) is `InstalmentQuoteService::atompayPlan()`. `POST /quote`, `POST /api/v1/quote` and `GET /api/v1/calculator` answer with it via `atompayQuote()`.
 - **Credit limit** = 30% of monthly income; **max instalment** = min(10% of income, disposable income) (`CreditAssessmentService::provisionalLimit`). The client only ever submits its profile; limits are computed server-side and stay *pending* until staff decide.
 
 ## Two designs: v1 and v2
@@ -87,7 +88,7 @@ Switch with `.env` `ATOMPAY_DESIGN=v1|v2`. **v2 has been the live design since 9
 
 **Migrated:** everything a visitor can reach. The landing page, `/products`, FAQ, privacy, delete-account, all six auth screens, the error pages and every email, plus the signed-in pages — `/my/applications`, `/my/verification`, `/my/orders`. The v1 design puts all three on one dashboard on purpose, so in v1 those URLs redirect to `/my`. Everything else (FAQ, privacy, auth, the application form, staff review) still renders its v1 view in both designs.
 
-> **The v2 landing page quotes AtomPay's real plan — 3 months, no advance, 0% markup — and the v1 page does not.** The v1 calculator prices AtomShop *seller* financing (3–12 months, 20–60% advance, 4%/month), which is a different product. See [docs/atompay-plan-rule.md](docs/atompay-plan-rule.md); `POST /quote` and the mobile `plan` endpoint have the same problem and are still to be decided.
+> **The v2 landing page quotes AtomPay's real plan — 3 months, no advance, 0% markup — and the v1 page does not.** The v1 calculator prices AtomShop *seller* financing (3–12 months, 20–60% advance, 4%/month), which is a different product. See [docs/atompay-plan-rule.md](docs/atompay-plan-rule.md); `POST /quote` and the mobile `/calculator` + `/quote` endpoints now quote AtomPay's plan.
 
 ## Layout
 

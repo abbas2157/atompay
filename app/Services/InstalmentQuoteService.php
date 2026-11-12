@@ -170,6 +170,63 @@ class InstalmentQuoteService
         ];
     }
 
+    /** @return int[] the one term AtomPay is sold on, as a tenure list */
+    public function atompayTenures(): array
+    {
+        return [max(1, (int) config('atompay.atompay_plan.months'))];
+    }
+
+    /**
+     * AtomPay's plan in the shape the calculator endpoints (`POST /quote`,
+     * `POST /api/v1/quote`) have always answered with, so an older app build
+     * keeps working and simply shows the right figures. Those endpoints used to
+     * quote seller financing, a product AtomPay does not sell
+     * (docs/atompay-plan-rule.md).
+     *
+     * `monthly` is the first two months; `last_monthly` takes the rounding.
+     * The processing fee is a disclaimer, never part of `total`.
+     *
+     * @throws InvalidArgumentException for any term but AtomPay's, or an advance.
+     */
+    public function atompayQuote(int $price, int $months, ?int $advance = null): array
+    {
+        if ($price <= 0) {
+            throw new InvalidArgumentException('Price must be greater than zero.');
+        }
+
+        if (! in_array($months, $this->atompayTenures(), true)) {
+            throw new InvalidArgumentException(self::atompayTermMessage());
+        }
+
+        if (($advance ?? 0) !== 0) {
+            throw new InvalidArgumentException(self::NO_ADVANCE_MESSAGE);
+        }
+
+        $plan = $this->atompayPlan($price);
+
+        return [
+            'plan' => 'atompay',
+            'price' => $plan['price'],
+            'advance' => 0,
+            'months' => $plan['months'],
+            'per_month_percentage' => 0.0,
+            'financed' => $plan['financed'],
+            'markup' => 0,
+            'total' => $plan['total'],
+            'monthly' => $plan['monthly'],
+            'last_monthly' => $plan['last_monthly'],
+            'processing_fee' => $plan['processing_fee'],
+            'processing_fee_percent' => $plan['fee_percent'],
+        ];
+    }
+
+    public const NO_ADVANCE_MESSAGE = 'AtomPay takes no down payment.';
+
+    public static function atompayTermMessage(): string
+    {
+        return 'AtomPay plans are always '.(int) config('atompay.atompay_plan.months').' months.';
+    }
+
     public function forget(): void
     {
         Cache::forget(self::CACHE_KEY);

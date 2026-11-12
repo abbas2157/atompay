@@ -109,7 +109,7 @@ The API for **all phases is already live**. The phases are the order the **app**
 ### Phase 3: Plans & Calculator
 
 - **My plans:** each AtomShop order paid by instalments, with its product, progress and full schedule. Active and History tabs.
-- **Plan calculator:** price, down payment (20–60%) and tenure give the monthly amount. The server does the math (`/quote`).
+- **Plan calculator:** AtomPay's plan is fixed at 3 months, no advance, 0% markup; price gives the monthly amount. The server does the math (`/plan-preview`; `/quote` returns the same plan in the older shape).
 - **"Shop on AtomShop.pk"** hand-off to the browser.
 
 ### Phase 4: Engagement

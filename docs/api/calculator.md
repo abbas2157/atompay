@@ -2,17 +2,16 @@
 
 [← API index](README.md) · [Conventions, errors & limits](conventions.md)
 
-> **For AtomPay's own plan use [`GET /plan-preview`](products.md#get-plan-preview) instead.** These
-> three price **Atomshop seller financing** (3–12 months, an advance and a markup), a different product.
-> The v2 app does not call `/calculator` or `/quote`; `/estimate` is still the income → limit estimate.
+> **The v2 app uses [`GET /plan-preview`](products.md#get-plan-preview)** for AtomPay's plan. `/calculator` and
+> `/quote` return the same plan in the shape older builds were written against; `/estimate` is the income → limit
+> estimate.
 
-All three are public, so they work before sign-up. They use the same pricing as AtomShop checkout:
+All three are public, so they work before sign-up.
 
-```
-markup  = per_month% × months × (price − advance)
-total   = price + markup
-monthly = ceil((total − advance) / months)
-```
+`/calculator` and `/quote` price **AtomPay's own plan**, the one checkout charges: always 3 months, no advance,
+0% markup. The months add up to the price exactly, because the last month takes the rounding. A 3% processing
+fee is shown with the plan as a disclaimer and is never added to `total`. Until 2026-11-12 these two endpoints
+priced Atomshop seller financing, which AtomPay does not sell.
 
 ## `GET /calculator`
 
@@ -21,39 +20,43 @@ The bounds for the calculator controls:
 ```json
 {
   "data": {
-    "tenures": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    "per_month_percentage": 4,
-    "advance": { "min_ratio": 0.2, "max_ratio": 0.6 },
+    "plan": "atompay",
+    "tenures": [3],
+    "per_month_percentage": 0,
+    "advance": { "min_ratio": 0, "max_ratio": 0 },
+    "processing_fee_percent": 3,
     "price": { "min": 10000, "max": 300000, "step": 5000 }
   }
 }
 ```
 
-The tenures and percentage come from AtomShop's admin settings and can change (they're cached for up to 10
-minutes on the server). Fetch them each time the calculator opens instead of hard-coding them.
-
 ## `POST /quote`
 
 ```json
-{ "price": 100000, "months": 6, "advance": 25000 }
+{ "price": 100000, "months": 3 }
 ```
 
-`advance` is optional and defaults to the minimum down payment (20% of price).
+`months` must be `3`. `advance` is optional; if sent, it must be `0`.
 
 ```json
 {
   "data": {
-    "price": 100000, "advance": 20000, "months": 6, "per_month_percentage": 4,
-    "financed": 80000, "markup": 19200, "total": 119200, "monthly": 16534,
-    "advance_bounds": { "min": 20000, "max": 60000 }
+    "plan": "atompay",
+    "price": 100000, "advance": 0, "months": 3, "per_month_percentage": 0,
+    "financed": 100000, "markup": 0, "total": 100000,
+    "monthly": 33333, "last_monthly": 33334,
+    "processing_fee": 3000, "processing_fee_percent": 3,
+    "advance_bounds": { "min": 0, "max": 0 }
   }
 }
 ```
 
-**`422`** returns field errors: `months` gets *"Choose one of: 3, 4, … months."*, and `advance` gets *"Down payment
-must be between PKR 20,000 and PKR 60,000."*
+`monthly` is months 1 and 2; `last_monthly` is month 3, which takes the rounding.
 
-Debounce slider changes (for example 300 ms) before calling this endpoint. It's limited to 60 calls/min.
+**`422`** returns field errors: `months` gets *"AtomPay plans are always 3 months."*, and `advance` gets
+*"AtomPay takes no down payment."*
+
+It's limited to 60 calls/min.
 
 ## `POST /estimate`
 

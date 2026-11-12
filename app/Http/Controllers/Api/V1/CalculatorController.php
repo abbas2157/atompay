@@ -18,16 +18,22 @@ class CalculatorController extends Controller
 {
     public function __construct(private readonly InstalmentQuoteService $quotes) {}
 
-    /** Bounds for the calculator controls. */
+    /**
+     * Bounds for the calculator controls - AtomPay's plan, so one tenure, no
+     * advance and no markup. The shape is the one seller financing used, so an
+     * older app build renders it unchanged.
+     */
     public function config(): JsonResponse
     {
         return response()->json(['data' => [
-            'tenures' => $this->quotes->tenures(),
-            'per_month_percentage' => $this->quotes->perMonthPercentage(),
+            'plan' => 'atompay',
+            'tenures' => $this->quotes->atompayTenures(),
+            'per_month_percentage' => 0.0,
             'advance' => [
-                'min_ratio' => (float) config('atompay.plan.min_advance_ratio'),
-                'max_ratio' => (float) config('atompay.plan.max_advance_ratio'),
+                'min_ratio' => 0.0,
+                'max_ratio' => 0.0,
             ],
+            'processing_fee_percent' => (float) config('atompay.atompay_plan.processing_fee_percent'),
             'price' => [
                 'min' => (int) config('atompay.plan.price_min'),
                 'max' => (int) config('atompay.plan.price_max'),
@@ -36,19 +42,18 @@ class CalculatorController extends Controller
         ]]);
     }
 
-    /** Prices one plan exactly as AtomShop checkout will. */
+    /** Prices AtomPay's plan exactly as AtomShop checkout will charge it. */
     public function quote(QuoteRequest $request): JsonResponse
     {
-        $price = (int) $request->validated('price');
-        $quote = $this->quotes->quote(
-            price: $price,
+        $quote = $this->quotes->atompayQuote(
+            price: (int) $request->validated('price'),
             months: (int) $request->validated('months'),
             advance: $request->filled('advance') ? (int) $request->validated('advance') : null,
         );
 
         return response()->json(['data' => [
-            ...$quote->toArray(),
-            'advance_bounds' => $this->quotes->advanceBounds($price),
+            ...$quote,
+            'advance_bounds' => ['min' => 0, 'max' => 0],
         ]]);
     }
 

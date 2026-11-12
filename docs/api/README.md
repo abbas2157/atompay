@@ -32,7 +32,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 | [products.md](products.md) | AtomPay-eligible products, categories, **plan preview** (public) |
 | [ask-atom.md](ask-atom.md) | Ask Atom chips and answers (public) |
 | [complaints.md](complaints.md) | In-app complaints (Help › Complaints) |
-| [calculator.md](calculator.md) | Seller-financing calculator and quote (not used by the v2 app), income estimate (all public) |
+| [calculator.md](calculator.md) | AtomPay plan calculator and quote (not used by the v2 app, which calls `/plan-preview`), income estimate (all public) |
 | [app-config.md](app-config.md) | Launch config (force update, links, support, **company facts: `business`**) and form options (public) |
 | [notifications.md](notifications.md) | Push device registration, push payload, notifications inbox, email/push/inbox channels |
 
@@ -115,6 +115,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 
 | Date | Change |
 |---|---|
+| 2026-11-12 | **`/calculator` and `/quote` price AtomPay's plan**, not Atomshop seller financing: tenures `[3]`, no advance, 0% markup. Same response shape; values changed. Added fields: `plan` (both), `processing_fee_percent` (both), `last_monthly` and `processing_fee` (`/quote`). A `months` other than 3 or any non-zero `advance` is a `422` field error. |
 | 2026-11-10 | **v2 app endpoints.** New: `GET /areas`, `GET /plan-preview`, `GET /products`, `/products/categories`, `/products/{id}`, `GET /plans/{id}/kfs`, `POST /plans/{id}/kfs/send`, `GET\|POST /complaints`, `GET /ask-atom/chips`, `POST /ask-atom`, `POST /me/password`. Added fields: `/app-config` → `maintenance`, `apps`, `features.voice`; `/options` → `complaint_topics`; `/profile` → `area`. Nothing renamed or removed. |
 | 2026-10-10 | **`GET /plans` lists every order**, in any status, including AtomPay-financed ones. `state` gains `pending`, `processing` and `cancelled`, and `?include=completed` is ignored. `GET /dashboard` gains `plans.pending_count`, and `active_count` counts only orders being repaid. `POST /application` can return `409 nothing_changed` once a limit is approved. |
 | 2026-09-27 | **Sign-up needs a one-time code.** `POST /auth/register` now takes `name`, `login` (an email **or** a mobile) and `password`, and returns `202` with a `signup_id` and no account. The code is sent by email or on WhatsApp, depending on what was typed. The new `POST /auth/register/verify` creates the account and returns the login body (`201`), and `POST /auth/register/resend` resends the code. Mobile-only accounts have `email: null`. `/app-config` gains `features.signup_channels`. The request and response of `/auth/register` changed, which is allowed because no app has shipped. |
