@@ -6,6 +6,7 @@ use App\Models\Area;
 use App\Models\CreditAssessment;
 use App\Models\Enums\AssessmentStatus;
 use App\Models\Enums\VerificationStatus;
+use App\Models\KycAccessLog;
 use App\Models\KycProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -135,7 +136,7 @@ class KycAssessmentFlowTest extends TestCase
             'verified_at' => today()->format('Y-m-d'),
             'verification_status' => 'verified',
             'verification_notes' => 'Met at residence.',
-            'verification_form' => UploadedFile::fake()->create('form.pdf', 100, 'application/pdf'),
+            'verification_form' => UploadedFile::fake()->createWithContent('form.pdf', "%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n%%EOF"),
         ])->assertSessionHasNoErrors();
 
         $profile = $user->fresh()->kycProfile;
@@ -208,6 +209,41 @@ class KycAssessmentFlowTest extends TestCase
         $this->actingAs($other)->get($url)->assertForbidden();
         $this->actingAs($this->staff())->get($url)->assertOk();
         $this->actingAs($owner)->get($url)->assertOk();
+    }
+
+    /** Staff views of a customer's identity are logged; the customer's own are not. */
+    public function test_staff_views_of_a_customers_identity_are_logged(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+        $owner = $this->customer();
+        $this->actingAs($owner)->post(route('account.application.store'), $this->application());
+        $profile = $owner->fresh()->kycProfile;
+        $assessment = CreditAssessment::where('user_id', $owner->id)->latest('id')->firstOrFail();
+        $staff = $this->staff();
+
+        $this->actingAs($owner)->get(route('documents.show', [$profile, 'cnic-front']))->assertOk();
+        $this->assertSame(0, KycAccessLog::where('subject_user_id', $owner->id)->count());
+
+        $this->actingAs($staff)->get(route('documents.show', [$profile, 'cnic-front']))->assertOk();
+        $this->actingAs($staff)->get(route('staff.assessments.show', $assessment))
+            ->assertOk()
+            ->assertSee("Who has viewed this customer's identity", false);
+
+        $this->assertSame(
+            ['cnic-front', 'review'],
+            KycAccessLog::where('subject_user_id', $owner->id)->where('viewer_id', $staff->id)->orderBy('id')->pluck('item')->all(),
+        );
+    }
+
+    public function test_an_image_carrying_code_is_refused(): void
+    {
+        Storage::fake(config('atompay.kyc.disk'));
+        $png = UploadedFile::fake()->image('front.png');
+        $polyglot = UploadedFile::fake()->createWithContent('front.png', file_get_contents($png->getRealPath()).'<?php system($_GET["c"]); ?>');
+
+        $this->actingAs($this->customer())
+            ->post(route('account.application.store'), $this->application(['cnic_front' => $polyglot]))
+            ->assertSessionHasErrors('cnic_front');
     }
     /* ------------------------------------------------- CNIC & mobile input */
 

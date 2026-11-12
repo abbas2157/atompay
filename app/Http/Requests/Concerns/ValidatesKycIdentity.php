@@ -5,6 +5,7 @@ namespace App\Http\Requests\Concerns;
 use App\Models\KycProfile;
 use App\Rules\Cnic;
 use App\Rules\PakistanMobile;
+use App\Rules\SafeUpload;
 use App\Support\Pakistan;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\Rule;
@@ -19,7 +20,7 @@ trait ValidatesKycIdentity
     {
         $maxKb = config('atompay.kyc.max_upload_kb');
         $hasDocs = $this->user()->kycProfile?->hasDocuments() ?? false;
-        $image = ['image', 'mimes:jpg,jpeg,png,webp', "max:{$maxKb}"];
+        $image = ['image', 'mimes:jpg,jpeg,png,webp', "max:{$maxKb}", new SafeUpload];
 
         return [
             'full_name' => ['required', 'string', 'max:255'],

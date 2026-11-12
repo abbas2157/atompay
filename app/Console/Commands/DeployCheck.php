@@ -43,6 +43,7 @@ class DeployCheck extends Command
         $this->checkCaches();
         $this->checkMigrations();
         $this->checkStoreRelease();
+        $this->checkUploadScanning();
 
         if (! $this->option('no-network')) {
             $this->checkAPictureLoads();
@@ -286,6 +287,33 @@ class DeployCheck extends Command
         $project && $expected && $project !== $expected
             ? $this->bad("push credentials are for Firebase project {$project}", "The app is registered in {$expected}; pushes would never arrive.")
             : $this->good('push on', 'Firebase project '.($project ?? '?'));
+    }
+
+    /**
+     * KYC uploads are opened on reviewers' machines. Without clamd only the
+     * structural checks stand between a malicious file and a reviewer.
+     */
+    private function checkUploadScanning(): void
+    {
+        $clamav = app(\App\Services\Security\ClamAv::class);
+
+        if (! $clamav->configured()) {
+            $this->warn('  ~ upload virus scanning is off (ATOMPAY_CLAMAV_SOCKET unset): structural checks only');
+
+            return;
+        }
+
+        $socket = (string) config('atompay.kyc.scan.clamav');
+
+        if ($clamav->ping()) {
+            $this->good('upload virus scanning', $socket);
+
+            return;
+        }
+
+        config('atompay.kyc.scan.fail_closed')
+            ? $this->bad("clamd does not answer at {$socket}", 'every KYC upload is being refused until it does (sudo systemctl status clamav-daemon)')
+            : $this->bad("clamd does not answer at {$socket}", 'uploads are accepted on structural checks alone (fail_closed is off)');
     }
 
     private function good(string $what, string $detail = ''): void

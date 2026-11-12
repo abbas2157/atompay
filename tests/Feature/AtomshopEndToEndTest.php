@@ -240,7 +240,7 @@ class AtomshopEndToEndTest extends TestCase
             'verified_at' => today()->format('Y-m-d'),
             'verification_status' => 'verified',
             'verification_notes' => 'Met at residence.',
-            'verification_form' => UploadedFile::fake()->create('form.pdf', 100, 'application/pdf'),
+            'verification_form' => UploadedFile::fake()->createWithContent('form.pdf', "%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n%%EOF"),
         ])->assertSessionHasNoErrors();
 
         $this->actingAs($staff)->post(route('staff.assessments.decide', $assessment), [

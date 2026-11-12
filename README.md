@@ -39,6 +39,7 @@ Open <http://localhost/atompay>. The root `index.php` + `.htaccess` are a dev-on
 | `atompay_credit_assessments` | `CreditAssessment` | **Owned by AtomPay** - sections 3-5: financial profile, risk, decision |
 | `atompay_personal_access_tokens` | `PersonalAccessToken` | **Owned by AtomPay** - mobile-app bearer tokens. Deliberately not AtomShop's `personal_access_tokens`: both apps call their user model `App\Models\User`, so a shared table would let either app's tokens open the other |
 | `atompay_devices` | `Device` | **Owned by AtomPay** - phones registered for push (FCM), tied to the sign-in that registered them. Not AtomShop's `fcm_tokens`, which belong to the shop's own app |
+| `atompay_kyc_access_logs` | `KycAccessLog` | **Owned by AtomPay** - who (staff) viewed a customer's CNIC, selfie or verification form; append-only, kept on account deletion |
 | `atompay_notifications` | `CustomerNotification` | **Owned by AtomPay** - customer inbox; unique `dedupe_key` makes each announcement happen once |
 
 Models on AtomShop tables use the `BelongsToAtomShop` trait, which guards every attribute so a stray mass-assignment can't rewrite shop data.

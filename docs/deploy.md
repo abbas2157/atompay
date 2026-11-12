@@ -121,6 +121,9 @@ MAIL_FROM_NAME="AtomPay"
 WHATSAPP_TOKEN=...
 WHATSAPP_PHONE_NUMBER_ID=...
 
+# KYC upload virus scanning - see "Upload virus scanning" below.
+ATOMPAY_CLAMAV_SOCKET=unix:///var/run/clamav/clamd.ctl
+
 # Mobile app. Push stays off until FCM_CREDENTIALS points at the Firebase
 # service-account JSON (keep it outside the web root, readable by www-data).
 FCM_CREDENTIALS=/var/www/shared/atompay/firebase-service-account.json
@@ -186,6 +189,21 @@ subfolder layout; pointing a production docroot at the project root would expose
 `.env`, `storage/` and `vendor/`.
 
 `storage:link` is not needed — this app serves no files from the public disk.
+
+### Upload virus scanning (clamd)
+
+KYC uploads are scanned by ClamAV before they are stored. One time:
+
+```bash
+sudo apt install clamav-daemon
+sudo systemctl enable --now clamav-freshclam clamav-daemon
+ls -l /var/run/clamav/clamd.ctl     # must exist once the signatures have loaded (~1 min)
+```
+
+The socket must be writable by `www-data` (Debian/Ubuntu ship it that way).
+Then set `ATOMPAY_CLAMAV_SOCKET` as above and `php artisan optimize`.
+`atompay:deploy-check` pings it. **While clamd is down every KYC upload is
+refused**, so keep it running; clamd needs about 1 GB of RAM.
 
 ### Scheduler (required for the mobile app)
 

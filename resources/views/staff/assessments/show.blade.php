@@ -142,6 +142,18 @@
                     @endforeach
                 </div>
             @endif
+
+            @if ($accessLog->isNotEmpty())
+                <div class="card p-6">
+                    <h4 class="text-[14px] mb-1">Who has viewed this customer's identity</h4>
+                    <p class="text-muted text-[13px] mb-3">Every staff view of the CNIC, selfie, verification form and this page is recorded. Latest 20.</p>
+                    @foreach ($accessLog as $entry)
+                        <x-side-row :label="$entry->created_at->format('d M Y H:i')">
+                            {{ $entry->viewer?->name ?? 'User #'.$entry->viewer_id }} &middot; {{ $entry->itemLabel() }}
+                        </x-side-row>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 </x-layouts.account>

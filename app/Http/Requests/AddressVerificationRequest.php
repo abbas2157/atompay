@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Enums\VerificationStatus;
+use App\Rules\SafeUpload;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class AddressVerificationRequest extends FormRequest
             'verified_at'         => ['required', 'date', 'before_or_equal:today'],
             'verification_status' => ['required', Rule::enum(VerificationStatus::class)],
             'verification_notes'  => ['nullable', 'string', 'max:2000'],
-            'verification_form'   => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', "max:{$maxKb}"],
+            'verification_form'   => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', "max:{$maxKb}", new SafeUpload],
         ];
     }
 

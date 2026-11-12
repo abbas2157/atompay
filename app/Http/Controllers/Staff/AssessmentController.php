@@ -9,6 +9,8 @@ use App\Models\CreditAssessment;
 use App\Models\Enums\AssessmentStatus;
 use App\Models\Enums\CreditHistory;
 use App\Models\Enums\VerificationStatus;
+use App\Models\KycAccessLog;
+use App\Services\KycAccessRecorder;
 use App\Services\CreditAssessmentService;
 use App\Services\InstalmentQuoteService;
 use App\Services\KycService;
@@ -48,12 +50,19 @@ class AssessmentController extends Controller
         ]);
     }
 
-    public function show(CreditAssessment $assessment): View
+    public function show(Request $request, CreditAssessment $assessment, KycAccessRecorder $audit): View
     {
         $assessment->load(['user.kycProfile.city', 'user.kycProfile.verifier:id,name', 'decider:id,name']);
         $user = $assessment->user;
 
+        // This page shows the CNIC number, so opening it is an access to log.
+        if ($user->kycProfile) {
+            $audit->record($request->user(), $user->kycProfile, 'review', $request);
+        }
+
         return view('staff.assessments.show', [
+            'accessLog'  => KycAccessLog::query()->where('subject_user_id', $user->id)
+                ->with('viewer:id,name')->latest('id')->limit(20)->get(),
             'assessment' => $assessment,
             'user'       => $user,
             'profile'    => $user->kycProfile,

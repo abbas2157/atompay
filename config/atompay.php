@@ -286,6 +286,18 @@ return [
         'path' => 'kyc',
         'max_upload_kb' => 4096,
         'min_age' => 18,
+
+        // Every upload passes UploadScanner's structural checks. With a clamd
+        // socket here it is also virus-scanned:
+        //   unix:///var/run/clamav/clamd.ctl  or  tcp://127.0.0.1:3310
+        // Empty = structural checks only (deploy-check warns).
+        'scan' => [
+            'clamav' => env('ATOMPAY_CLAMAV_SOCKET'),
+            'timeout' => 30,
+            // clamd configured but unreachable: refuse the upload (true) or
+            // accept it on the structural checks alone (false).
+            'fail_closed' => (bool) env('ATOMPAY_CLAMAV_FAIL_CLOSED', true),
+        ],
     ],
 
     /*

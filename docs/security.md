@@ -13,13 +13,43 @@ the identity documents, not the money.
 | Request rate | Named per-route limits, keyed by account or IP | `app/Providers/RateLimitServiceProvider.php` |
 | Brute force | Login counted against both account and source IP | `RateLimitServiceProvider::boot()` |
 | Document access | Owner-or-staff check, private disk, no public URL | `Account/DocumentController.php` |
+| Access audit | Every staff view of a CNIC scan, selfie, verification form or the review page (CNIC number) is logged: who, what, when, IP | `Services/KycAccessRecorder.php`, `atompay_kyc_access_logs` |
 | Mass assignment | AtomShop tables fully guarded | `Models/Concerns/BelongsToAtomShop.php` |
 | Input | Form requests on every write path | `app/Http/Requests/` |
-| Uploads | `image`/`mimes` + size caps, stored outside the web root | `KycApplicationRequest`, `KycService` |
+| Uploads | `image`/`mimes` + size caps, stored outside the web root; content checks + ClamAV before storing | `Rules/SafeUpload.php`, `Services/Security/UploadScanner.php` |
 | Server | Dotfiles, dumps and framework dirs refused | `.htaccess`, `public/.htaccess` |
 | Transport | HTTPS forced in production | `AppServiceProvider::boot()` |
 | Password reset | One-time code (email / WhatsApp), hashed, 10 min, 5 tries, no account enumeration; reset revokes every app token | `Services/PasswordResetService.php` |
 | Email opt-out | Signed unsubscribe URLs; one-click (RFC 8058) is CSRF-exempt only for that path | `Web/EmailAlertsController.php`, `bootstrap/app.php` |
+
+## Upload scanning
+
+Every KYC upload — the customer's CNIC front/back and selfie, and staff's signed
+verification form — passes `SafeUpload` before it is stored:
+
+1. **Structural checks** (always on). The type is sniffed from the bytes, not the
+   name. An image must decode and must not carry `<?php`, a phar stub or a
+   `<script>` (polyglot files). A PDF must have a PDF header and no
+   `/JavaScript`, `/JS`, `/Launch`, `/EmbeddedFile`, `/RichMedia`, `/XFA`,
+   `/SubmitForm`, `/ImportData` or `/GoToE`, including hex-escaped names.
+2. **ClamAV**, when `ATOMPAY_CLAMAV_SOCKET` names a clamd socket. The file is
+   streamed (INSTREAM), so clamd needs no access to PHP's temp directory. If
+   clamd is configured but down, uploads are **refused** with "try again in a
+   few minutes" — set `ATOMPAY_CLAMAV_FAIL_CLOSED=false` only to keep KYC open
+   through a clamd outage on structural checks alone.
+
+A rejected file is not kept; the log records the user, the reason, the type,
+size and SHA-256.
+
+## Access audit
+
+`atompay_kyc_access_logs` records each time someone other than the customer
+opens a CNIC scan, selfie or verification form, or the staff review page (which
+shows the CNIC number): viewer, customer, item, IP, user agent and time. The
+row is written before the file is sent, so a failed write fails the view.
+Customers viewing their own documents are not logged. Rows are append-only and
+survive account deletion; they name no customer data beyond the account id.
+The latest 20 are shown at the bottom of `/staff/assessments/{id}`.
 
 ## Password reset
 
@@ -181,19 +211,16 @@ vendor/bin/phpunit --filter SecurityTest
 
 Named honestly, so nobody assumes otherwise:
 
-- **No email verification on registration.** Anyone can create an account with
-  any address. The account is worthless until KYC is submitted and staff verify
-  it in person, so the exposure is spam rows rather than fraud — but it does
-  mean the email on an account is unproven.
 - **No two-factor authentication**, for customers or for staff. Staff accounts
   can approve credit limits; 2FA on the staff roles is the highest-value
   addition left.
-- **No malware scanning of uploads.** Files are validated as images/PDFs and
-  stored outside the web root where they cannot execute, but a malicious PDF
-  reaching a reviewer's machine is not defended against.
-- **No audit log.** `decided_by`/`verified_by` record who made each decision,
-  but not who *looked* at a customer's CNIC. For a business holding CNIC copies this is
-  usually required.
+- **Virus scanning depends on clamd.** Without `ATOMPAY_CLAMAV_SOCKET` only the
+  structural checks run, and those cannot see active content hidden inside a
+  compressed PDF object stream. `atompay:deploy-check` warns when it is off.
+- **AtomShop's admin panel is outside the access log.** It reads the same shared
+  KYC documents; views there are not recorded by AtomPay.
+- **Accounts AtomShop created** (at its own checkout) may have an unproven email.
+  Every AtomPay sign-up proves its email or mobile with a one-time code first.
 - **No automated dependency scanning.** Run `composer audit` and `npm audit` as
   part of deploying.
 - **No WAF or bot detection.** The rate limits blunt scripted abuse; they do not
