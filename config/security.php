@@ -126,6 +126,7 @@ return [
         'account_delete' => 5,     // POST /me/delete password checks, per account
         'password_change' => 5,     // POST /me/password current-password checks, per account
         'complaints' => 5,     // POST /complaints, per account per HOUR
+        'orders' => 5,     // POST /orders, per account per minute (one at a time is also locked)
         'kfs_send' => 3,     // POST /plans/{order}/kfs/send, per account per HOUR
         'otp_request' => 10,    // code requests, per identifier + IP (the services cap actual sends)
         'otp_request_ip' => 30,    // per IP, all identifiers

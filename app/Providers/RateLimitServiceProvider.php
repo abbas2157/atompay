@@ -80,6 +80,7 @@ class RateLimitServiceProvider extends ServiceProvider
 
         // Each complaint is read by a person, and each KFS copy is an email.
         RateLimiter::for('complaints', fn (Request $r) => Limit::perHour($limits['complaints'])->by('complaints:'.$this->actor($r)));
+        RateLimiter::for('orders', fn (Request $r) => Limit::perMinute($limits['orders'])->by('orders:'.$this->actor($r)));
         RateLimiter::for('kfs_send', fn (Request $r) => Limit::perHour($limits['kfs_send'])->by('kfs:'.$this->actor($r)));
 
         /*

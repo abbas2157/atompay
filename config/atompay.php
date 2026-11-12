@@ -63,6 +63,17 @@ return [
         ],
     ],
 
+    // "Buy with AtomPay" in the app (docs/api/orders.md). Atomshop places the
+    // order through POST {atomshop_api}/atompay/orders; server_key must equal
+    // Atomshop's ATOMPAY_SERVER_KEY. Off (app-config features.in_app_orders
+    // false, POST /orders 409) until both are set.
+    'orders' => [
+        'enabled' => (bool) env('ATOMPAY_IN_APP_ORDERS', false),
+        'atomshop_api' => env('ATOMSHOP_API_URL', 'https://atomshop.pk/api'),
+        'server_key' => (string) env('ATOMPAY_SERVER_KEY', ''),
+        'timeout' => (int) env('ATOMSHOP_API_TIMEOUT', 60),
+    ],
+
     'credit' => [
         // Approved limit as a share of declared monthly income.
         'limit_ratio' => 0.30,

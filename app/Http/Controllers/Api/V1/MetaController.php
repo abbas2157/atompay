@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Enums\EmploymentStatus;
 use App\Models\Enums\IncomeSource;
 use App\Services\CompanySettings;
+use App\Services\InAppOrderService;
 use App\Services\Messaging\WhatsAppClient;
 use App\Services\Push\FcmClient;
 use Illuminate\Http\JsonResponse;
@@ -50,6 +51,8 @@ class MetaController extends Controller
                 // Where codes can go (sign-up and reset): email always, WhatsApp when configured.
                 'password_reset_channels' => $channels = $whatsapp->available() ? ['email', 'whatsapp'] : ['email'],
                 'signup_channels' => $channels,
+                // "Buy with AtomPay" in the app; off until Atomshop takes the orders (docs/api/orders.md).
+                'in_app_orders' => InAppOrderService::enabled(),
             ],
         ]]);
     }

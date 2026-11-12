@@ -6,7 +6,7 @@ rules, tasks and this whole API), see [../MOBILE_APP_HANDBOOK.md](../MOBILE_APP_
 
 - **Server code:** `routes/api.php`, `app/Http/Controllers/Api/V1/`, `app/Http/Resources/Api/V1/`
 - **Tests** that pin every example in these files: `tests/Feature/Api/`
-- **Status:** Every v1 endpoint is live (47 endpoints).
+- **Status:** Every v1 endpoint is live (49 endpoints).
 
 | | |
 |---|---|
@@ -29,6 +29,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 | [application.md](application.md) | KYC Section 3 (income → limit), the assessment object, history |
 | [dashboard.md](dashboard.md) | Home screen: limit card, status banner, stepper, next due |
 | [plans.md](plans.md) | AtomShop instalment orders and their schedules, **Key Fact Statement** (with `accepted_at`) |
+| [orders.md](orders.md) | **Buy with AtomPay**: the Key Fact Statement for a product, then the order (Atomshop places it) |
 | [products.md](products.md) | AtomPay-eligible products, categories, **plan preview** (public) |
 | [ask-atom.md](ask-atom.md) | Ask Atom chips and answers (public) |
 | [complaints.md](complaints.md) | In-app complaints (Help › Complaints) |
@@ -49,6 +50,8 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 | GET | `/products` | optional | [products.md](products.md) |
 | GET | `/products/categories` | – | [products.md](products.md) |
 | GET | `/products/{id}` | optional | [products.md](products.md) |
+| GET | `/products/{id}/kfs` | ✓ | [orders.md](orders.md) |
+| POST | `/orders` | ✓ | [orders.md](orders.md) |
 | GET | `/ask-atom/chips` | – | [ask-atom.md](ask-atom.md) |
 | POST | `/ask-atom` | optional | [ask-atom.md](ask-atom.md) |
 | POST | `/auth/register` | – | [auth.md](auth.md#sign-up-one-time-code) |
@@ -115,6 +118,7 @@ formats, every error status, the `409` codes, rate limits, and the token lifecyc
 
 | Date | Change |
 |---|---|
+| 2026-11-12 | **Buy with AtomPay in the app.** New: `GET /products/{id}/kfs`, `POST /orders` ([orders.md](orders.md)); Atomshop places the order. Added field: `/app-config` → `features.in_app_orders` (off until both servers share `ATOMPAY_SERVER_KEY`). New `409` codes: `orders_unavailable`, `limit_required`, `over_limit`, `over_cap`, `address_required`, `order_in_progress`. Nothing renamed or removed. |
 | 2026-11-12 | **KYC images are malware-checked.** `POST /profile` can return two new `422` messages on `cnic_front` / `cnic_back` / `selfie` (refused file; scanner briefly unavailable). See [profile.md](profile.md#post-profile-multipartform-data). No shape change. |
 | 2026-11-12 | **`/calculator` and `/quote` price AtomPay's plan**, not Atomshop seller financing: tenures `[3]`, no advance, 0% markup. Same response shape; values changed. Added fields: `plan` (both), `processing_fee_percent` (both), `last_monthly` and `processing_fee` (`/quote`). A `months` other than 3 or any non-zero `advance` is a `422` field error. |
 | 2026-11-10 | **v2 app endpoints.** New: `GET /areas`, `GET /plan-preview`, `GET /products`, `/products/categories`, `/products/{id}`, `GET /plans/{id}/kfs`, `POST /plans/{id}/kfs/send`, `GET\|POST /complaints`, `GET /ask-atom/chips`, `POST /ask-atom`, `POST /me/password`. Added fields: `/app-config` → `maintenance`, `apps`, `features.voice`; `/options` → `complaint_topics`; `/profile` → `area`. Nothing renamed or removed. |

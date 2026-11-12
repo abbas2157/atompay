@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\MetaController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\PreferenceController;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Models\KycProfile;
 use Illuminate\Support\Facades\Route;
@@ -95,6 +96,9 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('/plans', [PlanController::class, 'index'])->name('plans');
         Route::get('/plans/{order}', [PlanController::class, 'show'])->whereNumber('order')->name('plans.show');
         Route::get('/plans/{order}/kfs', [KeyFactStatementController::class, 'show'])->whereNumber('order')->name('plans.kfs');
+        // "Buy with AtomPay": the statement for a product, then the order (docs/api/orders.md).
+        Route::get('/products/{product}/kfs', [OrderController::class, 'kfs'])->whereNumber('product')->name('products.kfs');
+        Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:orders')->name('orders.store');
         Route::post('/plans/{order}/kfs/send', [KeyFactStatementController::class, 'send'])->whereNumber('order')->middleware('throttle:kfs_send')->name('plans.kfs.send');
 
         // In-app complaints (Help > Complaints).

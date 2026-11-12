@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\OrderInstalment;
+use App\Models\Product;
 use App\Models\User;
 use App\Support\ShopTime;
 use Illuminate\Database\QueryException;
@@ -93,6 +94,54 @@ class KeyFactStatementService
             'early_settlement' => $company['early_settlement'],
             'complaints' => self::complaints($company['complaint_response_time']),
             'accepted_at' => $this->acceptedAt($order->id),
+            'issued_at' => now()->toIso8601String(),
+        ];
+    }
+
+    /**
+     * The statement for a product before it is ordered in the app: the same
+     * keys as forOrder(), with no order yet (`order_id` and `order_number`
+     * null) and no dates (Atomshop sets them on delivery). The customer
+     * accepts this one; its `amount_financed` goes back as `kfs_amount`, and
+     * Atomshop refuses the order if the price has moved since.
+     */
+    public function forProduct(Product $product): array
+    {
+        $financed = (int) $product->price;
+        $rows = array_map(fn (array $s) => [
+            'number' => $s['number'],
+            'due_date' => null,
+            'amount' => $s['amount'],
+        ], $this->quotes->atompayPlan($financed)['schedule']);
+
+        $feePercent = (float) config('atompay.atompay_plan.processing_fee_percent');
+        $fee = (int) round($financed * $feePercent / 100);
+        $amounts = array_column($rows, 'amount');
+        $company = $this->company->all();
+
+        return [
+            'order_id' => null,
+            'order_number' => null,
+            'product' => $product->title,
+            'lender' => [
+                'name' => $company['company_name'],
+                'licence' => null,
+                'address' => $company['registered_address'],
+            ],
+            'amount_financed' => $financed,
+            'advance' => 0,
+            'markup_percent' => (float) config('atompay.atompay_plan.markup_percent'),
+            'processing_fee_percent' => $feePercent,
+            'processing_fee' => $fee,
+            'apr_percent' => self::apr($financed, $fee, $amounts),
+            'months' => count($rows),
+            'schedule_final' => false,
+            'instalments' => $rows,
+            'total_repayable' => array_sum($amounts),
+            'late_payment' => $company['late_payment'],
+            'early_settlement' => $company['early_settlement'],
+            'complaints' => self::complaints($company['complaint_response_time']),
+            'accepted_at' => null,
             'issued_at' => now()->toIso8601String(),
         ];
     }
