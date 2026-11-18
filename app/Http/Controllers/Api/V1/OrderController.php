@@ -36,6 +36,8 @@ class OrderController extends Controller
             // The amount_financed of the statement the customer accepted.
             'kfs_amount' => ['required', 'integer', 'min:1'],
             'accept_kfs' => ['accepted'],
+            // Optional, the same for every retry of one order: Atomshop then places it once.
+            'request_id' => ['nullable', 'string', 'max:64'],
         ], [
             'accept_kfs.accepted' => 'Please read the Key Fact Statement and agree to its terms.',
         ]);
@@ -46,6 +48,7 @@ class OrderController extends Controller
             (int) $input['kfs_amount'],
             $request->ip(),
             $request->userAgent(),
+            $input['request_id'] ?? null,
         );
 
         $id = (int) $order['order_id'];

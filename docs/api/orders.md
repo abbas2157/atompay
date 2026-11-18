@@ -50,8 +50,12 @@ The same keys as [`GET /plans/{order}/kfs`](plans.md), before an order exists:
 ## `POST /orders`  · Auth ✓ · 5/min per account
 
 ```json
-{ "product_id": 812, "kfs_amount": 47000, "accept_kfs": true }
+{ "product_id": 812, "kfs_amount": 47000, "accept_kfs": true, "request_id": "8f1c…" }
 ```
+
+`request_id` is optional (max 64 characters). Make one when the customer taps **Buy** and send the same one on
+every retry of that order: Atomshop places an order once per id and answers a repeat with the order it already
+has. Without it the API remembers an id per customer and product until an attempt gets a definite answer.
 
 `201`:
 
@@ -67,7 +71,7 @@ The same keys as [`GET /plans/{order}/kfs`](plans.md), before an order exists:
 |---|---|
 | `409` | See the codes below. Nothing was ordered. |
 | `422` | `accept_kfs` not true, or `errors.order[0]`: Atomshop refused it, in words for the customer (the price changed since the statement: show it again; the product went out of stock). |
-| `5xx` | Atomshop didn't answer. **The order may not exist:** check `GET /plans` before offering to try again. |
+| `5xx` | Atomshop refused the call for a reason that isn't the customer's. Nothing was ordered. |
 
 A second `POST /orders` while one is being placed answers `409 order_in_progress`, so a double tap never orders twice.
 
@@ -81,3 +85,4 @@ A second `POST /orders` while one is being placed answers `409 order_in_progress
 | `over_cap` | A month is more than the monthly cap. Show `message`. |
 | `address_required` | The profile has no city, area or address. Send to the profile form. |
 | `order_in_progress` | An order is being placed. Show `message`, then My orders. |
+| `order_unconfirmed` | Atomshop didn't answer, twice. **The order may exist:** show `message`, then My orders (`GET /plans`). Trying again with the same `request_id` is safe: it returns that order instead of a second one. |

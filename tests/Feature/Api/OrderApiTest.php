@@ -79,6 +79,64 @@ class OrderApiTest extends ApiTestCase
             && $r['address'] === $profile->residential_address);
     }
 
+    public function test_the_apps_request_id_is_sent_and_a_dropped_call_is_retried_with_it(): void
+    {
+        Http::fake(['shop.test/*' => Http::sequence()
+            ->pushFailedConnection()
+            ->push(['success' => true, 'data' => $this->atomshopSummary(322)])]);
+
+        $this->order(['request_id' => 'app-attempt-1'])->assertCreated()->assertJsonPath('data.order_id', 322);
+
+        // Both tries carried the same id, so Atomshop can only have placed it once.
+        Http::assertSentCount(2);
+        Http::assertSent(fn (HttpRequest $r) => $r['request_id'] === 'app-attempt-1');
+        Http::assertNotSent(fn (HttpRequest $r) => $r['request_id'] !== 'app-attempt-1');
+    }
+
+    public function test_no_answer_twice_says_check_my_orders_and_the_next_tap_reuses_the_id(): void
+    {
+        Http::fake(['shop.test/*' => Http::sequence()
+            ->pushFailedConnection()
+            ->pushFailedConnection()
+            ->push(['success' => true, 'data' => $this->atomshopSummary(323)])]);
+
+        $this->order()->assertStatus(409)->assertJsonPath('code', 'order_unconfirmed');
+        $this->order()->assertCreated()->assertJsonPath('data.order_id', 323);
+
+        // No id from the app: the API made one and kept it for the next tap.
+        $ids = collect(Http::recorded())->map(fn ($pair) => $pair[0]['request_id'])->unique();
+        $this->assertCount(1, $ids);
+        $this->assertNotEmpty($ids->first());
+    }
+
+    public function test_retrying_an_unconfirmed_order_is_not_refused_for_that_order_itself(): void
+    {
+        Http::fake(['shop.test/*' => Http::sequence()
+            ->pushFailedConnection()
+            ->pushFailedConnection()
+            ->push(['success' => true, 'data' => $this->atomshopSummary(325)])]);
+        $this->order(['request_id' => 'app-attempt-9'])->assertStatus(409)->assertJsonPath('code', 'order_unconfirmed');
+
+        // Atomshop did save it: now it awaits approval and fills the limit.
+        $orderId = $this->makeAtomPayOrder($this->user, [], 'Pending');
+        DB::table('orders')->where('id', $orderId)->update(['total_deal_price' => 100000 - (int) $this->product->price + 1, 'advance_price' => 0]);
+
+        // The same attempt gets its order back instead of "over your limit"; a new attempt is still refused.
+        $this->order(['request_id' => 'app-attempt-9'])->assertCreated()->assertJsonPath('data.order_id', 325);
+        $this->order(['request_id' => 'app-attempt-10'])->assertStatus(409)->assertJsonPath('code', 'over_limit');
+    }
+
+    public function test_a_definite_answer_ends_the_id_so_the_next_order_is_a_new_one(): void
+    {
+        Http::fake(['shop.test/*' => Http::response(['success' => true, 'data' => $this->atomshopSummary(324)])]);
+
+        $this->order()->assertCreated();
+        $this->order()->assertCreated();
+
+        $ids = collect(Http::recorded())->map(fn ($pair) => $pair[0]['request_id'])->unique();
+        $this->assertCount(2, $ids);
+    }
+
     public function test_atomshops_refusal_reaches_the_customer_as_a_field_error(): void
     {
         Http::fake(['shop.test/*' => Http::response(['success' => false, 'message' => 'The price of this product has changed to Rs. 50,000.'], 422)]);
@@ -153,6 +211,17 @@ class OrderApiTest extends ApiTestCase
     private function kfs()
     {
         return $this->withToken($this->tokenFor($this->user))->getJson('/api/v1/products/'.$this->product->id.'/kfs');
+    }
+
+    /** What Atomshop answers for a placed order. */
+    private function atomshopSummary(int $orderId): array
+    {
+        $price = (int) $this->product->price;
+
+        return [
+            'order_id' => $orderId, 'product' => $this->product->title, 'total' => $price, 'advance' => 0,
+            'months' => 3, 'monthly' => intdiv($price, 3), 'last_monthly' => $price - 2 * intdiv($price, 3), 'area' => 'Johar Town',
+        ];
     }
 
     private function order(array $fields = [])
