@@ -41,8 +41,9 @@ class HomeController extends Controller
             'products'      => design_is_v2() ? $this->catalogue->featured(8) : collect(),
             'productCount'  => design_is_v2() ? $this->catalogue->count() : 0,
             'exampleIncome' => $income,
-            'exampleLimit'  => Money::share($income, (float) config('atompay.credit.limit_ratio')),
-            'exampleCap'    => Money::share($income, (float) config('atompay.credit.instalment_ratio')),
+            // Ratios shared with AtomShop through atom_settings, so the home example matches the real limit.
+            'exampleLimit'  => Money::share($income, app(\App\Services\CompanySettings::class)->number('limit_ratio', (float) config('atompay.credit.limit_ratio'))),
+            'exampleCap'    => Money::share($income, app(\App\Services\CompanySettings::class)->number('instalment_ratio', (float) config('atompay.credit.instalment_ratio'))),
         ]);
     }
 

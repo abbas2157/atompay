@@ -138,7 +138,8 @@ class InstalmentQuoteService
     {
         $price = max(0, $price ?? (int) config('atompay.atompay_plan.example_price'));
         $months = max(1, (int) config('atompay.atompay_plan.months'));
-        $feePercent = (float) config('atompay.atompay_plan.processing_fee_percent');
+        // Shared with AtomShop through atom_settings, so both Key Fact Statements show one fee.
+        $feePercent = app(CompanySettings::class)->number('processing_fee_percent', (float) config('atompay.atompay_plan.processing_fee_percent'));
 
         $monthly = intdiv($price, $months);
         $lastMonthly = $price - $monthly * ($months - 1);

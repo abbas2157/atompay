@@ -56,10 +56,37 @@ class CompanySettings
         return $this->all()[$key] ?? null;
     }
 
+    /**
+     * The numeric settings AtomShop shares with us in atom_settings (the processing fee % and the credit
+     * ratios), so a figure can't drift between the two apps' Key Fact Statements. $fallback is used when the
+     * row is missing or not a number, and must equal the config default, so behaviour is unchanged until the
+     * row is set. Short keys: processing_fee_percent, limit_ratio, instalment_ratio.
+     */
+    public const NUMBER_KEYS = ['processing_fee_percent', 'limit_ratio', 'instalment_ratio'];
+
+    public function number(string $key, float $fallback): float
+    {
+        $rows = Cache::remember(self::CACHE_KEY.':numbers', self::CACHE_TTL, function () {
+            try {
+                return DB::table(self::TABLE)
+                    ->whereIn('key', array_map(fn (string $k) => self::PREFIX.$k, self::NUMBER_KEYS))
+                    ->pluck('value', 'key')
+                    ->all();
+            } catch (QueryException) {
+                return [];
+            }
+        });
+
+        $value = $rows[self::PREFIX.$key] ?? null;
+
+        return is_numeric($value) ? (float) $value : $fallback;
+    }
+
     /** Re-read the table on the next call (tests, or after a known change). */
     public static function flush(): void
     {
         Cache::forget(self::CACHE_KEY);
+        Cache::forget(self::CACHE_KEY.':numbers');
     }
 
     /**

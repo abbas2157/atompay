@@ -36,10 +36,13 @@ class CreditAssessmentService
     /** Pure estimate from income alone - the landing-page widget. */
     public function estimate(int $monthlyIncome): array
     {
+        // Ratios shared with AtomShop through atom_settings, so both apps use one figure.
+        $settings = app(CompanySettings::class);
+
         return [
             'monthly_income' => $monthlyIncome,
-            'approved_limit' => Money::share($monthlyIncome, config('atompay.credit.limit_ratio')),
-            'max_instalment' => Money::share($monthlyIncome, config('atompay.credit.instalment_ratio')),
+            'approved_limit' => Money::share($monthlyIncome, $settings->number('limit_ratio', (float) config('atompay.credit.limit_ratio'))),
+            'max_instalment' => Money::share($monthlyIncome, $settings->number('instalment_ratio', (float) config('atompay.credit.instalment_ratio'))),
         ];
     }
 

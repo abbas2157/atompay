@@ -264,15 +264,19 @@ class AskAtomService
     private function limit(): array
     {
         $income = (int) config('atompay.atompay_plan.example_income');
-        $limitPct = (int) (config('atompay.credit.limit_ratio') * 100);
-        $capPct = (int) (config('atompay.credit.instalment_ratio') * 100);
+        // Ratios shared with AtomShop through atom_settings, so the answer matches the real credit maths.
+        $settings = app(CompanySettings::class);
+        $limitRatio = $settings->number('limit_ratio', (float) config('atompay.credit.limit_ratio'));
+        $capRatio = $settings->number('instalment_ratio', (float) config('atompay.credit.instalment_ratio'));
+        $limitPct = (int) round($limitRatio * 100);
+        $capPct = (int) round($capRatio * 100);
 
         return [
             '<p>Your purchase limit is <strong>'.$limitPct.'% of the monthly income you declare</strong>. '
             .'No single month may cost more than '.$capPct.'% of that income, or your disposable income after '
             .'expenses &mdash; whichever is lower.</p>'
-            .'<p>So '.$this->rs($income).' a month earns about a '.$this->rs(Money::share($income, (float) config('atompay.credit.limit_ratio')))
-            .' limit, with a '.$this->rs(Money::share($income, (float) config('atompay.credit.instalment_ratio'))).' monthly cap. '
+            .'<p>So '.$this->rs($income).' a month earns about a '.$this->rs(Money::share($income, $limitRatio))
+            .' limit, with a '.$this->rs(Money::share($income, $capRatio)).' monthly cap. '
             .'Staff set the final figure after checking your identity, your address and your income.</p>',
             [['label' => 'Apply for a limit', 'url' => auth()->check() ? route('account.application') : route('register')]],
         ];

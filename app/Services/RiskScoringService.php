@@ -54,11 +54,13 @@ class RiskScoringService
             $reasons[] = 'Monthly obligations are '.round($ratio * 100).'% of income';
         }
 
-        // Affordability: disposable income below the income-based instalment cap
-        $cap = Money::share($assessment->monthly_income, config('atompay.credit.instalment_ratio'));
+        // Affordability: disposable income below the income-based instalment cap.
+        // Ratio shared with AtomShop through atom_settings.
+        $instalmentRatio = app(CompanySettings::class)->number('instalment_ratio', (float) config('atompay.credit.instalment_ratio'));
+        $cap = Money::share($assessment->monthly_income, $instalmentRatio);
         if ($assessment->disposable_income < $cap) {
             $score -= $p['low_disposable'];
-            $reasons[] = 'Disposable income below the '.(int) (config('atompay.credit.instalment_ratio') * 100).'% instalment cap';
+            $reasons[] = 'Disposable income below the '.(int) round($instalmentRatio * 100).'% instalment cap';
         }
 
         // Identity / address not yet confirmed

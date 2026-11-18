@@ -33,7 +33,7 @@ class CalculatorController extends Controller
                 'min_ratio' => 0.0,
                 'max_ratio' => 0.0,
             ],
-            'processing_fee_percent' => (float) config('atompay.atompay_plan.processing_fee_percent'),
+            'processing_fee_percent' => app(\App\Services\CompanySettings::class)->number('processing_fee_percent', (float) config('atompay.atompay_plan.processing_fee_percent')),
             'price' => [
                 'min' => (int) config('atompay.plan.price_min'),
                 'max' => (int) config('atompay.plan.price_max'),
