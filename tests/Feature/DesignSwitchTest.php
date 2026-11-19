@@ -573,6 +573,7 @@ class DesignSwitchTest extends TestCase
             config('atompay.api.store_url.ios'),
             config('atompay.apps.atomseller.android'),
             config('atompay.apps.atomseller.ios'),
+            config('atompay.apps.atombrand.android'),
             config('atompay.apps.atombrand.ios'),
         ] as $url) {
             $this->assertNotEmpty($url);
@@ -584,8 +585,9 @@ class DesignSwitchTest extends TestCase
     }
 
     /**
-     * AtomBrand has no Android build published, so the card must say so rather
-     * than render a link to nothing.
+     * An app with no build published for a platform must say so rather than
+     * render a link to nothing. Every app is on both stores since 2026-11-19,
+     * so the config is blanked here to reach that branch.
      */
     public function test_an_unpublished_app_says_soon_instead_of_linking(): void
     {

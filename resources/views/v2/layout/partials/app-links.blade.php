@@ -2,8 +2,8 @@
     The two store links for one app in the ecosystem, as compact pills. Uses
     site.css's own .ic-play and .ic-apple glyphs, so the marks match the shop's.
 
-    An app with no link for a platform says so rather than linking nowhere -
-    AtomBrand's Android build is not published yet.
+    An app with no link for a platform says so rather than linking nowhere.
+    Every app is on both stores today, so nothing should read "soon".
 
     @include('v2.layout.partials.app-links', ['app' => [...], 'name' => 'Atomshop'])
 --}}

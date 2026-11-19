@@ -501,7 +501,7 @@
                 <div style="display:flex;gap:8px;flex-wrap:wrap">
                     <span class="chip">AtomPay &middot; Android &amp; iPhone</span>
                     <span class="chip">Atom Seller &middot; Android &amp; iPhone</span>
-                    <span class="chip">AtomBrand &middot; iPhone</span>
+                    <span class="chip">AtomBrand &middot; Android &amp; iPhone</span>
                 </div>
             </div>
         </div>

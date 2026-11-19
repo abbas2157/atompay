@@ -45,8 +45,9 @@ return [
     | links. AtomPay's own pair is not repeated here: it lives in api.store_url,
     | which the mobile API already reads, so each link has one home.
     |
-    | AtomBrand has no Android build published, so its android link is null and
-    | the card says "Android soon" rather than linking nowhere.
+    | Every app is on both stores since 2026-11-19, when AtomBrand's Android app
+    | was published. A link left empty makes its card say "Android soon" /
+    | "iPhone soon" rather than link nowhere.
     */
     'apps' => [
         'atomshop' => [
@@ -58,7 +59,7 @@ return [
             'ios' => env('ATOMSELLER_APP_IOS') ?: 'https://apps.apple.com/us/app/atom-seller-sell-more/id6817232001',
         ],
         'atombrand' => [
-            'android' => env('ATOMBRAND_APP_ANDROID'),
+            'android' => env('ATOMBRAND_APP_ANDROID') ?: 'https://play.google.com/store/apps/details?id=com.ecommerce.atombrand',
             'ios' => env('ATOMBRAND_APP_IOS') ?: 'https://apps.apple.com/us/app/atombrand-brand-partner/id6820037360',
         ],
     ],

@@ -30,7 +30,7 @@ Call this on every launch, before `GET /me`.
       "atomshop":   { "android": "https://play.google.com/store/apps/details?id=com.ecommerce.atomshop", "ios": "https://apps.apple.com/us/app/atomshop/id6744655747", "web": "https://atomshop.pk" },
       "atompay":    { "android": "https://play.google.com/store/apps/details?id=com.ecommerce.atompay", "ios": "https://apps.apple.com/us/app/atompay-pay-in-steps/id6817231756", "web": "https://atompay.shop" },
       "atomseller": { "android": "https://play.google.com/store/apps/details?id=com.ecommerce.atomseller", "ios": "https://apps.apple.com/us/app/atom-seller-sell-more/id6817232001", "web": "https://atomshop.pk/smart-seller" },
-      "atombrand":  { "android": null, "ios": "https://apps.apple.com/us/app/atombrand-brand-partner/id6820037360", "web": "https://atomshop.pk/brand-partners" }
+      "atombrand":  { "android": "https://play.google.com/store/apps/details?id=com.ecommerce.atombrand", "ios": "https://apps.apple.com/us/app/atombrand-brand-partner/id6820037360", "web": "https://atomshop.pk/brand-partners" }
     },
     "features": { "push": true, "voice": true, "password_reset_channels": ["email", "whatsapp"], "signup_channels": ["email", "whatsapp"] }
   }

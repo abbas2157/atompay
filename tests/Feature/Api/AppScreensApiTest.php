@@ -33,7 +33,7 @@ class AppScreensApiTest extends ApiTestCase
             ->assertJsonPath('data.maintenance.active', true)
             ->assertJsonPath('data.maintenance.message', 'Back soon')
             ->assertJsonPath('data.features.voice', false)
-            ->assertJsonPath('data.apps.atombrand.android', null)               // not on Play yet: the app says "Android soon"
+            ->assertJsonPath('data.apps.atombrand.android', config('atompay.apps.atombrand.android'))  // on Play since 2026-11-19
             ->assertJsonPath('data.apps.atomseller.web', rtrim(config('atompay.shop_url'), '/').'/smart-seller')
             ->assertJsonStructure(['data' => ['maintenance' => ['until'], 'apps' => ['atomshop' => ['android', 'ios', 'web'], 'atompay', 'atomseller', 'atombrand']]]);
 
